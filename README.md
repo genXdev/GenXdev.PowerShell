@@ -7,7 +7,9 @@
 ### NAME
     GenXdev Powershell Modules
 ### SYNOPSIS
-    A comprehensive PowerShell productivity suite for power users and developers, integrating AI, browser automation, media management, database tools, file system utilities, and Windows system control into a unified command-line workflow.
+    A comprehensive PowerShell productivity suite for power users and developers, integrating AI,
+    browser automation, media management, database tools, file system utilities,
+    and Windows system control into a unified command-line workflow.
 
 [![Made by Human](https://madebyhuman.iamjarl.com/badges/made-white.svg)](https://genxdev.net/)<br>[![GenXdev](https://img.shields.io/powershellgallery/v/GenXdev.svg?style=flat-square&label=GenXdev)](https://www.powershellgallery.com/packages/GenXdev/)  [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](./LICENSE) [![](https://badgen.net/static/quality/trust%20me%20bro/3C1)](https://github.com/genXdev/GenXdev.PowerShell/tree/main/Tests)
 
