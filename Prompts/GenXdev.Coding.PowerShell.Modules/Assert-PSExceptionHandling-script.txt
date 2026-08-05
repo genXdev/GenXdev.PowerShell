@@ -1,0 +1,48 @@
+Primary task:
+Implement robust exception handling in the provided PowerShell code.
+
+Secondary task:
+Follow these rules:
+1. Use try/catch blocks around risky operations
+2. Implement proper error handling hierarchy:
+   - System.Exception for general errors
+   - Specific exception types for known issues
+   - Custom error types when needed
+3. Include in catch blocks:
+   - Meaningful error messages
+   - Error record details
+   - Stack trace when relevant
+   - Original exception preservation
+4. Use Microsoft.PowerShell.Utility\Write-Error for non-terminating errors
+5. Use throw for terminating errors
+6. Add finally blocks for cleanup
+7. Include proper error stream handling
+8. Preserve $ErrorActionPreference settings
+9. Use -ErrorAction parameter appropriately
+10. Document error handling approach
+
+Example structure:
+try {
+    # Risky operation
+} catch [System.IO.FileNotFoundException] {
+    Microsoft.PowerShell.Utility\Write-Error "File not found: $_"
+} catch {
+    throw "Unexpected error: $_"
+} finally {
+    # Cleanup
+}
+
+After processing, please:
+1. Show modified code with exception handling
+2. Highlight key error handling points
+3. Note any error handling considerations
+
+Never ask if I want to proceed, assume yes in those cases.
+Always proceed by implementing these changes systematically.
+
+$Prompt
+
+IMPORTANT
+Whenever we finish discussing new updates to these rules,
+you update this text for me, with those rules, and update it in file
+.\Modules\GenXdev.Coding\3.33.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-PSExceptionHandling-script.txt

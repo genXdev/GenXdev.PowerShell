@@ -1,0 +1,231 @@
+Primary task:
+Improve scriptfile function '$CmdletName' in '$ScriptFileName'.
+
+You are analyzing C# cmdlet files that inherit from PSGenXdevCmdlet. Your task is to identify and replace old script-based invocations with the equivalent base class methods.
+
+## Base Functions Available in PSGenXdevCmdlet
+
+### 1. CopyIdenticalParamValues(string CmdletName)
+**Replaces:** Manual parameter copying using `GenXdev.FileSystem\Copy-IdenticalParamValues`
+**Old pattern:**
+```csharp
+$params = GenXdev.FileSystem\Copy-IdenticalParamValues `
+    -BoundParameters $PSBoundParameters `
+    -FunctionName 'TargetFunction' `
+    -DefaultValues (Microsoft.PowerShell.Utility\Get-Variable -Scope Local -ErrorAction SilentlyContinue)
+```
+**New pattern:**
+```csharp
+var params = CopyIdenticalParamValues("TargetFunction");
+```
+
+### 2. ConvertToJson(object obj, int depth = 20)
+**Replaces:** `Microsoft.PowerShell.Utility\ConvertTo-Json -Compress -Depth`
+**Old pattern:**
+```csharp
+var jsonScript = ScriptBlock.Create("param($obj) $obj | Microsoft.PowerShell.Utility\\ConvertTo-Json -Compress -Depth " + depth.ToString());
+var result = jsonScript.Invoke(obj);
+var json = (string)((PSObject)result[0]).BaseObject;
+```
+**New pattern:**
+```csharp
+string json = ConvertToJson(obj, depth);
+```
+
+### 3. ConvertFromJson(string json) and ConvertFromJson<T>(string json)
+**Replaces:** `Microsoft.PowerShell.Utility\ConvertFrom-Json -ErrorAction SilentlyContinue`
+**Old pattern:**
+```csharp
+var jsonScript = ScriptBlock.Create("param($json) @($json | Microsoft.PowerShell.Utility\\ConvertFrom-Json -ErrorAction SilentlyContinue)");
+var result = jsonScript.Invoke(json);
+var psArray = (System.Collections.ObjectModel.Collection<PSObject>)result;
+```
+**New pattern:**
+```csharp
+object[] results = ConvertFromJson(json);
+// or
+T[] results = ConvertFromJson<T>(json);
+```
+
+### 4. WriteJsonAtomic(string filePath, Hashtable data, int maxRetries = 10, int retryDelayMs = 200)
+**Replaces:** `GenXdev.FileSystem\WriteJsonAtomic`
+**Old pattern:**
+```csharp
+var script = ScriptBlock.Create(@"param($FilePath, $Data, $MaxRetries, $RetryDelayMs) GenXdev.FileSystem\WriteJsonAtomic -FilePath $FilePath -Data $Data -MaxRetries $MaxRetries -RetryDelayMs $RetryDelayMs");
+script.Invoke(filePath, data, maxRetries, retryDelayMs);
+```
+**New pattern:**
+```csharp
+WriteJsonAtomic(filePath, data, maxRetries, retryDelayMs);
+```
+
+### 5. ReadJsonWithRetry(string filePath, int maxRetries = 10, int retryDelayMs = 200, bool asHashtable = false)
+**Replaces:** `GenXdev.FileSystem\ReadJsonWithRetry`
+**Old pattern:**
+```csharp
+var script = ScriptBlock.Create(@"param($FilePath, $AsHashtable, $MaxRetries, $RetryDelayMs) GenXdev.FileSystem\ReadJsonWithRetry -FilePath $FilePath -AsHashtable:$AsHashtable -MaxRetries $MaxRetries -RetryDelayMs $RetryDelayMs");
+var result = script.Invoke(filePath, asHashtable, maxRetries, retryDelayMs);
+```
+**New pattern:**
+```csharp
+object data = ReadJsonWithRetry(filePath, maxRetries, retryDelayMs, asHashtable);
+```
+
+### 6. ExpandPath(string Path)
+**Replaces:** `GenXdev.FileSystem\Expand-Path`
+**Old pattern:**
+```csharp
+var expandPathScript = ScriptBlock.Create("param($Path) GenXdev.FileSystem\\Expand-Path -FilePath $Path");
+var result = expandPathScript.Invoke(Path);
+var expandedPath = result[0]?.BaseObject.ToString();
+```
+**New pattern:**
+```csharp
+string expandedPath = ExpandPath(Path);
+```
+
+### 7. ConfirmInstallationConsent(...)
+**Replaces:** `GenXdev.FileSystem\Confirm-InstallationConsent`
+**Old pattern:**
+```csharp
+var scriptBuilder = new System.Text.StringBuilder();
+scriptBuilder.Append("param(...) GenXdev.FileSystem\\Confirm-InstallationConsent ...");
+var confirmConsentScript = ScriptBlock.Create(scriptBuilder.ToString());
+var result = confirmConsentScript.Invoke(...);
+```
+**New pattern:**
+```csharp
+bool consent = ConfirmInstallationConsent(applicationName, source, description, publisher, forceConsent, consentToThirdPartySoftwareInstallation);
+```
+
+### 8. GetGenXdevPreference(string Name, string DefaultValue, string PreferencesDatabasePath, bool SessionOnly, bool ClearSession, bool SkipSession)
+**Replaces:** `GenXdev.Data\Get-GenXdevPreference`
+**Old pattern:**
+```csharp
+var script = ScriptBlock.Create(@"param($Name, $DefaultValue, $PreferencesDatabasePath, $SessionOnly, $ClearSession, $SkipSession)
+    GenXdev.Data\Get-GenXdevPreference -Name $Name -DefaultValue $DefaultValue -PreferencesDatabasePath $PreferencesDatabasePath -SessionOnly:$SessionOnly -ClearSession:$ClearSession -SkipSession:$SkipSession");
+var result = script.Invoke(name, defaultValue, databasePath, sessionOnly, clearSession, skipSession);
+string value = result[0]?.ToString();
+```
+**New pattern:**
+```csharp
+string value = GetGenXdevPreference(name, defaultValue, databasePath, sessionOnly, clearSession, skipSession);
+```
+
+### 9. SetGenXdevPreference(string Name, string Value, string PreferencesDatabasePath, bool SessionOnly, bool ClearSession, bool SkipSession)
+**Replaces:** `GenXdev.Data\Set-GenXdevPreference`
+**Old pattern:**
+```csharp
+var script = ScriptBlock.Create(@"param($Name, $Value, $PreferencesDatabasePath, $SessionOnly, $ClearSession, $SkipSession)
+    GenXdev.Data\Set-GenXdevPreference -Name $Name -Value $Value -PreferencesDatabasePath $PreferencesDatabasePath -SessionOnly:$SessionOnly -ClearSession:$ClearSession -SkipSession:$SkipSession");
+script.Invoke(name, value, databasePath, sessionOnly, clearSession, skipSession);
+```
+**New pattern:**
+```csharp
+SetGenXdevPreference(name, value, databasePath, sessionOnly, clearSession, skipSession);
+```
+
+### 10. RemoveGenXdevPreference(string Name, bool RemoveDefault, string PreferencesDatabasePath, bool SessionOnly, bool ClearSession, bool SkipSession)
+**Replaces:** `GenXdev.Data\Remove-GenXdevPreference`
+**Old pattern:**
+```csharp
+var script = ScriptBlock.Create(@"param($Name, $RemoveDefault, $PreferencesDatabasePath, $SessionOnly, $ClearSession, $SkipSession)
+    GenXdev.Data\Remove-GenXdevPreference -Name $Name -RemoveDefault:$RemoveDefault -PreferencesDatabasePath $PreferencesDatabasePath -SessionOnly:$SessionOnly -ClearSession:$ClearSession -SkipSession:$SkipSession");
+script.Invoke(name, removeDefault, databasePath, sessionOnly, clearSession, skipSession);
+```
+**New pattern:**
+```csharp
+RemoveGenXdevPreference(name, removeDefault, databasePath, sessionOnly, clearSession, skipSession);
+```
+
+### 11. SetGenXdevDefaultPreference(string Name, string Value, string PreferencesDatabasePath, bool SessionOnly, bool ClearSession, bool SkipSession)
+**Replaces:** `GenXdev.Data\Set-GenXdevDefaultPreference`
+**Old pattern:**
+```csharp
+var script = ScriptBlock.Create(@"param($Name, $Value, $PreferencesDatabasePath, $SessionOnly, $ClearSession, $SkipSession)
+    GenXdev.Data\Set-GenXdevDefaultPreference -Name $Name -Value $Value -PreferencesDatabasePath $PreferencesDatabasePath -SessionOnly:$SessionOnly -ClearSession:$ClearSession -SkipSession:$SkipSession");
+script.Invoke(name, value, databasePath, sessionOnly, clearSession, skipSession);
+```
+**New pattern:**
+```csharp
+SetGenXdevDefaultPreference(name, value, databasePath, sessionOnly, clearSession, skipSession);
+```
+
+### 12. GetGenXdevPreferenceNames(string PreferencesDatabasePath, bool SessionOnly, bool ClearSession, bool SkipSession)
+**Replaces:** `GenXdev.Data\Get-GenXdevPreferenceNames`
+**Old pattern:**
+```csharp
+var script = ScriptBlock.Create(@"param($PreferencesDatabasePath, $SessionOnly, $ClearSession, $SkipSession)
+    GenXdev.Data\Get-GenXdevPreferenceNames -PreferencesDatabasePath $PreferencesDatabasePath -SessionOnly:$SessionOnly -ClearSession:$ClearSession -SkipSession:$SkipSession");
+var result = script.Invoke(databasePath, sessionOnly, clearSession, skipSession);
+string[] names = result.Select(r => r.ToString()).ToArray();
+```
+**New pattern:**
+```csharp
+string[] names = GetGenXdevPreferenceNames(databasePath, sessionOnly, clearSession, skipSession);
+```
+
+### 13. GetPreferencesDatabasePath(string PreferencesDatabasePath, bool SessionOnly, bool ClearSession, bool SkipSession)
+**Replaces:** `GenXdev.Data\Get-PreferencesDatabasePath`
+**Old pattern:**
+```csharp
+var script = ScriptBlock.Create(@"param($PreferencesDatabasePath, $SessionOnly, $ClearSession, $SkipSession)
+    GenXdev.Data\Get-PreferencesDatabasePath -PreferencesDatabasePath $PreferencesDatabasePath -SessionOnly:$SessionOnly -ClearSession:$ClearSession -SkipSession:$SkipSession");
+var result = script.Invoke(databasePath, sessionOnly, clearSession, skipSession);
+string path = result[0]?.ToString();
+```
+**New pattern:**
+```csharp
+string path = GetPreferencesDatabasePath(databasePath, sessionOnly, clearSession, skipSession);
+```
+
+### 14. SetPreferencesDatabasePath(string PreferencesDatabasePath, bool SkipSession, bool SessionOnly, bool ClearSession)
+**Replaces:** `GenXdev.Data\Set-PreferencesDatabasePath`
+**Old pattern:**
+```csharp
+var script = ScriptBlock.Create(@"param($PreferencesDatabasePath, $SkipSession, $SessionOnly, $ClearSession)
+    GenXdev.Data\Set-PreferencesDatabasePath -PreferencesDatabasePath $PreferencesDatabasePath -SkipSession:$SkipSession -SessionOnly:$SessionOnly -ClearSession:$ClearSession");
+script.Invoke(databasePath, skipSession, sessionOnly, clearSession);
+```
+**New pattern:**
+```csharp
+SetPreferencesDatabasePath(databasePath, skipSession, sessionOnly, clearSession);
+```
+
+## Analysis Instructions
+
+1. **Search for patterns:** Look for ScriptBlock.Create() calls that invoke PowerShell cmdlets
+2. **Identify replacements:** Match the invoked cmdlets to the base class methods above
+3. **Replace systematically:** Replace the script invocation code with direct base class method calls
+4. **Maintain functionality:** Ensure all parameters and error handling are preserved
+5. **Clean up:** Remove unused ScriptBlock variables and simplify the code
+
+## Replace in this order for maximum impact:
+1. CopyIdenticalParamValues (most common)
+2. ExpandPath (simple replacement)
+3. JSON methods (ConvertToJson, ConvertFromJson, WriteJsonAtomic, ReadJsonWithRetry)
+   Use base methods from PSGenXdevCmdlet for JSON operations instead of InvokeCommand. Use ConvertToJson(object) and ConvertFromJson<T>(string) for serialization/deserialization instead of invoking GenXdev.Data\ConvertTo-Json and GenXdev.Data\ConvertFrom-Json via ScriptBlock.
+   Use base methods from PSGenXdevCmdlet for atomic JSON file operations instead of InvokeCommand. Use WriteJsonAtomic(string filePath, object data) and ReadJsonWithRetry(string filePath, bool asHashtable = false) instead of invoking GenXdev.Data\Write-JsonAtomic and GenXdev.Data\Read-JsonWithRetry via ScriptBlock.
+
+4. ConfirmInstallationConsent (complex parameter building)
+5. Preference methods (GetGenXdevPreference, SetGenXdevPreference, RemoveGenXdevPreference, etc.)
+6. GetGenXdevAppDataPath ( replacement for $ENV:APPData\GenXdev.PowerShell\ )
+7. GetGenXdevModulesBase ( replacement for $($MyInvocation.MyCommand.Module.ModuleBase)\..\..\ )
+8. GetPowerShellProfilePath ( replacement for $($MyInvocation.MyCommand.Module.ModuleBase)\..\..\ )
+9. GetPowerShellScriptsPath ( replacement for $($MyInvocation.MyCommand.Module.ModuleBase)\..\..\Scripts )
+10. GetGenXdevModuleBase ( replacement for $($MyInvocation.MyCommand.Module.ModuleBase)\..\..\somemodulename\3.33.0\ )
+
+Focus on files that show signs of using these old patterns - look for ScriptBlock.Create,
+InvokeCommand.InvokeScript, or direct cmdlet invocations that match the base methods.
+
+## Analyze what is available in:
+.\Modules\GenXdev.FileSystem\3.33.0\Functions\GenXdev.FileSystem\PSGenXdevCmdlet.cs
+.\Modules\GenXdev.FileSystem\3.33.0\Functions\GenXdev.FileSystem\PSGenXdevCmdlet.FindItem.cs
+.\Modules\GenXdev.FileSystem\3.33.0\Functions\GenXdev.FileSystem\PSGenXdevCmdlet.KeyValueStore.cs
+.\Modules\GenXdev.FileSystem\3.33.0\Functions\GenXdev.FileSystem\PSGenXdevCmdlet.Preferences.cs
+.\Modules\GenXdev.FileSystem\3.33.0\Functions\GenXdev.FileSystem\PSGenXdevCmdlet.Utilities.cs
+
+## Check
+With exception of the Find-Item cmdlet, most cmdlets where ported from .ps1 cmdlet to .cs cmdlet
+with AI Assistence and human validation, feel free to check if the requirements by which this
+happened are still up-to-date with the current ones in file: '.\Modules\GenXdev.Coding\3.33.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-ConvertToCSharp.txt'

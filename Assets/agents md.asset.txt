@@ -1,0 +1,174 @@
+# Agents Configuration
+
+This document describes the AI agents and capabilities available in this GenXdev PowerShell development environment.
+
+## Overview
+
+This workspace provides a comprehensive PowerShell development environment with AI agent capabilities through the GenXdev MCP (Model Context Protocol) server. The agents can interact with PowerShell modules, execute commands, manage files, and provide development assistance.
+
+## Available Agents
+
+### GenXdev MCP Server Agent
+
+**Name**: GenXdev
+**Type**: MCP Server
+**Protocol**: HTTP
+**Endpoint**: `http://localhost:2175/mcp`
+**Status**: Active (running as background task)
+
+#### Capabilities
+
+- **PowerShell Module Management**: Access to 20+ GenXdev modules with hundreds of cmdlets
+- **File Operations**: Read, write, create, and manage files in the workspace
+- **Code Analysis**: PSScriptAnalyzer integration for code quality checks
+- **Testing**: Pester test framework integration
+- **Development Tools**: Code generation, refactoring, and documentation
+- **System Integration**: Windows system management and automation
+- **AI Integration**: LLM integration and AI model management
+- **Version Control**: Git operations and change tracking
+- **Task Automation**: Scheduled tasks and background processes
+
+#### Exposed Tools
+
+The MCP server exposes the following categories of tools:
+
+1. **Core Development**
+   - `Get-GenXdevCmdlet` - Discover available cmdlets and modules
+   - `Assert-GenXdevTest` - Run unit tests and code analysis
+   - `Import-GenXdevModules` - Reload modules after changes
+
+2. **File Management**
+   - `Get-ClipboardFiles` - Access files from Windows clipboard
+   - `Set-ClipboardFiles` - Copy files to Windows clipboard
+   - `Get-GitChangedFiles` - Track Git repository changes
+
+3. **Documentation**
+   - `Add-TodoLineToREADME` - Add TODO items to project documentation
+   - `Add-FeatureLineToREADME` - Track feature requests
+   - `Add-IssueLineToREADME` - Log issues and bugs
+
+4. **Entertainment & Productivity**
+   - `Get-Help` - PowerShell help system access
+
+5. **Code Generation**
+   - `New-GenXdevCmdlet` - Generate new PowerShell cmdlets following GenXdev standards
+
+#### Configuration
+
+```json
+{
+  "name": "GenXdev",
+  "type": "mcp_server",
+  "transport": {
+    "type": "http",
+    "url": "http://localhost:2175/mcp"
+  },
+  "capabilities": [
+    "tools",
+    "resources",
+    "logging"
+  ],
+  "features": {
+    "powershell_modules": true,
+    "file_operations": true,
+    "code_analysis": true,
+    "testing": true,
+    "ai_integration": true
+  }
+}
+```
+
+## Integration Points
+
+### VS Code Integration
+
+- **Tasks**: Pre-configured tasks for debugging, testing, and MCP server management
+- **Extensions**: PowerShell extension with IntelliSense and debugging support
+- **Workspace Settings**: Optimized for PowerShell development
+
+### Claude Desktop Integration
+
+Add the following to your Claude Desktop MCP configuration:
+
+```json
+{
+  "servers": {
+    "genxdev": {
+      "type": "http",
+      "url": "http://localhost:2175/mcp"
+    }
+  }
+}
+```
+
+## Development Guidelines
+
+### Code Standards
+
+- Follow GenXdev PowerShell coding standards (23 requirements for modules, 22 for scripts)
+- Use proper error handling and verbose logging
+- Maintain 80-character line limits in comment-based help
+- Apply consistent parameter formatting with separator lines
+
+### Testing
+
+- Run `Assert-GenXdevTest` after making changes, use parameter CmdletName
+- Use both PSScriptAnalyzer and Pester tests
+- Never use `isBackground=true` for unit tests - always wait for completion
+
+### Documentation
+
+- Update README.md with feature/issue/todo entries
+- Maintain changelog entries for cmdlet changes
+- Follow PowerShell verb-noun naming conventions
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `MCP_PORT` | Port for MCP server | `2175` |
+| `MCP_HOST` | Host for MCP server | `localhost` |
+| `GENXDEV_VERBOSE` | Enable verbose logging | `false` |
+
+## Troubleshooting
+
+### Common Issues
+
+1. **MCP Server Not Responding**
+   - Check if the server task is running in VS Code
+   - Restart using: `Ctrl+Shift+P` → "Tasks: Run Task" → "Start GenXdev MVP Server"
+
+2. **Module Loading Errors**
+   - Run the "Debug GenXdev module loading" task
+   - Use `Import-GenXdevModules` to reload modules
+
+3. **Test Failures**
+   - Run `Assert-GenXdevTest -TestFailedAction SolveWithAI` for AI-assisted fixing
+   - Check the test output for specific error details
+
+### Logs and Diagnostics
+
+- **MCP Server Logs**: Available through VS Code terminal output
+- **Module Logs**: Check `logs/` directory for detailed module operation logs
+- **Test Results**: Output from PSScriptAnalyzer and Pester tests
+
+## Contributing
+
+When adding new agents or modifying existing ones:
+
+1. Follow the parameter management guidelines in `.github/copilot-instructions.md`
+2. Update this `agents.md` file with new capabilities
+3. Test thoroughly with `Assert-GenXdevTest`
+4. Document changes in the changelog
+
+## Security Considerations
+
+- MCP server runs on localhost by default
+- File operations are restricted to the workspace directory
+- PowerShell execution follows Windows security policies
+- Credential management follows PowerShell best practices
+
+---
+
+*Last updated: August 21, 2025*
+*GenXdev PowerShell Development Environment v3.33.0*

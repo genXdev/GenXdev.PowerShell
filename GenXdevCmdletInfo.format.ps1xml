@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+    <ViewDefinitions>
+        <!-- GenXdevCmdletInfo: Table View -->
+        <View>
+            <Name>GenXdevCmdletInfo-Table</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.GenXdevCmdletInfo</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <AutoSize />
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>Name</Label>
+                        <Width>20</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Description</Label>
+                        <Width>40</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap />
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <ScriptBlock>
+                                    $ansiColorWhite = "$([char]27)[0;37m"
+                                    $ansiColorGrey = "$([char]27)[0;90m"
+                                    $ansiColorCyan = "$([char]27)[0;36m"
+                                    $ansiColorReset = "$([char]27)[0m"
+
+                                    $s = "$ansiColorGrey$($_.BaseModule)\$ansiColorWhite$($_.Name)$ansiColorReset"
+                                    if (-not [string]::IsNullOrWhiteSpace($_.Aliases)) {
+                                        $s = "$ansiColorGrey$($_.BaseModule)\$ansiColorWhite$($_.Name)$ansiColorGrey --> $ansiColorCyan$($_.Aliases)$ansiColorReset"
+                                    }
+                                    $s
+                                </ScriptBlock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>
+                                    $ansiColorWhite = "$([char]27)[0;37m"
+                                    $ansiColorGrey = "$([char]27)[0;90m"
+                                    $ansiColorCyan = "$([char]27)[0;36m"
+                                    $ansiColorReset = "$([char]27)[0m"
+
+                                    $Global:_GenXdevCmdletInfoOddEven = if ($Global:_GenXdevCmdletInfoOddEven) { $false } else { $true }
+                                    $ansiColor = if ($Global:_GenXdevCmdletInfoOddEven) { $ansiColorWhite } else { $ansiColorGrey }
+
+                                    if ([string]::IsNullOrWhiteSpace($_.Description)) {
+
+                                        "${ansiColorCyan}No description found$ansiColorReset"
+                                    }
+                                    else {
+
+                                        "$ansiColor$($_.Description)$ansiColorReset"
+                                    }
+                                </ScriptBlock>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+        <!-- GenXdevCmdletInfo: List View -->
+        <View>
+            <Name>GenXdevCmdletInfo-List</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.GenXdevCmdletInfo</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <Label>Name</Label>
+                                <PropertyName>Name</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Module Name</Label>
+                                <PropertyName>ModuleName</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Base Module</Label>
+                                <PropertyName>BaseModule</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Line Number</Label>
+                                <PropertyName>LineNo</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Description</Label>
+                                <PropertyName>Description</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Aliases</Label>
+                                <PropertyName>Aliases</PropertyName>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+        <!-- GenXdevCmdletInfo: Wide View -->
+        <View>
+            <Name>GenXdevCmdletInfo-Wide</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.GenXdevCmdletInfo</TypeName>
+            </ViewSelectedBy>
+            <WideControl>
+                <WideEntries>
+                    <WideEntry>
+                        <WideItem>
+                            <ScriptBlock>
+                                $name = $_.Name
+                                $ModuleObj = if ($_.ModuleName) { $_.ModuleName } else { $_.BaseModule }
+                                $aliases = if ($_.Aliases) { " [$($_.Aliases)]" } else { "" }
+                                "${name} (${moduleObj})${aliases}"
+                            </ScriptBlock>
+                        </WideItem>
+                    </WideEntry>
+                </WideEntries>
+            </WideControl>
+        </View>
+    </ViewDefinitions>
+</Configuration>

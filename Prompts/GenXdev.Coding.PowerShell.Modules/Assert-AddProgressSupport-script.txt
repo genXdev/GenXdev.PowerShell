@@ -1,0 +1,36 @@
+# Example template for adding progress support
+$activity = "Processing items"
+$totalItems = $items.Count
+$current = 0
+
+foreach ($item in $items) {
+
+    $current++
+    $percentComplete = ($current / $totalItems) * 100
+
+    Microsoft.PowerShell.Utility\Write-Progress `
+        -Activity $activity `
+        -Status "Processing item $current of $totalItems" `
+        -PercentComplete $percentComplete
+
+    # Process item
+    # ...existing code...
+}
+
+# Clean up progress bar
+Microsoft.PowerShell.Utility\Write-Progress -Activity $activity -Completed
+
+Notes:
+- Use descriptive activity names
+- Update status frequently
+- Show items processed vs total
+- Clean up progress bar when done
+- Nest progress bars with ParentId for sub-operations
+- Add try/finally to ensure progress cleanup
+
+$Prompt
+
+IMPORTANT
+Whenever we finish discussing new updates to these rules,
+you update this text for me, with those rules, and update it in file
+.\Modules\GenXdev.Coding\3.33.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-AddProgressSupport-script.txt

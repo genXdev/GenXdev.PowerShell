@@ -1,0 +1,109 @@
+GenXdev\Close-Webbrowser: Closes one or more webbrowser instances selectively.
+GenXdev\Convert-PhysicsUnit: Converts a value from one physics unit to another within the same category.
+GenXdev\ConvertTo-HashTable: Converts a PSCustomObject to a HashTable recursively.
+GenXdev\ConvertTo-Uris: Parses strings for any valid URI.
+GenXdev\Copy-PDFsFromGoogleQuery: Downloads PDF files found through Google search results.
+GenXdev\CurrentUserHasElevatedRights: Checks if the current user has elevated rights.
+GenXdev\Export-BrowserBookmarks: Exports browser bookmarks to a JSON file.
+GenXdev\Find-DuplicateFiles: Find duplicate files across multiple directories based on configurable criteria.
+GenXdev\Find-Image: Searches for image files and metadata in specified directories with filtering
+capabilities and optional browser-based gallery display.
+GenXdev\Find-Item: Search for files and directories with advanced filtering options.
+GenXdev\Get-ApparentSizeAtArmLength: Calculates the apparent size of an object at arm's length.
+GenXdev\Get-AtEyeLengthSizeInMM: Calculates the apparent size in mm of an object at arm's length.
+GenXdev\Get-BrowserBookmark: Returns all bookmarks from installed web browsers.
+GenXdev\Get-BuoyantForceByDisplacedVolumeAndDensity: Calculates buoyant force.
+GenXdev\Get-CentripetalAccelerationByVelocityAndRadius: Calculates centripetal acceleration.
+GenXdev\Get-ClipboardFiles: Gets files from the Windows clipboard that were set for file operations
+like copy/paste.
+GenXdev\Get-DopplerFrequencyShiftBySourceSpeedAndObserverSpeed: Calculates Doppler shifted frequency.
+GenXdev\Get-DragForceByVelocityDensityAreaAndCoefficient: Calculates drag force.
+GenXdev\Get-EscapeVelocityByMassAndRadius: Calculates escape velocity.
+GenXdev\Get-ForegroundWindow: Gets the handle of the currently active foreground window.
+GenXdev\Get-FreeFallDistance: Calculates the distance fallen during free fall for a given time duration.
+GenXdev\Get-FreeFallHeight: Calculates the height fallen during free fall for a given time duration.
+GenXdev\Get-FreeFallTime: Calculates the time required for an object to fall a given height during free fall.
+GenXdev\Get-ImageMetadata: Extracts comprehensive metadata from an image file.
+GenXdev\Get-ImpactVelocityByHeightAndGravity: Calculates impact velocity from height.
+GenXdev\Get-KineticEnergyByMassAndVelocity: Calculates kinetic energy.
+GenXdev\Get-KnownFolderPath: Gets the path of a Windows known folder using the Windows Shell32 API.
+GenXdev\Get-LightTravelTimeByDistance: Calculates time for light to travel a distance.
+GenXdev\Get-MagnificationByObjectDistanceAndImageDistance: Calculates magnification for a lens.
+GenXdev\Get-MomentumByMassAndVelocity: Calculates linear momentum.
+GenXdev\Get-NextAffirmation: Returns a random affirmation text from the affirmations.dev API.
+GenXdev\Get-OrbitalVelocityByRadiusAndMass: Calculates orbital velocity.
+GenXdev\Get-PotentialEnergyByMassHeightAndGravity: Calculates gravitational potential energy.
+GenXdev\Get-ProjectileRangeByInitialSpeedAndAngle: Calculates the range of a projectile.
+GenXdev\Get-RefractionAngleByIncidentAngleAndIndices: Calculates refraction angle using Snell's law.
+GenXdev\Get-ResonantFrequencyByLengthAndSpeed: Calculates resonant frequency for a closed pipe.
+GenXdev\Get-SoundTravelDistanceByTime: Calculates the distance sound travels in a given time.
+GenXdev\Get-TerminalVelocityByMassGravityDensityAndArea: Calculates terminal velocity.
+GenXdev\Get-TimeOfFlightByInitialVelocityAndAngle: Calculates the time of flight for a projectile.
+GenXdev\Get-WaveSpeedByFrequencyAndWavelength: Calculates wave speed.
+GenXdev\Get-WikipediaSummary: Retrieves a summary of a topic from Wikipedia.
+GenXdev\Import-GenXdevModules: Imports all GenXdev PowerShell modules into the global scope.
+GenXdev\Invoke-Fasti: Extracts archive files in the current directory to their own folders and deletes
+them afterwards.
+GenXdev\Invoke-WindowsUpdate: Checks if Windows is up to date and optionally installs available updates.
+GenXdev\Move-FilesToDateFolder: Moves files matching search criteria into date-based subfolders.
+GenXdev\Move-ToRecycleBin: Moves files and directories to the Windows Recycle Bin safely.
+GenXdev\Open-AllPossibleQueries: Opens all possible query types for given search terms or URLs.
+GenXdev\Open-BingCopilotQuery: Opens a Bing CoPilot query in a webbrowser
+GenXdev\Open-BingQuery: Opens a Bing search query in a web browser.
+GenXdev\Open-BrowserBookmarks: Opens browser bookmarks that match specified search criteria.
+GenXdev\Open-BuiltWithSiteInfo: Opens BuiltWith website queries in a web browser.
+GenXdev\Open-ChatGPTQuery: Opens a ChatGPT query in a web browser.
+GenXdev\Open-CloudLLMChat: Opens a cloud LLM chat interface for AI queries.
+GenXdev\Open-DeepSearchQuery: Opens a DeepSeek query in a webbrowser
+GenXdev\Open-GameOfLife: Opens Conway's Game of Life simulation in a web browser.
+GenXdev\Open-GenXdevAppCatalog: Opens the GenXdev progressive webapps catalog in a web browser.
+GenXdev\Open-GithubCopilotQuery: Opens a Github CoPilot query in a webbrowser
+GenXdev\Open-GithubQuery: Opens a Github repository search query in a web browser or executes advanced
+searches against the GitHub REST API supporting all available qualifiers and
+search categories (repositories, code, issues, users, commits, discussions,
+topics, wikis).
+GenXdev\Open-GoogleGeminiQuery: Opens a Google Gemini query in a webbrowser
+GenXdev\Open-GoogleQuery: Opens Google queries in a web browser with configurable settings and extensive
+customization options.
+GenXdev\Open-GoogleSiteInfo: Opens Google site information queries in a web browser.
+GenXdev\Open-GrokipediaQuery: Opens a Grokipedia query in a webbrowser.
+GenXdev\Open-IMDBQuery: Opens an IMDB search query in a web browser.
+GenXdev\Open-InstantStreetViewQuery: Opens InstantStreetView queries in a web browser.
+GenXdev\Open-MediaFile: Opens and plays media files using VLC media player with advanced filtering and
+configuration options.
+GenXdev\Open-MovieQuote: Opens a video of a movie quote in a web browser.
+GenXdev\Open-SearchEngine: Opens a search query in the specified search engine using a web browser.
+GenXdev\Open-SimularWebSiteInfo: Opens SimilarWeb website information for specified URLs in a web browser.
+GenXdev\Open-StackOverflowQuery: Opens Stack Overflow search queries in a web browser.
+GenXdev\Open-Timeline: Opens an interactive timeline showing current time, date, century, and
+millennium.
+GenXdev\Open-ViralSimulation: Opens a viral simulation game in a web browser with extensive configuration
+options.
+GenXdev\Open-VlcMediaPlayer: Launches and controls VLC Media Player with extensive configuration options.
+GenXdev\Open-WaybackMachineSiteInfo: Opens WaybackMachine site information in a web browser.
+GenXdev\Open-Webbrowser: Opens URLs in one or more browser windows with optional positioning and styling.
+GenXdev\Open-WebsiteAndPerformQuery: Opens a webpage in a webbrowser and performs one or more queries.
+GenXdev\Open-WhoisHostSiteInfo: Opens a Whois host information query in a web browser.
+GenXdev\Open-WikipediaNLQuery: Opens Dutch Wikipedia searches in a web browser.
+GenXdev\Open-WikipediaQuery: Opens a Wikipedia query in a webbrowser.
+GenXdev\Open-WolframAlphaQuery: Opens a Wolfram Alpha query in a web browser.
+GenXdev\Open-XGrokQuery: Opens a X Grok query in a webbrowser
+GenXdev\Open-Yab: Opens the YAB game in a web browser with configurable settings.
+GenXdev\Open-YabAIBattle: Opens the YabAI Battle game in a web browser.
+GenXdev\Open-YoutubeQuery: Opens YouTube search queries in a web browser.
+GenXdev\Out-Serial: Sends a string to a serial port
+GenXdev\Remove-ItemWithFallback: Removes files or directories with multiple fallback mechanisms for reliable deletion.
+GenXdev\Remove-OnReboot: Marks files or directories for deletion during the next system boot.
+GenXdev\Rename-InProject: Performs text replacement throughout a project directory.
+GenXdev\Save-DesktopScreenShot: Captures a screenshot of the specified monitor and saves it to the
+specified path.
+GenXdev\Send-Key: Sends simulated keystrokes to a window or process.
+GenXdev\Set-ClipboardFiles: Sets files to the Windows clipboard for file operations like copy/paste.
+GenXdev\Set-FoundLocation: Finds the first matching file or folder and sets the location to it.
+GenXdev\Set-WindowPosition: Positions and resizes windows when explicit positioning parameters are provided.
+GenXdev\Show-GenXdevCmdlet: Displays GenXdev PowerShell modules with their cmdlets and aliases.
+GenXdev\Start-RoboCopy: Provides a PowerShell wrapper for Microsoft's Robust Copy (RoboCopy) utility.
+GenXdev\Test-PathUsingWindowsDefender: Scans files or directories for malware using Windows Defender.
+GenXdev\Write-FileAtomic: Writes bytes to a file atomically to prevent corruption.
+GenXdev\Write-JsonFileAtomic: Writes an object as JSON to a file atomically to prevent corruption.
+GenXdev\Write-TextFileAtomic: Writes text to a file atomically to prevent corruption.

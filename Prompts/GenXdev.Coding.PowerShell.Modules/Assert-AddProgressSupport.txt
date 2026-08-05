@@ -1,0 +1,31 @@
+Primary task:
+Add progress bar support to the following PowerShell code.
+
+Secondary task:
+Follow these rules:
+1. Use Microsoft.PowerShell.Utility\Write-Progress to show operation progress
+2. Include Activity, Status and PercentComplete parameters
+3. Add progress tracking for loops and long-running operations
+4. Clean up progress bar when operation completes
+5. Keep error handling intact
+6. Maintain existing Microsoft.PowerShell.Utility\Write-Verbose messages
+7. Use meaningful activity descriptions
+8. Add status updates at key points
+9. Calculate percentage based on work completed
+10. Nest progress bars for sub-operations if needed
+11. Keep all existing functionality unchanged
+
+After processing, please:
+1. Provide the modified code with progress support added
+2. Highlight key progress tracking points
+3. Note any performance considerations
+
+Never ask if I want to proceed, assume yes in those cases.
+Always proceed by implementing these changes systematically.
+
+$Prompt
+
+IMPORTANT
+Whenever we finish discussing new updates to these rules,
+you update this text for me, with those rules, and update it in file
+.\Modules\GenXdev.Coding\3.33.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-AddProgressSupport.txt

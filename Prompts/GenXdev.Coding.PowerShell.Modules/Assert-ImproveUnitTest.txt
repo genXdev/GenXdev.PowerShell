@@ -1,0 +1,68 @@
+Your task:
+Ensure that this function has the a unit test that invokes
+GenXdev.Coding\Invoke-GenXdevScriptAnalyzer
+or
+Invoke-ScriptAnalyzer
+and if so, replace that test with the one below;
+if it doesn't have such a test, add the one below;
+
+################################################################################
+Pester\Describe "$CmdletName" {
+
+    Pester\It "Should pass PSScriptAnalyzer rules" {
+
+        # get the script path for analysis
+        $scriptPath = GenXdev.FileSystem\Expand-Path "$($MyInvocation.MyCommand.Module.ModuleBase)\Functions\$FullModuleName\$CmdLetNoTestName.ps1"
+
+        # run analyzer with explicit settings
+        $analyzerResults = GenXdev.Coding\Invoke-GenXdevScriptAnalyzer `
+            -Path $scriptPath
+
+        [string] $message = ""
+        $analyzerResults | Microsoft.PowerShell.Core\ForEach-Object {
+
+            $message = $message + @"
+--------------------------------------------------
+Rule: $($_.RuleName)`
+Description: $($_.Description)
+Message: $($_.Message)
+`r`n
+"@
+        }
+
+        $analyzerResults.Count | Should -Be 0 -Because @"
+The following PSScriptAnalyzer rules are being violated:
+$message
+"@;
+    }
+}
+
+################################################################################
+
+If really necessary you can create a rule exception for ScriptAnalyzer rules:
+
+function Get-SpotifyLyrics {
+
+    [CmdLetBinding(DefaultParameterSetName = "")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "Get-SpotifyLyrics")]    [Alias("lyrics")]
+    param(
+        # params
+    )
+
+    # function implementation
+}
+
+################################################################################
+
+Only add a Describe {} block if there isn't one yet.
+Ensure that the block above is the first one in the Describe block.
+
+Never ask if I want to proceed, assume yes in those cases.
+Always proceed by implementing these changes systematically.
+
+$Prompt
+
+IMPORTANT
+Whenever we finish discussing new updates to these rules,
+you update this text for me, with those rules, and update it in file
+.\Modules\GenXdev.Coding\3.33.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-ImproveUnitTest.txt

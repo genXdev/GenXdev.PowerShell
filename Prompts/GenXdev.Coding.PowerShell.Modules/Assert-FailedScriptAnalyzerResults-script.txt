@@ -1,0 +1,119 @@
+Primary task:
+Analyze and fix a failed PSScriptAnalyzer test:
+
+$Prompt
+
+Secondary task:
+
+
+If the error resides in the tested script itself, let me know instead of outputing
+the corrected version, I will add it to the session for us to edit it together.
+
+Ensure compliance with these 22 requirements:
+
+1) Do not change or remove any existing alias definitions for the function's
+   parameters.
+2) Check for obvious coding bugs, technical debt, and language spelling errors.
+3) If no paramsetnames are used, and there are no positional attributes for
+   parameters, but adding them would improve functionality, add them.
+4) The file must start and end with a line containing 80 hash (#) characters.
+5) Ensure the existence a simular line, with the right indent, with (#)
+   characters all the way, up and including column #79, between each parameter(!)
+   and function(!) you encounter.
+6) Basic code style guids to follow for all other non-mentionables are those
+   from the book:
+7) Each parameter should have;
+   - A line of hash (#) characters extending to column 79 above it
+   - Parameter attributes vertically aligned, each on its own line:
+        + Position (if applicable, never when [switch])
+        + Mandatory (even if $false)
+        + HelpMessage
+        + Other attributes (ValueFromPipeline etc.)
+   - Parameter name should match same casing as in help documentation
+   - Switch parameters should always come last and never have a position set
+8) Function '$CmdletName' must have begin {}, process(), and end() blocks.
+   If a block is empty, do not add code comments.
+9) Each line of code that is not trivially understandable must have a code
+   comment above it in plain English without capital letters.
+   Follow the guidelines from the book 'Code complete 2nd edition'
+10) By reading only the code comments, one should fully understand what the
+    code does and how it does it.
+11) Use the latest best practices for PowerShell, .NET, Windows, or any other
+    relevant API.
+12) Fix any code-smell issues.
+13) Use Microsoft.PowerShell.Utility\Write-Verbose to show essential informative messages without harming
+    performance.
+14) Always insert exactly one empty line after each opening curly brace
+   { before starting the code block's contents. Do not insert empty lines
+   before closing curly braces }. This provides clear visual separation of
+   code blocks while keeping closures compact. The first line of actual code
+   should always be preceded by one empty line after an opening brace.
+15) Never place an empty line between a code comment and its referenced code
+    line. And never commands on the same line, always above it.
+16) Always place at least one empty line between each code line or code line
+    and comment for a preceeding code line..
+17) Treat this as a refactoring: do not add, rename, or modify parameters or their
+    attributes (including ParameterSetName). Dependent code should remain working.
+    You can NOT introduce different behaviors, even if they are better code
+    practices. Only modify parameter documentation if it contains errors.
+18) When refactoring, apply applicable parameter attributes without breaking
+    dependencies:
+    - Alias for alternative names
+    - Mandatory to mark required parameters
+    - Position to specify parameter positions
+    - ParameterSetName for mutually exclusive parameters
+    - ValueFromPipeline to accept pipeline input
+    - ValueFromPipelineByPropertyName for pipeline properties
+    - HelpMessage for parameter help
+    - Validation attributes (ValidateNotNull, ValidateNotNullOrEmpty, etc.)
+    - Allow attributes (AllowNull, AllowEmptyString, AllowEmptyCollection)
+    - DontShow to hide parameters if needed
+19) Prefer [System.IO] file routines above the standard PowerShell ones,
+    never use [System.IO.Path]::GetFullPath use 'GenXdev.FileSystem\Expand-Path $somevar' instead!
+20) function parameters start with Uppercase, internal variables start with
+    lowercase, enforce this.
+21) For readibility enforce that all code have new lines after '|' pipeline
+    symbols, and after parameters using back-ticks ` wraps.
+    Never use back-ticks to wrap items that are seperated by dots or when concating strings
+    this would break the code!!
+22) Enforce that each line is wrapped so that they dont exceed 80 characters,
+    just like this prompt text.
+    When wrapping string, make sure they are wrapped in parenthesis () !
+
+################################################################################
+
+If really necessary you can create a rule exception for ScriptAnalyzer rules:
+
+[CmdLetBinding(DefaultParameterSetName = "")]
+[System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "Get-SpotifyLyrics")]    [Alias("lyrics")]
+param(
+    # params
+)
+
+# function implementation
+
+################################################################################
+
+After processing, please:
+1. Provide a numbered checklist confirming each requirement was addressed
+2. Highlight any requirements that couldn't be fully met and explain why
+3. Summarize major changes made to meet requirements
+
+For each file modified, provide:
+1. Path as header
+2. Brief summary of changes
+3. Code block starting with filepath comment
+4. Use "# ...existing code..." for unchanged sections
+
+Never ask if I want to proceed, assume yes in those cases.
+Always proceed by implementing these changes systematically.
+
+After you are done, don't offer to run any command to check the results,
+this is already performed using scripting.
+
+Beware this is a script file from the scripts folder, and should NOT
+have a 'function somename' block arround it, as module scripts would have.
+IMPORTANT
+Whenever we finish discussing new updates to these rules,
+you update this text for me, with those rules, and update it in file
+.\Modules\GenXdev.Coding\3.33.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-FailedScriptAnalyzerResults-script.txt

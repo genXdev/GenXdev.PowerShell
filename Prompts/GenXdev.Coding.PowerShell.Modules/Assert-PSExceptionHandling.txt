@@ -1,0 +1,186 @@
+Primary task:
+Implement robust exception handling in the provided PowerShell code.
+
+Secondary task:
+Follow these rules:
+1. Use try/catch blocks around risky operations
+2. Implement proper error handling hierarchy:
+   - System.Exception for general errors
+   - Specific exception types for known issues
+   - Custom error types when needed
+3. Include in catch blocks:
+   - Meaningful error messages
+   - Error record details
+   - Stack trace when relevant
+   - Original exception preservation
+4. Use Microsoft.PowerShell.Utility\Write-Error for non-terminating errors
+5. Use throw for terminating errors
+6. Add finally blocks for cleanup
+7. Include proper error stream handling
+8. Preserve $ErrorActionPreference settings
+9. Use -ErrorAction parameter appropriately
+10. Document error handling approach
+
+Example structure:
+try {
+    # Risky operation
+} catch [System.IO.FileNotFoundException] {
+    Microsoft.PowerShell.Utility\Write-Error "File not found: $_"
+} catch {
+    throw "Unexpected error: $_"
+} finally {
+    # Cleanup
+}
+
+After processing, please:
+1. Show modified code with exception handling
+2. Highlight key error handling points
+3. Note any error handling considerations
+
+Never ask if I want to proceed, assume yes in those cases.
+Always proceed by implementing these changes systematically.
+
+Third and last task:
+Ensure compliance with these 17 requirements:
+
+1) The file must start and end with a line containing 80 hash (#) characters.
+2) Ensure the existence a simular line, with the right indent, with (#)
+   characters all the way, up and including column #79, between each parameter(!)
+   and function(!) you encounter.
+3) Immediately below that line of previous point #2, include a <# #> meta
+   section with SYNOPSIS, DESCRIPTION, .PARAMETER (for each parameter), and at
+   least one .EXAMPLE with full parameter names and one .EXAMPLE with aliases
+   or positional parameters if available. If the short example is the same as
+   the full one, don't emit, or remove it. Never change existing .EXAMPLES or .NOTES
+4) Each parameter should have;
+   - A line of hash (#) characters extending to column 79 above it
+   - Parameter attributes vertically aligned, each on its own line:
+        + Position (if applicable, never when [switch])
+        + Mandatory (even if $false)
+        + HelpMessage
+        + Other attributes (ValueFromPipeline etc.)
+   - Parameter name should match same casing as in help documentation
+   - Switch parameters should always come last and never have a position set
+5) Function '$CmdletName' must have begin {}, process(), and end() blocks.
+   If a block is empty, do not add code comments.
+6) Each line of code that is not trivially understandable must have a code
+   comment above it in plain English without capital letters.
+   Follow the guidelines from the book 'Code complete 2nd edition'
+7) By reading only the code comments, one should fully understand what the
+    code does and how it does it.
+8) Use Microsoft.PowerShell.Utility\Write-Verbose to show essential informative messages without harming
+    performance.
+9) Always insert exactly one empty line after each opening curly brace
+   { before starting the code block's contents. Do not insert empty lines
+   before closing curly braces }. This provides clear visual separation of
+   code blocks while keeping closures compact. The first line of actual code
+   should always be preceded by one empty line after an opening brace.
+10) Never place an empty line between a code comment and its referenced code
+    line. And never commands on the same line, always above it.
+11) Always place at least one empty line between each code line or code line
+    and comment for a preceeding code line..
+12) DO NOT MODIFY ANY FUNCTIONAL CODE. Only add/modify comments,
+    documentation, and formatting (line wrapping/indentation).
+    All existing code including parameter attributes, ValidateSets,
+    variables, logic, and functionality must remain exactly as-is.
+13) function parameters start with Uppercase, internal variables start with
+    lowercase, enforce this.
+14) For readibility enforce that all code have new lines after '|' pipeline
+    symbols, and after parameters using back-ticks ` wraps.
+    Never use back-ticks to wrap items that are seperated by dots or when concating strings
+    this would break the code!!
+15) Enforce that each line is wrapped so that they dont exceed 80 characters,
+    just like this prompt text.
+    When wrapping string, make sure they are wrapped in parenthesis () !
+16) I prefer '$null = Some-Function' over 'Some-Function | Out-Null' if
+    you encounter this, change it.
+17) Make sure all parameters are represented in the meta data .PARAMETER
+    lines above the function.
+
+
+An example of how it should look technically and cosmetically:
+
+###############################################################################
+<#
+.SYNOPSIS
+Opens the specified GenXdev cmdlet in Visual Studio Code.
+
+.DESCRIPTION
+This function retrieves the script file and line number for the specified
+GenXdev cmdlet and opens it in Visual Studio Code at the correct position.
+
+.PARAMETER CmdletName
+The name of the cmdlet to open in Visual Studio Code.
+
+.EXAMPLE
+Show-GenXdevCmdLetInIde -Filter "Get-GenXDevModuleInfo"
+
+.EXAMPLE
+editcmdlet Get-GenXDevModuleInfo
+#>
+function Show-GenXdevCmdLetInIde {
+
+    [CmdletBinding()]
+    [Alias("editcmdlet")]
+
+    param(
+        #######################################################################
+        [parameter(
+            Mandatory = $false,
+            Position = 0,
+            HelpMessage = "The name of the cmdlet to improve"
+        )]
+        [string] $CmdletName
+        #######################################################################
+    )
+
+    begin {
+        # retrieve the cmdlet with script position
+        $cmdLet = GenXdev.Helpers\Get-GenXDevCmdlet -Filter $CmdletName
+
+        # output verbose information about the cmdlet
+        Microsoft.PowerShell.Utility\Write-Verbose $cmdLet
+    }
+
+    process {
+
+        # open vscode
+        p -code
+
+        # wait for vscode to open
+        Microsoft.PowerShell.Utility\Start-Sleep -Seconds 3
+
+        # output verbose information about the command to open the script file
+        Microsoft.PowerShell.Utility\Write-Verbose "code -g `"$($cmdLet.ScriptFilePath):$($cmdLet.LineNo)`""
+
+        # open the script file at the function's location
+        code -g "$($cmdLet.ScriptFilePath):$($cmdLet.LineNo)"
+    }
+
+    end {
+    }
+}
+###############################################################################
+
+
+After processing, please:
+1. Provide a numbered checklist confirming each requirement was addressed
+2. Highlight any requirements that couldn't be fully met and explain why
+3. Summarize major changes made to meet requirements
+
+For each file modified, provide:
+1. Path as header
+2. Brief summary of changes
+3. Code block starting with filepath comment
+4. Use "# ...existing code..." for unchanged sections
+
+Never ask if I want to proceed, assume yes in those cases.
+Always proceed by implementing these changes systematically.
+
+$Prompt
+
+
+IMPORTANT
+Whenever we finish discussing new updates to these rules,
+you update this text for me, with those rules, and update it in file
+.\Modules\GenXdev.Coding\3.33.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-PSExceptionHandling.txt

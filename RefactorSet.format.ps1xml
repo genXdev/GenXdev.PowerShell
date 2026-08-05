@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <ViewDefinitions>
+    <!-- RefactorDefinition: Main summary table -->
+    <View>
+      <Name>RefactorDefinition-Table</Name>
+      <ViewSelectedBy>
+        <TypeName>GenXdev.Helpers.RefactorDefinition</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader>
+            <Label>Name</Label>
+            <Width>26</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Priority</Label>
+            <Width>8</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Status</Label>
+            <Width>14</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Last Updated</Label>
+            <Width>20</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Unselected</Label>
+            <Width>20</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Selected</Label>
+            <Width>20</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Done</Label>
+            <Width>20</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>done %</Label>
+            <Width>6</Width>
+          </TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem>
+                <PropertyName>Name</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Priority</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <ScriptBlock>if ($_.State) { $_.State.Status } else { "" }</ScriptBlock>
+              </TableColumnItem>
+              <TableColumnItem>
+                <ScriptBlock>if ($_.State) { $_.State.LastUpdated } else { "" }</ScriptBlock>
+              </TableColumnItem>
+              <TableColumnItem>
+                <ScriptBlock>if ($_.State) {"$($_.State.Unselected.Count)"} else { "" }</ScriptBlock>
+              </TableColumnItem>
+              <TableColumnItem>
+                <ScriptBlock>if ($_.State) {"$($_.State.Selected.Count)"} else { "" }</ScriptBlock>
+              </TableColumnItem>
+              <TableColumnItem>
+                <ScriptBlock>if ($_.State) {"$($_.State.RefactoredIndex+1)"} else { "" }</ScriptBlock>
+              </TableColumnItem>
+              <TableColumnItem>
+                <ScriptBlock>if ($_.State) { $_.State.PercentageComplete } else { "" }</ScriptBlock>
+              </TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+
+    <!-- RefactorDefinition: List view for details -->
+    <View>
+      <Name>RefactorDefinition-List</Name>
+      <ViewSelectedBy>
+        <TypeName>GenXdev.Helpers.RefactorDefinition</TypeName>
+      </ViewSelectedBy>
+      <ListControl>
+        <ListEntries>
+          <ListEntry>
+            <ListItems>
+              <ListItem>
+                <Label>Name</Label>
+                <PropertyName>Name</PropertyName>
+              </ListItem>
+              <ListItem>
+                <Label>Priority</Label>
+                <PropertyName>Priority</PropertyName>
+              </ListItem>
+              <ListItem>
+                <Label>Status</Label>
+                <ScriptBlock>if ($_.State) { $_.State.Status } else { "" }</ScriptBlock>
+              </ListItem>
+              <ListItem>
+                <Label>Last Updated</Label>
+                <ScriptBlock>if ($_.State) { $_.State.LastUpdated } else { "" }</ScriptBlock>
+              </ListItem>
+              <ListItem>
+                <Label>Percentage Complete</Label>
+                <ScriptBlock>if ($_.State) { $_.State.PercentageComplete } else { "" }</ScriptBlock>
+              </ListItem>
+              <ListItem>
+                <Label>Prompt</Label>
+                <ScriptBlock>if ($_.RefactorSettings) { $_.RefactorSettings.Prompt } else { "" }</ScriptBlock>
+              </ListItem>
+              <ListItem>
+                <Label>Selection Script</Label>
+                <ScriptBlock>if ($_.SelectionSettings) { $_.SelectionSettings.Script } else { "" }</ScriptBlock>
+              </ListItem>
+              <ListItem>
+                <Label>Log Count</Label>
+                <ScriptBlock>if ($_.Log) { $_.Log.Count } else { 0 }</ScriptBlock>
+              </ListItem>
+            </ListItems>
+          </ListEntry>
+        </ListEntries>
+      </ListControl>
+    </View>
+
+    <!-- RefactorSettings: Table -->
+    <View>
+      <Name>RefactorSettings-Table</Name>
+      <ViewSelectedBy>
+        <TypeName>GenXdev.Helpers.RefactorSettings</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader>
+            <Label>PromptKey</Label>
+            <Width>15</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Prompt</Label>
+            <Width>30</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Code</Label>
+            <Width>8</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>VS</Label>
+            <Width>8</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>KeysToSend</Label>
+            <Width>20</Width>
+          </TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem>
+                <PropertyName>PromptKey</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Prompt</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Code</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>VisualStudio</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <ScriptBlock>if ($_.KeysToSend) { $_.KeysToSend -join ", " } else { "" }</ScriptBlock>
+              </TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+
+    <!-- SelectionSettings: Table -->
+    <View>
+      <Name>SelectionSettings-Table</Name>
+      <ViewSelectedBy>
+        <TypeName>GenXdev.Helpers.SelectionSettings</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader>
+            <Label>Script</Label>
+            <Width>30</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>AutoAddModifiedFiles</Label>
+            <Width>10</Width>
+          </TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem>
+                <PropertyName>Script</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>AutoAddModifiedFiles</PropertyName>
+              </TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+
+    <!-- RefactorSelectionLLMSettings: Table -->
+    <View>
+      <Name>RefactorSelectionLLMSettings-Table</Name>
+      <ViewSelectedBy>
+        <TypeName>GenXdev.Helpers.RefactorSelectionLLMSettings</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader>
+            <Label>Model</Label>
+            <Width>15</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Prompt</Label>
+            <Width>30</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Temperature</Label>
+            <Width>10</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>MaxToken</Label>
+            <Width>8</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>TTL</Label>
+            <Width>6</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>LLMQueryType</Label>
+            <Width>15</Width>
+          </TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem>
+                <PropertyName>Model</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Prompt</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Temperature</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>MaxToken</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>TTLSeconds</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>LLMQueryType</PropertyName>
+              </TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+
+    <!-- RefactorLogItem: Table -->
+    <View>
+      <Name>RefactorLogItem-Table</Name>
+      <ViewSelectedBy>
+        <TypeName>GenXdev.Helpers.RefactorLogItem</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader>
+            <Label>Timestamp</Label>
+            <Width>22</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Message</Label>
+            <Width>60</Width>
+          </TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem>
+                <PropertyName>Timestamp</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Message</PropertyName>
+              </TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+
+    <!-- RefactorState: Table -->
+    <View>
+      <Name>RefactorState-Table</Name>
+      <ViewSelectedBy>
+        <TypeName>GenXdev.Helpers.RefactorState</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader>
+            <Label>Status</Label>
+            <Width>20</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>LastUpdated</Label>
+            <Width>20</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Complete %</Label>
+            <Width>10</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Selected</Label>
+            <Width>20</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Refactored</Label>
+            <Width>20</Width>
+          </TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem>
+                <PropertyName>Status</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>LastUpdated</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>PercentageComplete</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <ScriptBlock>if ($_.Selected) { $_.Selected -join ", " } else { "" }</ScriptBlock>
+              </TableColumnItem>
+              <TableColumnItem>
+                <ScriptBlock>if ($_.Refactored) { $_.Refactored -join ", " } else { "" }</ScriptBlock>
+              </TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+
+  </ViewDefinitions>
+</Configuration>

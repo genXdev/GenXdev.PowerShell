@@ -1,0 +1,1371 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+    <ViewDefinitions>
+        <!-- ImageSearchResult: Table View -->
+        <View>
+            <Name>ImageSearchResult-Table</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResult</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <AutoSize />
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>Path</Label>
+                        <Width>40</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Description</Label>
+                        <Width>40</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Width</Label>
+                        <Width>10</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Height</Label>
+                        <Width>10</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Keywords</Label>
+                        <Width>30</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap />
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <ScriptBlock>
+                                    [string] $p = "$($_.Path)"
+                                    if ($p -like "file://") {
+                                        $p = $p.Substring(7);
+                                    }
+                                    [string] $cs  = "$((Get-Location).Path)\"
+                                    if ($p.startsWith($cs)) {
+
+                                        $p = ".\"+$p.Substring($cs.length)
+                                    }
+                                    if ($p.length -gt 50) {
+                                        $p = ($p.Substring(0,25)+"\..\"+$p.Substring($p.length-21)).Substring(0, 50)
+                                    }
+                                    $p
+                                </ScriptBlock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>
+                                [string] $s = ($_.Description -and -not [string]::IsNullOrWhiteSpace($_.Description.Short_Description)) ?
+                                   $_.Description.Short_Description : "" ;
+                                $s += " ==&gt; "+(($_.Description -and -not [string]::IsNullOrWhiteSpace($_.Description.Long_Description)) ? $_.Description.Long_Description : "" );
+                                if ($s.Trim() -ne "==&gt;") {
+                                $s
+                                }
+                                else {
+                                    ""
+                                }
+                                </ScriptBlock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Width</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Height</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>if ($_.Description.Keywords -and $_.Description.Keywords.Count -gt 0) { $_.Description.Keywords -join ", " } else { "" }</ScriptBlock>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+        <!-- ImageSearchResult: List View -->
+        <View>
+            <Name>ImageSearchResult-List</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResult</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <Label>Path</Label>
+                                <PropertyName>Path</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Short Description</Label>
+                                <ScriptBlock>if ($_.Description) { $_.Description.Short_Description } else { "" }</ScriptBlock>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Picture Type</Label>
+                                <ScriptBlock>if ($_.Description) { $_.Description.Picture_Type } else { "" }</ScriptBlock>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Has Nudity</Label>
+                                <ScriptBlock>if ($_.Description -and $_.Description.Has_Nudity -ne $null) { $_.Description.Has_Nudity } else { "" }</ScriptBlock>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Has Explicit Content</Label>
+                                <ScriptBlock>if ($_.Description -and $_.Description.Has_Explicit_Content -ne $null) { $_.Description.Has_Explicit_Content } else { "" }</ScriptBlock>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Keywords</Label>
+                                <ScriptBlock>if ($_.Description.Keywords -and $_.Description.Keywords.Count -gt 0) { $_.Description.Keywords -join ", " } else { "" }</ScriptBlock>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Width</Label>
+                                <PropertyName>Width</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Height</Label>
+                                <PropertyName>Height</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Objects Count</Label>
+                                <ScriptBlock>if ($_.Objects) { $_.Objects.Count } else { "" }</ScriptBlock>
+                            </ListItem>
+                            <ListItem>
+                                <Label>People Count</Label>
+                                <ScriptBlock>if ($_.People) { $_.People.Count } else { "" }</ScriptBlock>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+        <!-- ImageSearchResult: Wide View -->
+        <View>
+            <Name>ImageSearchResult-Wide</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResult</TypeName>
+            </ViewSelectedBy>
+            <WideControl>
+                <WideEntries>
+                    <WideEntry>
+                        <WideItem>
+                            <PropertyName>Path</PropertyName>
+                        </WideItem>
+                    </WideEntry>
+                </WideEntries>
+            </WideControl>
+        </View>
+        <!-- ImageSearchResultDescription: Table View -->
+        <View>
+            <Name>ImageSearchResultDescription-Table</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultDescription</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <AutoSize />
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>Short Description</Label>
+                        <Width>40</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Picture Type</Label>
+                        <Width>15</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Has Nudity</Label>
+                        <Width>10</Width>
+                        <Alignment>Center</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Has Explicit Content</Label>
+                        <Width>10</Width>
+                        <Alignment>Center</Alignment>
+                    </TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap />
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <PropertyName>Short_Description</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Picture_Type</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>if ($_.Has_Nudity -ne $null) { $_.Has_Nudity } else { "" }</ScriptBlock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>if ($_.Has_Explicit_Content -ne $null) { $_.Has_Explicit_Content } else { "" }</ScriptBlock>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+        <!-- ImageSearchResultDescription: List View -->
+        <View>
+            <Name>ImageSearchResultDescription-List</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultDescription</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <Label>Style Type</Label>
+                                <PropertyName>Style_Type</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Short Description</Label>
+                                <PropertyName>Short_Description</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Long Description</Label>
+                                <PropertyName>Long_Description</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Picture Type</Label>
+                                <PropertyName>Picture_Type</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Has Nudity</Label>
+                                <ScriptBlock>if ($_.Has_Nudity -ne $null) { $_.Has_Nudity } else { "" }</ScriptBlock>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Has Explicit Content</Label>
+                                <ScriptBlock>if ($_.Has_Explicit_Content -ne $null) { $_.Has_Explicit_Content } else { "" }</ScriptBlock>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Overall Mood</Label>
+                                <PropertyName>Overall_MoodOf_Image</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Keywords</Label>
+                                <ScriptBlock>if ($_.Keywords -and $_.Keywords.Count -gt 0) { $_.Keywords -join ", " } else { "" }</ScriptBlock>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+        <!-- ImageSearchResultMetadata: Table View -->
+        <View>
+            <Name>ImageSearchResultMetadata-Table</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultMetadata</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <AutoSize />
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>FileName</Label>
+                        <Width>40</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Format</Label>
+                        <Width>10</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Artist</Label>
+                        <Width>20</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>DateTime</Label>
+                        <Width>20</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap />
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <ScriptBlock>if ($_.Basic) { $_.Basic.FileName } else { "" }</ScriptBlock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>if ($_.Basic) { $_.Basic.Format } else { "" }</ScriptBlock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>if ($_.Author) { $_.Author.Artist } else { "" }</ScriptBlock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>if ($_.DateTime) { $_.DateTime.DateTime } else { "" }</ScriptBlock>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+        <!-- ImageSearchResultMetadata: List View -->
+        <View>
+            <Name>ImageSearchResultMetadata-List</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultMetadata</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <Label>FileName</Label>
+                                <ScriptBlock>if ($_.Basic) { $_.Basic.FileName } else { "" }</ScriptBlock>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Format</Label>
+                                <ScriptBlock>if ($_.Basic) { $_.Basic.Format } else { "" }</ScriptBlock>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Width</Label>
+                                <ScriptBlock>if ($_.Basic) { $_.Basic.Width } else { "" }</ScriptBlock>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Height</Label>
+                                <ScriptBlock>if ($_.Basic) { $_.Basic.Height } else { "" }</ScriptBlock>
+                            </ListItem>
+                            <ListItem>
+                                <Label>FileSizeBytes</Label>
+                                <ScriptBlock>if ($_.Basic) { $_.Basic.FileSizeBytes } else { "" }</ScriptBlock>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Artist</Label>
+                                <ScriptBlock>if ($_.Author) { $_.Author.Artist } else { "" }</ScriptBlock>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Copyright</Label>
+                                <ScriptBlock>if ($_.Author) { $_.Author.Copyright } else { "" }</ScriptBlock>
+                            </ListItem>
+                            <ListItem>
+                                <Label>DateTime</Label>
+                                <ScriptBlock>if ($_.DateTime) { $_.DateTime.DateTime } else { "" }</ScriptBlock>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Latitude</Label>
+                                <ScriptBlock>if ($_.Gps) { $_.Gps.Latitude } else { "" }</ScriptBlock>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Longitude</Label>
+                                <ScriptBlock>if ($_.Gps) { $_.Gps.Longitude } else { "" }</ScriptBlock>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+        <!-- ImageSearchResultGps: Table View -->
+        <View>
+            <Name>ImageSearchResultGps-Table</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultGps</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <AutoSize />
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>Latitude</Label>
+                        <Width>12</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Longitude</Label>
+                        <Width>12</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Altitude</Label>
+                        <Width>10</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>LatitudeDMS</Label>
+                        <Width>20</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>LongitudeDMS</Label>
+                        <Width>20</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap />
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <PropertyName>Latitude</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Longitude</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Altitude</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>LatitudeDMS</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>LongitudeDMS</PropertyName>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+        <!-- ImageSearchResultGps: List View -->
+        <View>
+            <Name>ImageSearchResultGps-List</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultGps</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <Label>Latitude</Label>
+                                <PropertyName>Latitude</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Longitude</Label>
+                                <PropertyName>Longitude</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Altitude</Label>
+                                <PropertyName>Altitude</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>LatitudeDMS</Label>
+                                <PropertyName>LatitudeDMS</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>LongitudeDMS</Label>
+                                <PropertyName>LongitudeDMS</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>LatitudeError</Label>
+                                <PropertyName>LatitudeError</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>LongitudeError</Label>
+                                <PropertyName>LongitudeError</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>AltitudeError</Label>
+                                <PropertyName>AltitudeError</PropertyName>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+        <!-- ImageSearchResultAuthor: Table View -->
+        <View>
+            <Name>ImageSearchResultAuthor-Table</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultAuthor</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <AutoSize />
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>Artist</Label>
+                        <Width>40</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Copyright</Label>
+                        <Width>40</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap />
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <PropertyName>Artist</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Copyright</PropertyName>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+        <!-- ImageSearchResultAuthor: List View -->
+        <View>
+            <Name>ImageSearchResultAuthor-List</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultAuthor</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <Label>Artist</Label>
+                                <PropertyName>Artist</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Copyright</Label>
+                                <PropertyName>Copyright</PropertyName>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+        <!-- ImageSearchResultBasic: Table View -->
+        <View>
+            <Name>ImageSearchResultBasic-Table</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultBasic</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <AutoSize />
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>FileName</Label>
+                        <Width>40</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Format</Label>
+                        <Width>10</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Width</Label>
+                        <Width>10</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Height</Label>
+                        <Width>10</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>FileSizeBytes</Label>
+                        <Width>12</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap />
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <PropertyName>FileName</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Format</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Width</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Height</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>FileSizeBytes</PropertyName>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+        <!-- ImageSearchResultBasic: List View -->
+        <View>
+            <Name>ImageSearchResultBasic-List</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultBasic</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <Label>FileName</Label>
+                                <PropertyName>FileName</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>FileExtension</Label>
+                                <PropertyName>FileExtension</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Format</Label>
+                                <PropertyName>Format</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Width</Label>
+                                <PropertyName>Width</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Height</Label>
+                                <PropertyName>Height</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>PixelFormat</Label>
+                                <PropertyName>PixelFormat</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>HorizontalResolution</Label>
+                                <PropertyName>HorizontalResolution</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>VerticalResolution</Label>
+                                <PropertyName>VerticalResolution</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>FileSizeBytes</Label>
+                                <PropertyName>FileSizeBytes</PropertyName>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+        <!-- ImageSearchResultExposure: Table View -->
+        <View>
+            <Name>ImageSearchResultExposure-Table</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultExposure</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <AutoSize />
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>FNumber</Label>
+                        <Width>10</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>ExposureTime</Label>
+                        <Width>12</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>ISOSpeedRatings</Label>
+                        <Width>8</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>FocalLength</Label>
+                        <Width>10</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap />
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <PropertyName>FNumber</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>ExposureTime</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>ISOSpeedRatings</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>FocalLength</PropertyName>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+        <!-- ImageSearchResultExposure: List View -->
+        <View>
+            <Name>ImageSearchResultExposure-List</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultExposure</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <Label>FNumber</Label>
+                                <PropertyName>FNumber</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>ExposureTime</Label>
+                                <PropertyName>ExposureTime</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>ISOSpeedRatings</Label>
+                                <PropertyName>ISOSpeedRatings</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>FocalLength</Label>
+                                <PropertyName>FocalLength</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>ExposureProgram</Label>
+                                <PropertyName>ExposureProgram</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>MeteringMode</Label>
+                                <PropertyName>MeteringMode</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Flash</Label>
+                                <PropertyName>Flash</PropertyName>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+        <!-- ImageSearchResultCamera: Table View -->
+        <View>
+            <Name>ImageSearchResultCamera-Table</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultCamera</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <AutoSize />
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>Make</Label>
+                        <Width>20</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Model</Label>
+                        <Width>20</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Software</Label>
+                        <Width>20</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap />
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <ScriptBlock>
+                                    if ($_.Make -or $_.Model -or $_.Software) { $_.Make } else { "(none)" }
+                                </ScriptBlock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>
+                                    if ($_.Make -or $_.Model -or $_.Software) { $_.Model } else { "" }
+                                </ScriptBlock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>
+                                    if ($_.Make -or $_.Model -or $_.Software) { $_.Software } else { "" }
+                                </ScriptBlock>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+        <!-- ImageSearchResultCamera: List View -->
+        <View>
+            <Name>ImageSearchResultCamera-List</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultCamera</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <Label>Make</Label>
+                                <PropertyName>Make</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Model</Label>
+                                <PropertyName>Model</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Software</Label>
+                                <PropertyName>Software</PropertyName>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+        <!-- ImageSearchResultDateTime: Table View -->
+        <View>
+            <Name>ImageSearchResultDateTime-Table</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultDateTime</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <AutoSize />
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>DateTime</Label>
+                        <Width>20</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>DateTimeOriginal</Label>
+                        <Width>20</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>DateTimeDigitized</Label>
+                        <Width>20</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap />
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <PropertyName>DateTime</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>DateTimeOriginal</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>DateTimeDigitized</PropertyName>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+        <!-- ImageSearchResultDateTime: List View -->
+        <View>
+            <Name>ImageSearchResultDateTime-List</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultDateTime</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <Label>DateTime</Label>
+                                <PropertyName>DateTime</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>DateTimeOriginal</Label>
+                                <PropertyName>DateTimeOriginal</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>DateTimeDigitized</Label>
+                                <PropertyName>DateTimeDigitized</PropertyName>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+        <!-- ImageSearchResultOther: Table View -->
+        <View>
+            <Name>ImageSearchResultOther-Table</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultOther</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <AutoSize />
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>Software</Label>
+                        <Width>20</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>ColorSpace</Label>
+                        <Width>15</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>ResolutionUnit</Label>
+                        <Width>15</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap />
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <ScriptBlock>
+                                    if ($_.Software -or $_.ColorSpace -or $_.ResolutionUnit) { $_.Software } else { "(none)" }
+                                </ScriptBlock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>
+                                    if ($_.Software -or $_.ColorSpace -or $_.ResolutionUnit) { $_.ColorSpace } else { "" }
+                                </ScriptBlock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>
+                                    if ($_.Software -or $_.ColorSpace -or $_.ResolutionUnit) { $_.ResolutionUnit } else { "" }
+                                </ScriptBlock>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+        <!-- ImageSearchResultOther: List View -->
+        <View>
+            <Name>ImageSearchResultOther-List</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultOther</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <Label>Software</Label>
+                                <PropertyName>Software</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>ColorSpace</Label>
+                                <PropertyName>ColorSpace</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>ResolutionUnit</Label>
+                                <PropertyName>ResolutionUnit</PropertyName>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+        <!-- ImageSearchResultObjects: Table View -->
+        <View>
+            <Name>ImageSearchResultObjects-Table</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultObjects</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <AutoSize />
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>Count</Label>
+                        <Width>8</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Object Types</Label>
+                        <Width>40</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Objects</Label>
+                        <Width>40</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap />
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <PropertyName>Count</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>if ($_.object_counts -and $_.object_counts.Count -gt 0) { $_.object_counts.GetEnumerator() | Microsoft.PowerShell.Core\ForEach-Object { "${($_.Key)}: ${($_.Value)}" } -join ", " } else { "" }</ScriptBlock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>if ($_.objects -and $_.objects.Count -gt 0) { $_.objects.Label -join ", " } else { "" }</ScriptBlock>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+        <!-- ImageSearchResultObjects: List View -->
+        <View>
+            <Name>ImageSearchResultObjects-List</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultObjects</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <Label>Count</Label>
+                                <PropertyName>Count</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Object Types</Label>
+                                <ScriptBlock>if ($_.object_counts -and $_.object_counts.Count -gt 0) { $_.object_counts.GetEnumerator() | Microsoft.PowerShell.Core\ForEach-Object { "${($_.Key)}: ${($_.Value)}" } -join ", " } else { "" }</ScriptBlock>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Objects</Label>
+                                <ScriptBlock>if ($_.objects -and $_.objects.Count -gt 0) { $_.objects.Label -join ", " } else { "" }</ScriptBlock>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+        <!-- ImageSearchResultFacePrediction: Table View -->
+        <View>
+            <Name>ImageSearchResultFacePrediction-Table</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultFacePrediction</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <AutoSize />
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>UserId</Label>
+                        <Width>40</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Confidence</Label>
+                        <Width>10</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>X_Min</Label>
+                        <Width>8</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Y_Min</Label>
+                        <Width>8</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap />
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <PropertyName>UserId</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>"{0:P1}" -f $_.Confidence</ScriptBlock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>X_Min</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Y_Min</PropertyName>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+        <!-- ImageSearchResultFacePrediction: List View -->
+        <View>
+            <Name>ImageSearchResultFacePrediction-List</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultFacePrediction</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <Label>UserId</Label>
+                                <PropertyName>UserId</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Confidence</Label>
+                                <ScriptBlock>"{0:P1}" -f $_.Confidence</ScriptBlock>
+                            </ListItem>
+                            <ListItem>
+                                <Label>X_Min</Label>
+                                <PropertyName>X_Min</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Y_Min</Label>
+                                <PropertyName>Y_Min</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>X_Max</Label>
+                                <PropertyName>X_Max</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Y_Max</Label>
+                                <PropertyName>Y_Max</PropertyName>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+        <!-- ImageSearchResultObject: Table View -->
+        <View>
+            <Name>ImageSearchResultObject-Table</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultObject</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <AutoSize />
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>Label</Label>
+                        <Width>40</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Confidence</Label>
+                        <Width>10</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>X_Min</Label>
+                        <Width>8</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Y_Min</Label>
+                        <Width>8</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap />
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <PropertyName>Label</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>"{0:P1}" -f $_.Confidence</ScriptBlock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>X_Min</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Y_Min</PropertyName>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+        <!-- ImageSearchResultObject: List View -->
+        <View>
+            <Name>ImageSearchResultObject-List</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultObject</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <Label>Label</Label>
+                                <PropertyName>Label</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Confidence</Label>
+                                <ScriptBlock>"{0:P1}" -f $_.Confidence</ScriptBlock>
+                            </ListItem>
+                            <ListItem>
+                                <Label>X_Min</Label>
+                                <PropertyName>X_Min</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Y_Min</Label>
+                                <PropertyName>Y_Min</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>X_Max</Label>
+                                <PropertyName>X_Max</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Y_Max</Label>
+                                <PropertyName>Y_Max</PropertyName>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+        <!-- ImageSearchResultPeople: Table View -->
+        <View>
+            <Name>ImageSearchResultPeople-Table</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultPeople</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <AutoSize />
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>Success</Label>
+                        <Width>8</Width>
+                        <Alignment>Center</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Count</Label>
+                        <Width>8</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Faces</Label>
+                        <Width>40</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Predictions</Label>
+                        <Width>12</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap />
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <PropertyName>Success</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Count</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>if ($_.Faces -and $_.Faces.Count -gt 0) { $_.Faces -join ", " } else { "" }</ScriptBlock>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>if ($_.Predictions) { $_.Predictions.Count } else { "" }</ScriptBlock>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+        <!-- ImageSearchResultPeople: List View -->
+        <View>
+            <Name>ImageSearchResultPeople-List</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultPeople</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <Label>Success</Label>
+                                <PropertyName>Success</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Count</Label>
+                                <PropertyName>Count</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Faces</Label>
+                                <ScriptBlock>if ($_.Faces -and $_.Faces.Count -gt 0) { $_.Faces -join ", " } else { "" }</ScriptBlock>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Predictions</Label>
+                                <ScriptBlock>if ($_.Predictions -and $_.Predictions.Count -gt 0) { $_.Predictions.UserId -join ", " } else { "" }</ScriptBlock>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+        <!-- ImageSearchResultScenes: Table View -->
+        <View>
+            <Name>ImageSearchResultScenes-Table</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultScenes</TypeName>
+            </ViewSelectedBy>
+            <TableControl>
+                <AutoSize />
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>Label</Label>
+                        <Width>20</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Scene</Label>
+                        <Width>40</Width>
+                        <Alignment>Left</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Confidence</Label>
+                        <Width>10</Width>
+                        <Alignment>Right</Alignment>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Success</Label>
+                        <Width>8</Width>
+                        <Alignment>Center</Alignment>
+                    </TableColumnHeader>
+                </TableHeaders>
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap />
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <PropertyName>Label</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Scene</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Confidence</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>Success</PropertyName>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+            </TableControl>
+        </View>
+        <!-- ImageSearchResultScenes: List View -->
+        <View>
+            <Name>ImageSearchResultScenes-List</Name>
+            <ViewSelectedBy>
+                <TypeName>GenXdev.Helpers.ImageSearchResultScenes</TypeName>
+            </ViewSelectedBy>
+            <ListControl>
+                <ListEntries>
+                    <ListEntry>
+                        <ListItems>
+                            <ListItem>
+                                <Label>Label</Label>
+                                <PropertyName>Label</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Scene</Label>
+                                <PropertyName>Scene</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Confidence</Label>
+                                <PropertyName>Confidence</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Confidence Percentage</Label>
+                                <PropertyName>Confidence_Percentage</PropertyName>
+                            </ListItem>
+                            <ListItem>
+                                <Label>Success</Label>
+                                <PropertyName>Success</PropertyName>
+                            </ListItem>
+                        </ListItems>
+                    </ListEntry>
+                </ListEntries>
+            </ListControl>
+        </View>
+    </ViewDefinitions>
+</Configuration>

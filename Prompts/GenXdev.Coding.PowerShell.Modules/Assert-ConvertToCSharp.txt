@@ -1,0 +1,493 @@
+Primary task:
+Convert the PowerShell function in '$ScriptFileName' to a C# cmdlet
+implementation that provides equivalent functionality while maintaining
+backward compatibility.
+
+$Prompt
+
+Create a new C# file with the same base name as the PowerShell script but
+with .cs extension, placing it in the same directory. The C# cmdlet should
+be functionally equivalent to the PowerShell function but optimized for
+performance during module loading.
+
+CRITICAL UNDERSTANDING: What "Refactoring" Means in This Context
+
+Refactoring in this conversion process has a FUNDAMENTAL and NON-NEGOTIABLE
+meaning that supersedes all other considerations:
+
+NO MATTER WHAT INPUT the function receives, the OUTPUT must be IDENTICAL
+to the original PowerShell function in every measurable way:
+
+- Same return values for identical inputs
+- Same error messages and error types for invalid inputs
+- Same side effects (file operations, registry changes, etc.)
+- Same pipeline behavior and object types
+- Same parameter validation and error conditions
+- Same verbose/debug/warning output messages
+- Same performance characteristics for the end user
+- Same handling of edge cases and boundary conditions
+
+This rule comes BEFORE ALL OTHER CONSIDERATIONS including:
+- Performance improvements (secondary benefit only)
+- Code readability enhancements (nice to have)
+- Faster module loading (the goal, but not at cost of compatibility)
+- Modern C# patterns (only if they maintain exact behavior)
+
+The conversion is ONLY successful if existing scripts, tests, and user
+workflows continue to function without ANY modifications. If even a single
+test fails or a single use case behaves differently, the refactoring has
+failed regardless of any performance gains achieved.
+
+Think of this as creating a drop-in replacement engine for a car - it can
+be more efficient, quieter, or faster, but the car must drive EXACTLY the
+same way with the same controls, same responses, and same reliability.
+
+Secondary task:
+Ensure compliance with these 53 requirements for C# cmdlet conversion:
+
+1) Don't copy any headers, they will be added by the build script later.
+
+2) PowerShell help text (SYNOPSIS, DESCRIPTION, PARAMETER, EXAMPLES)
+   must be placed in a [System.ComponentModel.Description(@"...")]
+   attribute directly above the [Cmdlet(...)] attribute on the class.
+   Convert any PS1 comment-based help (.SYNOPSIS, .DESCRIPTION, etc.)
+   into this format. Do NOT use the old class-level /// <summary> with
+   <para type="synopsis"> blocks. Do NOT add /// <param name="...">
+   tags — HelpMessage in [Parameter()] replaces that role.
+   The reference implementation is Find-Item.Cmdlet.cs.
+
+3) Each parameter property should have:
+   - Proper C# parameter attributes ([Parameter], [Alias], etc.) vertically aligned
+   - XML documentation comments (///) above each parameter
+   - Parameter names following PascalCase convention
+   - Switch parameters should use SwitchParameter type and come after regular parameters
+
+4) Use the same verb-noun naming convention as the original PowerShell function for the C# cmdlet attributes. If it is not a common verb specify it as a string.
+
+5) All parameter names, types, positions, and attributes must match exactly to maintain backward compatibility with existing scripts.
+
+6) Implement all parameter validation attributes (Mandatory, Position, HelpMessage, ValidateNotNull, etc.) as C# attributes on properties.
+
+7) Convert PowerShell switch parameters to C# SwitchParameter type with proper default values and handling. Use SwitchParameter.ToBool() instead of SwitchParameter.IsPresent to properly handle cases where users explicitly set the switch to $false (e.g., -SwitchParam:$False), maintaining exact PowerShell switch parameter behavior.
+
+8) Preserve all parameter aliases by converting them to C# Alias attributes on the corresponding properties. In C#, use a single [Alias("alias1", "alias2", ...)] attribute with all aliases as parameters, not multiple [Alias] attributes.
+
+9) Convert parameter sets using ParameterSetName attributes in C# if they exist in the original PowerShell function.
+
+10) Class must inherit from PSGenXdevCmdlet and implement BeginProcessing(), ProcessRecord(), and EndProcessing() methods. If a method is empty, do not add code comments.
+
+11) Read up on these instructions on how to refactor away certain old patterns in file: '.\Modules\GenXdev.Coding\3.33.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-CheckCSharpInvocations.txt'
+
+12) Use InvokeCommand.InvokeScript() with ScriptBlock.Create() to call other PowerShell functions and cmdlets from within the C# implementation. Always expect results from InvokeCommand.InvokeScript or ScriptBlock.Invoke to be returned as PSObject (System.Management.Automation.PSObject), not as raw .BaseObject or primitive types. All code and documentation must reflect this expectation, and all result handling must use PSObject semantics for compatibility with PowerShell pipeline and type system. IMPORTANT: For simple cmdlet invocations that return a single value, ALWAYS use the base method InvokeScript<T>(string script) instead of verbose ScriptBlock.Create().Invoke() patterns. Example: Use `var port = InvokeScript<int>("GenXdev.Webbrowser\\Get-ChromeRemoteDebuggingPort");` instead of creating a ScriptBlock, invoking it, and extracting the value from the result collection.
+
+13) Use input processing the exact same way as implemented in the .ps1 file. Keep the same code in the
+same blocks, keep the same parameter and their attributes exactly. Convert PowerShell begin/process/end blocks to corresponding C# cmdlet lifecycle methods (BeginProcessing, ProcessRecord, EndProcessing).
+
+14) Use Microsoft.PowerShell.Utility\Write-Verbose equivalent (WriteVerbose) for all verbose output messages. Use line and block comments in the same way/spirit as the original cmdlet.
+
+15) Convert error handling from PowerShell Write-Error to C# WriteError with proper ErrorRecord construction.
+
+16) Implement proper exception handling using try-catch blocks and convert to appropriate PowerShell error records.
+
+17) Use fully qualified .NET type names and avoid using PowerShell-specific shortcuts that don't exist in C#.
+
+18) Don't use script invocations for things that are essentially .Net calls, instead invoke those directly.
+
+19) Convert hashtable operations to use System.Collections.Hashtable or Dictionary<string, object> as appropriate.
+
+20) Handle array and collection operations using proper .NET collection types and LINQ where beneficial for performance.
+
+21) Convert PowerShell string manipulation to use .NET string methods and StringBuilder for performance-critical operations.
+
+22) Use System.Management.Automation.PSObject for complex object handling when interfacing with PowerShell data structures.
+
+23) Implement proper disposal patterns for IDisposable objects created during cmdlet execution.
+
+24) Add appropriate using statements for all referenced namespaces below the header block at the top of the C# file.
+
+25) Include proper method/class documentation using /// <summary> on
+    properties and methods for IntelliSense support. The class-level
+    PowerShell help text goes in the [Description] attribute (see rule 2).
+
+26) Follow C# naming conventions: PascalCase for public members, camelCase for private fields, and descriptive method names.
+
+27) Optimize performance-critical sections by avoiding unnecessary object allocations and using efficient algorithms.
+
+28) Use base methods from PSGenXdevCmdlet for common operations instead of InvokeCommand when available. For parameter copying, use CopyIdenticalParamValues("FunctionName") instead of invoking GenXdev.FileSystem\Copy-IdenticalParamValues via InvokeCommand.
+
+29) When in doubt about styling cmdlet '.\Modules\GenXdev.FileSystem\3.33.0\Functions\GenXdev.FileSystem\Find-Item.*.cs' may always serve as an ideal example.
+
+30) Each line of code that is not trivially understandable must have a code comment above it in plain English. Follow the guidelines from the book 'Code complete 2nd edition'
+
+31) By reading only the code comments and help attributes, one should
+    fully understand what the code does and how it does it.
+    (follow coding style from the book: 'Code Complete 2nd edition')
+
+32) Use WriteVerbose() for essential informative messages without harming performance.
+
+33) Always insert exactly one empty line after each opening curly brace { before starting the code block's contents. Do not insert empty lines before closing curly braces }. This provides clear visual separation of code blocks while keeping closures compact.
+
+34) Never place an empty line between a code comment and its referenced code line. Comments should be immediately above the code they describe.
+
+35) Always place at least one empty line between each code line or code block for readability.
+
+36) Properties and methods use PascalCase, private fields use camelCase, enforce this.
+
+37) For readability enforce that long lines are wrapped appropriately, avoiding excessive line lengths. When wrapping method calls or expressions, maintain logical grouping.
+
+38) Enforce that each line is wrapped so that they don't exceed 100 characters for better readability. When wrapping strings or expressions, use appropriate continuation.
+
+39) Use proper .NET exception handling patterns with try-catch blocks where appropriate.
+
+40) Make sure all parameters have a HelpMessage in [Parameter()].
+
+41) Never add comments indicating changes made, such as '// <--- Comment added here' or similar markers.
+
+42) Ensure proper using statements at the top of the file for all referenced namespaces, organized appropriately.
+
+43) Make sure all parameters are represented in the meta data .PARAMETER lines above the function.
+
+44) Ensure proper comma separation between parameters in param() blocks. Each parameter declaration except the last must be followed by a comma.
+
+45) Don't write anything into comments that only has to do with this refactor, like '// empty like original' or such
+
+46) DONT change psd1, psm1
+
+47) Compile the .NET module assemblies after making the changes to ensure the C# cmdlet is available.
+
+48) Avoid using string interpolation in InvokeCommand.InvokeScript() calls to prevent escaping issues with special characters (like single quotes) in variable values. Instead, use ScriptBlock.Create() with parameter blocks for safe script execution, or prefer native C# functions where available.
+
+49) Inside a ScriptBlock, PowerShell script cannot have normal double-quoted strings spanning multiple lines. Multi-line strings should be constructed using parentheses and string concatenation with + at the end of lines for continuation.
+
+50) For path expansion, always invoke this.ExpandPath as it considers the current PowerShell location rather than the process working directory.
+
+51) When launching external processes that may have been installed and added to PATH during the same cmdlet execution, use InvokeCommand.InvokeScript with Start-Process instead of System.Diagnostics.Process.Start, as .NET may not see PATH environment changes made by other PowerShell functions (like *ensure* functions) within the same process.
+
+52) Do not copy PSScriptAnalyzer suppression attributes (like [System.Diagnostics.CodeAnalysis.SuppressMessage("PSUseSingularNouns", "")]) to C# cmdlet classes, as these are PowerShell-specific rules that do not apply to C# code and have no meaning in the C# context.
+
+53) again, NEVER use PowerShell ScriptBlocks for simple .NET operations that can be done natively in C#. This is a performance anti-pattern and defeats the purpose of converting to C#. Examples of what NOT to do:
+   - Creating COM objects via ScriptBlock when you can use Type.GetTypeFromProgID() and Activator.CreateInstance()
+   - Simple method calls via ScriptBlock when you can use reflection or direct calls
+   - Basic string operations, math operations, or .NET Framework/Core API calls
+   - File I/O operations that can be done with System.IO classes
+   Use ScriptBlocks ONLY for PowerShell-specific functionality like module-qualified cmdlet calls, PowerShell-specific console operations, or GenXdev module interactions that have no .NET equivalent.
+
+
+Implementation pattern requirements:
+
+A) Class structure should inherit from PSGenXdevCmdlet and use appropriate
+   attributes:
+   ```csharp
+   [System.ComponentModel.Description(@"
+   .SYNOPSIS
+   Brief description.
+   ")]
+   [Cmdlet(VerbsCommon.Get, "Example")]
+   [OutputType(typeof(ReturnType))]
+   public partial class GetExampleCommand : PSGenXdevCmdlet
+   ```
+
+B) Parameters should be implemented as properties with proper attributes:
+   ```csharp
+   [Parameter(
+       Mandatory = true,
+       Position = 0,
+       HelpMessage = "Description of parameter")]
+   [ValidateNotNullOrEmpty]
+   public string ParameterName { get; set; }
+   ```
+
+C) Main processing should occur in ProcessRecord():
+   ```csharp
+   protected override void ProcessRecord()
+   {
+       // Implementation using InvokeCommand for PowerShell interop
+       var results = InvokeCommand.InvokeScript("Get-ChildItem @params");
+       WriteObject(results);
+   }
+   ```
+
+D) Use InvokeCommand for calling PowerShell functions:
+   ```csharp
+   // For simple cmdlet invocations that return a single value, use InvokeScript<T>
+   var port = InvokeScript<int>("GenXdev.Webbrowser\\Get-ChromeRemoteDebuggingPort");
+   var path = InvokeScript<string>("GenXdev.Windows\\Get-KnownFolderPath -KnownFolder Desktop");
+
+   // Use ScriptBlock.Create with parameters for safe execution when passing variables
+   var scriptBlock = ScriptBlock.Create("param($param1, $param2) SomeFunction -Param1 $param1 -Param2 $param2");
+   var results = scriptBlock.Invoke(value1, value2);
+
+   // Only use verbose patterns when you need to process multiple results
+   var items = InvokeCommand.InvokeScript("Get-ChildItem @params");
+   ```
+
+F) For parameter copying using base method CopyIdenticalParamValues:
+   ```csharp
+   // Use the base method for parameter copying instead of InvokeScript
+   var invocationParams = CopyIdenticalParamValues("ModuleName\\TargetFunctionName");
+   // Then add specific parameters
+   invocationParams["Name"] = "value";
+   // Invoke the function using the copied parameters
+   var invokeScript = ScriptBlock.Create("param($params) TargetFunctionName @params");
+   invokeScript.Invoke(invocationParams);
+   ```
+
+G) For JSON serialization/deserialization using base methods:
+   ```csharp
+   // Use base methods for JSON operations instead of InvokeScript
+   var jsonString = ConvertToJson(myObject);
+   var deserializedObject = ConvertFromJson<MyType>(jsonString);
+   ```
+
+H) For atomic JSON file operations using base methods:
+   ```csharp
+   // Use base methods for atomic JSON file I/O instead of InvokeScript
+   WriteJsonAtomic(filePath, dataObject);
+   var data = (Hashtable)ReadJsonWithRetry(filePath, asHashtable: true);
+   ```
+
+I) For path expansion using base method:
+   ```csharp
+   // Use base method for path expansion instead of InvokeScript
+   var expandedPath = ExpandPath("~/relative/path");
+   // For paths that require directory creation, use CreateDirectory: true
+   var filePath = ExpandPath(Path.Combine(GetGenXdevAppDataPath(), "file.txt"), CreateDirectory: true);
+   ```
+
+K) For app data path using base method:
+   ```csharp
+   // Use base method for getting GenXdev app data path instead of manual path building
+   var appDataPath = GetGenXdevAppDataPath(); // Creates %LOCALAPPDATA%\GenXdev.PowerShell
+   var configPath = ExpandPath(Path.Combine(appDataPath, "config.json"), CreateDirectory: true);
+   ```
+   ```csharp
+   // Always prefer base methods when available
+   public class MyCommand : PSGenXdevCmdlet
+   {
+       protected override void ProcessRecord()
+       {
+           // Use base methods for common operations
+           var params = CopyIdenticalParamValues("TargetFunction");
+           var json = ConvertToJson(data);
+           var path = ExpandPath(inputPath);
+           WriteJsonAtomic(configFile, configData);
+
+           // Only use ScriptBlock/InvokeCommand for PowerShell-specific operations
+           var script = ScriptBlock.Create("param($p) Some-PowerShellOnlyCmdlet @p");
+           script.Invoke(params);
+       }
+   }
+   ```
+
+E) Use [System.ComponentModel.Description(@"...")] for help text:
+
+   [System.ComponentModel.Description(@"
+   .SYNOPSIS
+   Brief description of the cmdlet functionality.
+   .DESCRIPTION
+   * ParameterName — Description of the parameter. Aliases: alias1,
+     alias2. Position: 0.
+   .EXAMPLE
+   ```powershell
+   Cmdlet-Name -Parameter "value"
+   ```
+
+   Detailed explanation of the example.
+   ")]
+   [Cmdlet(VerbsCommon.Get, "Example")]
+   [OutputType(typeof(ReturnType))]
+   public class GetExampleCommand : PSGenXdevCmdlet
+   {
+       /// <summary>
+       /// Description of the parameter
+       /// </summary>
+       [Parameter(
+           Mandatory = true,
+           Position = 0,
+           HelpMessage = "Description of parameter")]
+       [ValidateNotNullOrEmpty]
+       public string ParameterName { get; set; }
+
+       /// <summary>
+       /// Begin processing - initialization logic
+       /// </summary>
+       protected override void BeginProcessing()
+       {
+           WriteVerbose("Starting cmdlet execution");
+       }
+
+       /// <summary>
+       /// Process record - main cmdlet logic
+       /// </summary>
+       protected override void ProcessRecord()
+       {
+           // Implementation here
+           WriteObject("result");
+       }
+
+       /// <summary>
+       /// End processing - cleanup logic
+       /// </summary>
+       protected override void EndProcessing()
+       {
+           // Cleanup if needed
+       }
+   }
+   ```
+
+Performance optimization guidelines:
+
+- Use StringBuilder for string concatenation in loops
+- Cache InvokeCommand results when calling the same function repeatedly
+- Use LINQ methods for collection operations when they improve readability
+- Avoid boxing/unboxing of value types unnecessarily
+- Use specific collection types instead of generic object arrays
+- Implement lazy evaluation for expensive operations when possible
+
+Error handling requirements:
+
+- Convert PowerShell terminating errors to C# exceptions appropriately
+- Use WriteError() for non-terminating errors with proper ErrorCategory
+- Maintain the same error behavior as the original PowerShell function
+- Include meaningful error messages with context information
+
+Testing compatibility requirements:
+
+- The C# cmdlet must pass all existing Pester tests for the PowerShell
+  function without modification to the test files
+- Parameter binding behavior must be identical to the PowerShell version
+- Output format and types must match exactly
+- Error conditions must produce equivalent error messages and categories
+
+File organization:
+
+- Place the .cs file in the same directory as the .ps1 file
+- Use the same base filename with .cs extension
+- Include appropriate file header comments with copyright and description
+
+Build integration notes:
+
+- The C# file should be compiled as part of the module's build process
+- Help extraction should occur during build to generate MAML files
+- The original .ps1 file can be kept for reference or removed after
+  successful conversion and testing
+- Update module export lists to reference the C# cmdlet instead of
+  the PowerShell function
+
+An example of how it should look technically and cosmetically:
+
+```csharp
+using System.Collections;
+using System.IO;
+using System.Management.Automation;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
+
+namespace GenXdev.FileSystem
+{
+   /// <summary>
+   /// <para type="synopsis">
+   /// Brief description of the cmdlet functionality.
+   /// </para>
+   ///
+   /// <para type="description">
+   /// PARAMETERS
+   /// </para>
+   ///
+   /// <para type="description">
+   /// -ParameterName &lt;Type&gt;<br/>
+   /// Description of the parameter.<br/>
+   /// - <b>Aliases</b>: alias1, alias2<br/>
+   /// - <b>Position</b>: 0<br/>
+   /// - <b>Default</b>: "default value"<br/>
+   /// </para>
+   ///
+   /// <example>
+   /// <para>Example description</para>
+   /// <para>Detailed explanation of the example.</para>
+   /// <code>
+   /// Cmdlet-Name -Parameter "value"
+   /// </code>
+   /// </example>
+   /// </summary>
+   [Cmdlet(VerbsCommon.Get, "Example")]
+   [OutputType(typeof(ReturnType))]
+   public class GetExampleCommand : PSGenXdevCmdlet
+   {
+       /// <summary>
+       /// Description of the parameter
+       /// </summary>
+       [Parameter(
+           Mandatory = true,
+           Position = 0,
+           HelpMessage = "Description of parameter")]
+       [ValidateNotNullOrEmpty]
+       public string ParameterName { get; set; }
+
+       /// <summary>
+       /// Begin processing - initialization logic
+       /// </summary>
+       protected override void BeginProcessing()
+       {
+           WriteVerbose("Starting cmdlet execution");
+       }
+
+       /// <summary>
+       /// Process record - main cmdlet logic
+       /// </summary>
+       protected override void ProcessRecord()
+       {
+           // Implementation here
+           WriteObject("result");
+       }
+
+       /// <summary>
+       /// End processing - cleanup logic
+       /// </summary>
+       protected override void EndProcessing()
+       {
+           // Cleanup if needed
+       }
+   }
+}
+```
+
+After processing, please:
+1. Provide a numbered checklist confirming each requirement was addressed
+2. Highlight any requirements that couldn't be fully met and explain why
+3. Summarize major changes made during the conversion process
+4. List any PowerShell-specific features that required special handling
+5. Document any performance improvements achieved through the conversion
+
+For the C# file created, provide:
+1. Full file path as header
+2. Brief summary of the conversion approach
+3. Complete C# code with XML documentation
+4. Notes on any complex PowerShell-to-C# conversions performed
+
+Never ask if I want to proceed, assume yes in those cases.
+Always proceed by implementing the conversion systematically.
+
+Important notes for successful conversion:
+
+- Maintain exact parameter compatibility to avoid breaking existing scripts
+- Use InvokeCommand liberally to leverage existing PowerShell ecosystem
+- Preserve all existing aliases, parameter sets, and validation rules
+- Document any behavioral differences, even if they are improvements
+
+The goal is to achieve faster module loading while maintaining 100%
+backward compatibility with existing PowerShell scripts that use the
+converted function.
+
+TOP MOST IMPORTANT RULE: NO MATTER what INPUT the fuction gets, it's OUTPUT has always
+to be the same as the old PowerShell script function would output with that same INPUT!
+
+Do report on what concessions you made for following this top most role,
+so I can reconcider one of your points.
+
+IMPORTANT
+Whenever we finish discussing new updates to these rules,
+you update this text for me, with those rules, and update it in file
+.\Modules\GenXdev.Coding\3.33.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-ConvertToCSharp.txt
+
+For rules related to formatting, documentation, and style (such as header handling, XML documentation, code comments, naming conventions, line wrapping, etc.), update both this file and Assert-OnlyCSharpDocumentation.txt to maintain consistency.

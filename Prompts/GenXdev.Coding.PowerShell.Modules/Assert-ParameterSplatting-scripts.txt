@@ -1,0 +1,104 @@
+Primary task:
+Refactor function '$CmdletName' in '$ScriptFileName' to use parameter splatting with hashtables for improved readability and git diff comparison.
+
+Secondary task:
+Transform long multiline cmdlet invocations with multiple parameters into splatting methods where each parameter occupies its own line using hashtables.
+
+SPLATTING IMPLEMENTATION GUIDELINES:
+
+1) WHEN TO USE SPLATTING:
+   - Function calls with 3 or more parameters
+   - Long parameter lines that exceed 80 characters
+   - Complex parameter values that benefit from being on separate lines
+   - When parameter organization improves code readability
+
+2) SPLATTING SYNTAX TRANSFORMATION:
+
+   BEFORE (traditional parameter passing):
+   ```powershell
+   SomeCommand -Parameter1 "Value1" -Parameter2 "Value2" -Parameter3 $Variable -Switch1 -Parameter4 @("Array", "Values")
+   ```
+
+   AFTER (splatting with hashtable):
+   ```powershell
+   $splat = @{
+       Parameter1 = "Value1"
+       Parameter2 = "Value2"
+       Parameter3 = $Variable
+       Switch1    = $true
+       Parameter4 = @("Array", "Values")
+   }
+   SomeCommand @splat
+   ```
+
+3) SPLATTING BEST PRACTICES:
+   - Use descriptive hashtable variable names (e.g., $params, $splat, $config)
+   - Align equals signs for visual consistency
+   - Place one parameter per line for optimal git diff comparison
+   - Use $true explicitly for switch parameters in hashtables
+   - Group related parameters together within the hashtable
+   - Place the splatted command call immediately after hashtable definition
+
+4) HASHTABLE FORMATTING RULES:
+   - Opening brace on same line as variable assignment
+   - Each parameter on its own line with proper indentation
+   - Align parameter values using spaces after equals sign
+   - Closing brace on its own line, aligned with variable name
+   - Use consistent spacing around equals signs
+
+5) COMPLEX PARAMETER HANDLING:
+   - Long string values: Keep on same line or use parentheses for multi-line
+   - Script blocks: Can be included directly in hashtable
+   - Arrays: Use @() syntax clearly within hashtable
+   - Nested objects: Consider breaking into separate variables if complex
+
+6) GIT DIFF ADVANTAGES:
+   - Each parameter change shows as a single line modification
+   - Adding/removing parameters doesn't affect other parameter lines
+   - Parameter reordering is clearly visible in diffs
+   - Merge conflicts are easier to resolve with one parameter per line
+
+7) PERFORMANCE CONSIDERATIONS:
+   - Splatting has minimal performance overhead
+   - Benefits of readability outweigh minor performance costs
+   - Hashtable creation is optimized in PowerShell 5.0+
+
+8) WHEN NOT TO USE SPLATTING:
+   - Single parameter function calls
+   - Very simple two-parameter calls where splatting adds complexity
+   - When the original call is already clear and concise
+
+IMPLEMENTATION STEPS:
+1. Identify function calls with multiple parameters that would benefit from splatting
+2. Create descriptive hashtable variable names
+3. Transform each parameter into hashtable key-value pairs
+4. Ensure proper formatting and alignment
+5. Replace original function call with splatted version
+6. Test to ensure functionality remains identical
+
+EXAMPLE TRANSFORMATION:
+
+BEFORE:
+```powershell
+New-Refactor -Name "Example" -PromptKey "SomeKey" -SelectionScript $script -AutoAddModifiedFiles -Priority 0
+```
+
+AFTER:
+```powershell
+$refactorParams = @{
+    Name                 = "Example"
+    PromptKey           = "SomeKey"
+    SelectionScript     = $script
+    AutoAddModifiedFiles = $true
+    Priority            = 0
+}
+New-Refactor @refactorParams
+```
+
+Remember: The goal is to improve code maintainability, readability, and git workflow efficiency while maintaining exact functional equivalence.
+
+$Prompt
+IMPORTANT
+Whenever we finish discussing new updates to these rules,
+you update this text for me, with those rules, and update it in file
+.\Modules\GenXdev.Coding\3.33.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-ParameterSplatting-scripts.txt

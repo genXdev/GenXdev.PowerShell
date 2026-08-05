@@ -1,0 +1,277 @@
+---
+applyTo: "**"
+description: "General frontend coding guidelines"
+---
+When working with .ps1 files, detect the modulename from the file
+path and then read the filelist of the folder with the versionnumber.
+Read all .md files in the folder, and always take them into concideration.
+---
+## Core Development Rules
+- **Never add parameter aliases** unless explicitly listed in user request or called function's definition
+- **Edit files directly** - never return generated output in chat if file is open
+- **Add conclusions** from PowerShell/GenXdev discussions as guidelines to this file
+- **Run unit tests** using Assert-GenXdevTest after making changes to cmdlets
+- **Wait for completion** - CRITICAL: Never use isBackground=true for unit tests/MCP calls, always wait for full execution (3+ minutes)
+- **Offer changelog entries** after making changes to cmdlets/scripts
+- **Commit messages** - read and empty .\change-log.md to create professional commit messages
+- **NEVER create System.Management.Automation.PowerShell instances** - use base class methods or InvokeCommand instead
+## PSScriptAnalyzer exceptions
+- never rename functions, create rule exceptions below [CmdletBinding()]
+- **Do not copy PSScriptAnalyzer suppression attributes to C# cmdlet classes** - these are PowerShell-specific rules that have no meaning in C# code
+- **Internal function naming** - For functions used only internally, skip PowerShell verb-noun convention completely (e.g., use `ProcessImageData` instead of `Get-ProcessedImageData`) to prevent them from appearing in tab completion when users type standard verbs like `Get-` and press TAB
+
+## Parameter Copying Pattern
+Use GenXdev.FileSystem\Copy-IdenticalParamValues for cmdlets that invoke other GenXdev cmdlets:
+```powershell
+$params = GenXdev.FileSystem\Copy-IdenticalParamValues `
+    -BoundParameters $PSBoundParameters `
+    -FunctionName 'GenXdev.AI\Get-AIMetaLanguage' `
+    -DefaultValues (Microsoft.PowerShell.Utility\Get-Variable -Scope Local -ErrorAction SilentlyContinue)
+$language = Get-AIMetaLanguage @params
+```
+Copy ALL parameters except those causing wrong behaviors. Remove default values and adapt HelpMessage context.
+---------
+## MCP Server Integration
+Add PowerShell cmdlets to `Start-GenXdevMCPServer` to make them available as MCP tools:
+- Enables AI integration and remote PowerShell execution
+- Source: `.\Modules\GenXdev.AI\3.33.0\Functions\GenXdev\Start-GenXdevMCPServer.ps1`
+- Use `[GenXdev.Helpers.ExposedCmdletDefinition]` with Name, Description, AllowedParams, JsonDepth
+- Set `Confirm: false` and `OutputText: true` for most cmdlets
+
+## Memory Properties (Win32_OperatingSystem)
+- Use `TotalVisibleMemorySize` (not TotalPhysicalMemory) for total RAM
+- Values in KB - divide by 1024² for GB: `(Get-CimInstance Win32_OperatingSystem).TotalVisibleMemorySize / 1024 / 1024`
+- Include error handling and unit validation
+
+## Data Processing Guidelines (Home/Get-LatestData)
+- **Cache**: Store plain text only (no ANSI codes), clean with `\x1b\[[0-9;]*m` regex
+- **Display**: Apply colors at display time, return with `\r\n` newlines
+- **Pipeline**: Sort before limiting, dedupe with `Select-Object -Unique`
+- **Error handling**: Process sources independently, use cache as fallback
+
+## Knowledge Gap Monitoring
+Alert with "� **Knowledge Gap Alert**:" when missing:
+- PowerShell built-ins (`$TestDrive`, `$PSScriptRoot`, etc.)
+- Pester features, .NET Core APIs, security practices
+- Provide examples and explain why practices matter
+
+## Creative Direction
+**RESPECT USER'S VISION** - implement exactly as requested:
+- Follow user's patterns over standards
+- "Very simple" means minimal, no extras
+- "That's all" means NO additional features
+- Trust user's architectural decisions
+
+
+## Parameter Management Guidelines
+
+### Core Parameter Rules
+- **Never add aliases** unless explicitly listed in the user request or called function's parameter definition. **Do not add any aliases for new parameters unless the alias is present in the user request or in the called function's definition.**
+- **Never remove parameters** unless explicitly requested by the user - only adjust aliases to resolve conflicts
+- **Always preserve original parameters** during edits - each parameter must remain separate with its own purpose
+- **Match called function aliases** exactly for pass-through parameters
+
+### Parameter Editing Safety Protocol
+1. **Pre-Edit**: Read entire parameter section, verify all parameters will remain intact
+2. **During Edit**: One parameter at a time, include 3-5 lines context, maintain separator integrity
+3. **Post-Edit**: Run `get_errors`, verify parameter count unchanged, check separator line formatting
+
+### Parameter Formatting Standards
+- **Separator Lines**: Exactly one `###############################################################################` before each parameter block
+- **Alias Placement**: `[Alias()]` directly above `[Parameter()]` (only if alias is explicitly listed in user request or called function's definition)
+- **No Duplicates**: Each parameter has exactly one `[Parameter()]` block and, if required, one `[Alias()]` block
+- **Consistent Indentation**: Align all attributes consistently
+- **Comment-based Help Line Length**: All comment-based help (XML help) above functions must strictly enforce a maximum line length of 80 characters, including parameter descriptions and examples.
+- **Comment-based Help Closure**: Always close the comment-based help section with `#>` on its own line, with nothing else on that line.
+
+### Alias Conflict Resolution
+- **Remove conflicting alias** from calling function (never assign same alias to different parameters)
+- **Preserve backward compatibility** aliases when required
+- **Never merge parameters** even if they share aliases
+- **Document resolution steps** in change log
+
+### Emergency Recovery
+If parameters are corrupted: Stop changes → Read parameter section → Restore from called function → Verify with `get_errors` → Document recovery
+
+---------
+
+## Azure Integration
+Use Azure tools when handling Azure requests:
+- @azure Rule - Use Azure Tools for all Azure operations
+- @azure Rule - Use code gen best practices (`azure_development-get_code_gen_best_practices`)
+- @azure Rule - Use deployment best practices (`azure_development-get_deployment_best_practices`)
+- @azure Rule - Use Azure Functions best practices (`azure_development-get_azure_function_code_gen_best_practices`)
+- @azure Rule - Use SWA best practices (`azure_development-get_swa_best_practices`)
+
+---
+
+# C# Cmdlet Conversion Rules
+
+- Avoid building scripts as strings with parameter values to prevent escaping issues and reliance on valid input. Instead, use InvokeCommand.GetCommand().InvokeWithContext() with a parameter hashtable for safe cmdlet invocation, or ScriptBlock.Create() with a param block and Invoke() with object arguments for safe script execution.
+- **For simple cmdlet invocations that return a single value, ALWAYS use InvokeScript<T>(string script)** - This is the preferred method for simple lookups. Example: `var port = InvokeScript<int>("GenXdev\\Get-ChromeRemoteDebuggingPort");` instead of creating a ScriptBlock, invoking it, and manually extracting the value.
+- Use SwitchParameter.ToBool() instead of SwitchParameter.IsPresent to properly handle cases where users explicitly set the switch to $false (e.g., -SwitchParam:$False), maintaining exact PowerShell switch parameter behavior.
+
+## Base Functions Available in PSGenXdevCmdlet
+
+### 1. CopyIdenticalParamValues(string CmdletName)
+**Replaces:** Manual parameter copying using `GenXdev.FileSystem\Copy-IdenticalParamValues`
+**Old pattern:**
+```csharp
+$params = GenXdev.FileSystem\Copy-IdenticalParamValues `
+    -BoundParameters $PSBoundParameters `
+    -FunctionName 'TargetFunction' `
+    -DefaultValues (Microsoft.PowerShell.Utility\Get-Variable -Scope Local -ErrorAction SilentlyContinue)
+```
+**New pattern:**
+```csharp
+var params = CopyIdenticalParamValues("TargetFunction");
+```
+
+### 2. ConvertToJson(object obj, int depth = 20)
+**Replaces:** `Microsoft.PowerShell.Utility\ConvertTo-Json -Compress -Depth`
+**Old pattern:**
+```csharp
+var jsonScript = ScriptBlock.Create("param($obj) $obj | Microsoft.PowerShell.Utility\\ConvertTo-Json -Compress -Depth " + depth.ToString());
+var result = jsonScript.Invoke(obj);
+var json = (string)((PSObject)result[0]).BaseObject;
+```
+**New pattern:**
+```csharp
+string json = ConvertToJson(obj, depth);
+```
+
+### 3. ConvertFromJson(string json) and ConvertFromJson<T>(string json)
+**Replaces:** `Microsoft.PowerShell.Utility\ConvertFrom-Json -ErrorAction SilentlyContinue`
+**Old pattern:**
+```csharp
+var jsonScript = ScriptBlock.Create("param($json) @($json | Microsoft.PowerShell.Utility\\ConvertFrom-Json -ErrorAction SilentlyContinue)");
+var result = jsonScript.Invoke(json);
+var psArray = (System.Collections.ObjectModel.Collection<PSObject>)result;
+```
+**New pattern:**
+```csharp
+object[] results = ConvertFromJson(json);
+// or
+T[] results = ConvertFromJson<T>(json);
+```
+
+### 4. WriteJsonAtomic(string filePath, Hashtable data, int maxRetries = 10, int retryDelayMs = 200)
+**Replaces:** `GenXdev.FileSystem\WriteJsonAtomic`
+**Old pattern:**
+```csharp
+var script = ScriptBlock.Create(@"param($FilePath, $Data, $MaxRetries, $RetryDelayMs) GenXdev.FileSystem\WriteJsonAtomic -FilePath $FilePath -Data $Data -MaxRetries $MaxRetries -RetryDelayMs $RetryDelayMs");
+script.Invoke(filePath, data, maxRetries, retryDelayMs);
+```
+**New pattern:**
+```csharp
+WriteJsonAtomic(filePath, data, maxRetries, retryDelayMs);
+```
+
+### 5. ReadJsonWithRetry(string filePath, int maxRetries = 10, int retryDelayMs = 200, bool asHashtable = false)
+**Replaces:** `GenXdev.FileSystem\ReadJsonWithRetry`
+**Old pattern:**
+```csharp
+var script = ScriptBlock.Create(@"param($FilePath, $AsHashtable, $MaxRetries, $RetryDelayMs) GenXdev.FileSystem\ReadJsonWithRetry -FilePath $FilePath -AsHashtable:$AsHashtable -MaxRetries $MaxRetries -RetryDelayMs $RetryDelayMs");
+var result = script.Invoke(filePath, asHashtable, maxRetries, retryDelayMs);
+```
+**New pattern:**
+```csharp
+object data = ReadJsonWithRetry(filePath, maxRetries, retryDelayMs, asHashtable);
+```
+
+### 6. ExpandPath(string Path)
+**Replaces:** `GenXdev.FileSystem\Expand-Path`
+**Old pattern:**
+```csharp
+var expandPathScript = ScriptBlock.Create("param($Path) GenXdev.FileSystem\\Expand-Path -FilePath $Path");
+var result = expandPathScript.Invoke(Path);
+var expandedPath = result[0]?.BaseObject.ToString();
+```
+**New pattern:**
+```csharp
+string expandedPath = ExpandPath(Path);
+```
+
+Notes on CreateDirectory and directory-path handling:
+- Prefer using the `CreateDirectory` parameter on `ExpandPath` instead of manually checking `Directory.Exists` and calling
+    `Directory.CreateDirectory`. Example:
+
+```csharp
+// Create parent directories if they don't exist while resolving a file path
+string path = ExpandPath(Path.Combine(GetGenXdevAppDataPath(), "file.txt"), CreateDirectory: true);
+```
+
+- IMPORTANT: When the `Path` argument itself is the directory you intend to create (not a filename inside
+    that directory), the path MUST end with a trailing backslash (`\\`). This disambiguates a directory
+    creation request from a filename. For example, to create `C:\temp\mydir` use:
+
+```csharp
+string dir = ExpandPath("C:\\temp\\mydir\\", CreateDirectory: true);
+```
+
+If you omit the trailing backslash for a pure-directory intent (e.g. `"C:\\temp\\mydir"`) the helper may
+treat the value as a potential filename or behave differently. When in doubt, include the trailing `\\`.
+
+This pattern reduces races and simplifies code: call `ExpandPath(..., CreateDirectory: true)` whenever you need
+to ensure a directory exists for a file or for the directory itself, and avoid ad-hoc `if (!Exists) Create` blocks.
+
+### 7. ConfirmInstallationConsent(...)
+**Replaces:** `GenXdev.FileSystem\Confirm-InstallationConsent`
+**Old pattern:**
+```csharp
+var scriptBuilder = new System.Text.StringBuilder();
+scriptBuilder.Append("param(...) GenXdev.FileSystem\\Confirm-InstallationConsent ...");
+var confirmConsentScript = ScriptBlock.Create(scriptBuilder.ToString());
+var result = confirmConsentScript.Invoke(...);
+```
+**New pattern:**
+```csharp
+bool consent = ConfirmInstallationConsent(applicationName, source, description, publisher, forceConsent, consentToThirdPartySoftwareInstallation);
+```
+
+### 8. GetGenXdevAppDataPath(string additional = null)
+**Replaces:** Manual path building for `$ENV:LOCALAPPDATA\GenXdev.PowerShell`
+**Old pattern:**
+```csharp
+string dir = System.Environment.GetEnvironmentVariable("LOCALAPPDATA") + "\\GenXdev.PowerShell";
+if (!System.IO.Directory.Exists(dir)) { System.IO.Directory.CreateDirectory(dir); }
+string path = ExpandPath($"{dir}\\file.txt");
+```
+**New pattern:**
+```csharp
+string path = ExpandPath(Path.Combine(GetGenXdevAppDataPath(), "file.txt"), CreateDirectory: true);
+```
+
+### 9. InvokeScript<T>(string script)
+**Replaces:** Verbose ScriptBlock.Create().Invoke() patterns for simple cmdlet invocations
+**Old pattern:**
+```csharp
+var chromePortScript = ScriptBlock.Create("GenXdev\\Get-ChromeRemoteDebuggingPort");
+var chromePortResult = chromePortScript.Invoke();
+var chromePort = chromePortResult[0].BaseObject.ToString();
+```
+**New pattern:**
+```csharp
+var chromePort = InvokeScript<int>("GenXdev\\Get-ChromeRemoteDebuggingPort");
+```
+**Use cases:**
+- Simple cmdlet invocations that return a single scalar value
+- Getting configuration values from GenXdev cmdlets
+- Looking up paths, ports, or other single-value returns
+- Any PowerShell script that doesn't require parameters and returns a simple type
+
+**When NOT to use:**
+- When you need to pass parameters (use ScriptBlock.Create with param block)
+- When processing multiple return values
+- When you need full PSObject properties (use InvokeCommand.InvokeScript)
+
+## PowerShell String Interpolation Rule
+- Always use curly braces `{}` for variable names inside double-quoted strings when the variable is immediately followed by a character that could be interpreted as part of the variable name, or when the variable is part of a property or expression.
+- Example:
+    - Incorrect: `Write-Warning "Failed to rename $file.Name to $newName: $_"`
+    - Correct:   `Write-Warning "Failed to rename $($file.Name) to ${newName}: $_"`
+- This prevents PowerShell from misinterpreting variable boundaries and avoids runtime errors.
+
+## Enforcement
+- All PowerShell scripts must use `${variable}` syntax for string interpolation when ambiguity is possible.
+- Review all warning, error, and output messages for correct interpolation.

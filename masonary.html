@@ -1,0 +1,1884 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Image Gallery - Masonry Layout</title>
+        <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        #bg {
+            background-color: #333333;
+            width: 100%;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #333333;
+            color: #333;
+        }
+
+        html {
+            background-color: #333333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: white;
+            margin-top: 2em;
+            font-weight: 300;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            margin: 0;
+        }
+
+        .gallery-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .masonry {
+            column-count: 1;
+            column-gap: 20px;
+            column-fill: balance;
+        }
+
+        @media (min-width: 768px) {
+            .masonry { column-count: 2; }
+        }
+
+        @media (min-width: 1024px) {
+            .masonry { column-count: 3; }
+        }
+
+        @media (min-width: 1400px) {
+            .masonry { column-count: 4; }
+        }
+
+        /* Single column mode (JS toggled) */
+        .single-column-mode .gallery-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-left: auto;
+            margin-right: auto;
+            max-width: 33vw;
+            width: 100%;
+        }
+        .single-column-mode .masonry {
+            column-count: 1 !important;
+        }
+
+        /* In single column mode and portrait orientation, gallery is full width */
+        @media (orientation: portrait) {
+            .single-column-mode .gallery-container {
+                max-width: 100vw;
+            }
+        }
+
+        .gallery-item {
+            break-inside: avoid;
+            margin-bottom: 20px;
+            background: white;
+            border-radius: 18px;
+            border: 1px solid black;
+            overflow: hidden;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+            position: relative;
+        }
+
+        .gallery-item.show-only-pictures .content,
+        .gallery-item.show-only-pictures .description,
+        .gallery-item.show-only-pictures .metadata,
+        .gallery-item.show-only-pictures .keywords,
+        .gallery-item.show-only-pictures .recognized-faces,
+        .gallery-item.show-only-pictures .detected-objects,
+        .gallery-item.show-only-pictures .scene-classification,
+        .gallery-item.show-only-pictures .actions {
+            display: none !important;
+        }
+
+        .gallery-item.show-only-pictures img {
+            border-radius: 18px;
+            border-bottom: none;
+        }
+
+        .gallery-item:hover {
+            background: #fafafa;
+            border-color: #666;
+        }
+
+        .image-container {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-bottom: 1px solid black;
+            transition: filter 0.2s ease;
+        }
+
+        .gallery-item:hover img {
+            filter: brightness(1.05);
+        }
+
+        .face-overlay {
+            position: absolute;
+            border: 2px solid #000000;
+            background-color: rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .gallery-item:hover .face-overlay {
+            opacity: 1;
+        }
+
+        .face-label {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-align: center;
+            line-height: 1.3;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            white-space: nowrap;
+        }
+
+        .object-label {
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            background-color: rgba(255, 107, 107, 0.9);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            line-height: 1.2;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+            white-space: nowrap;
+        }
+
+        .object-overlay {
+            position: absolute;
+            border: 2px solid #ff6b6b;
+            background-color: rgba(255, 107, 107, 0.2);
+            pointer-events: none;
+            box-sizing: border-box;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .gallery-item:hover .object-overlay {
+            opacity: 1;
+        }
+
+        .content {
+            padding: 15px;
+        }
+
+        .description {
+            margin-bottom: 12px;
+        }
+
+        .short-description {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .long-description {
+            color: #5d6d7e;
+            font-size: 13px;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .metadata {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .metadata-item {
+            background-color: #e6e6e6;
+            color: #000000;
+            padding: 4px 8px;
+            border-radius: 0px;
+            border: 1px solid #999999;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: default;
+        }
+
+        .metadata-item.people {
+            background-color: #e6e6e6;
+            color: #000000;
+        }
+
+        .metadata-item.faces {
+            background-color: #e6e6e6;
+            color: #000000;
+        }
+
+        .keywords {
+            margin-bottom: 10px;
+        }
+
+        .keywords-label {
+            font-size: 11px;
+            color: #7f8c8d;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .keyword-tag {
+            display: inline-block;
+            background-color: #e6e6e6;
+            color: #000000;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #999999;
+            font-size: 11px;
+            margin: 2px 2px 2px 0;
+            font-weight: 500;
+            cursor: default;
+        }
+
+        .recognized-faces {
+            margin-bottom: 10px;
+        }
+
+        .faces-label {
+            font-size: 11px;
+            color: #7f8c8d;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .face-name-tag {
+            background-color: #e6e6e6;
+            color: #000000;
+            border: 1px solid #999999;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin: 2px 4px 2px 0;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            display: inline-block;
+        }
+
+        .face-name-tag:hover, .face-name-tag:focus {
+            background-color: #85c9c4;
+            outline: none;
+        }
+
+        .detected-objects {
+            margin-bottom: 10px;
+        }
+
+        .objects-label {
+            font-size: 11px;
+            color: #7f8c8d;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .object-name-tag {
+            display: inline-block;
+            background-color: #e6e6e6;
+            color: #000000;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #999999;
+            font-size: 11px;
+            margin: 2px 2px 2px 0;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .object-name-tag:hover {
+            background-color: #85c9c4;
+        }
+
+        .scene-classification {
+            margin-bottom: 10px;
+        }
+
+        .scene-label {
+            font-size: 11px;
+            color: #7f8c8d;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .scene-name-tag {
+            display: inline-block;
+            background-color: #e6e6e6;
+            color: #000000;
+            padding: 4px 8px;
+            border-radius: 0px;
+            border: 1px solid #999999;
+            font-size: 11px;
+            margin: 2px 2px 2px 0;
+            font-weight: 500;
+            cursor: default;
+        }
+        .metadata-item.objects {
+            background-color: #e6e6e6;
+            color: #000000;
+        }
+
+        .metadata-item.scene {
+            background-color: #e6e6e6;
+            color: #000000;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .copy-path-btn {
+            background-color: #e6e6e6;
+            color: #000000;
+            border: 1px solid #999999;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-weight: 500;
+        }
+
+        .copy-path-btn:hover {
+            background-color: #85c9c4;
+        }
+
+        .copy-path-btn:active {
+            transform: scale(0.98);
+        }
+
+        .view-original {
+            background-color: #e6e6e6;
+            color: #000000;
+            text-decoration: none;
+            border: 1px solid #999999;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            display: inline-block;
+        }
+
+        .view-original:hover {
+            background-color: #85c9c4;
+            color: #000000;
+            text-decoration: none;
+        }
+
+        .view-original:active {
+            transform: scale(0.98);
+        }
+
+        .edit-btn {
+            background-color: #e6e6e6;
+            color: #000000;
+            border: 1px solid #999999;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-weight: 500;
+        }
+
+        .edit-btn:hover {
+            background-color: #85c9c4;
+        }
+
+        .edit-btn:active {
+            transform: scale(0.98);
+        }
+
+        .delete-btn {
+            background-color: #e6e6e6;
+            color: #000000;
+            border: 1px solid #999999;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-weight: 500;
+        }
+
+        .delete-btn:hover {
+            background-color: #85c9c4;
+        }
+
+        .delete-btn:active {
+            transform: scale(0.98);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .no-images {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+        }
+
+        .no-images h3 {
+            margin-bottom: 10px;
+            color: #95a5a6;
+        }
+
+        .sentinel {
+            height: 100px;
+            width: 100%;
+            visibility: hidden;
+        }
+
+        @media print {
+            /* Prevent page breaks within key elements */
+            html, body, #bg, .gallery-container, .masonry {
+                height: auto !important;
+                min-height: unset !important;
+                overflow: visible !important;
+                page-break-before: avoid;
+                page-break-after: avoid;
+                page-break-inside: avoid;
+                margin: 0;
+                padding: 0;
+            }
+
+            /* Ensure single-column layout for print */
+            .masonry {
+                column-count: 1 !important;
+                column-gap: 0 !important;
+                display: block !important;
+            }
+
+            /* Prevent splitting of gallery items */
+            .gallery-item {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                page-break-before: auto;
+                page-break-after: auto;
+                margin-bottom: 15px !important;
+                display: block !important;
+                box-shadow: none !important;
+                border: none !important;
+                width: 100% !important;
+            }
+
+            /* Optimize images for print */
+            .gallery-item img {
+                max-width: 100% !important;
+                max-height: 45vh !important;
+                height: auto !important;
+                object-fit: contain !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                border-bottom: none !important;
+                display: block !important;
+            }
+
+            /* Prevent content splitting */
+            .content, .description, .metadata, .keywords, .recognized-faces, .detected-objects, .scene-classification {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            /* Hide interactive and non-essential elements */
+            .actions, .copy-path-btn, .view-original, .edit-btn, .delete-btn, .sentinel {
+                display: none !important;
+            }
+
+            /* Remove hover effects */
+            .gallery-item:hover {
+                transform: none !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+
+            /* Hide overlays */
+            .face-overlay, .object-overlay {
+                display: none !important;
+            }
+
+            /* Style tags for print */
+            .face-name-tag, .object-name-tag, .scene-name-tag {
+                background-color: #f8f9fa !important;
+                color: #495057 !important;
+                padding: 2px 6px !important;
+                border-radius: 10px !important;
+                font-size: 10px !important;
+                border: 1px solid #dee2e6 !important;
+                font-weight: normal !important;
+                cursor: auto !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            /* Optimize text */
+            .short-description, .long-description {
+                page-break-inside: avoid !important;
+                color: #333 !important;
+            }
+
+            /* Ensure white background */
+            html, body, #bg {
+                background-color: white !important;
+            }
+
+            /* Text color for readability */
+            .header h1 {
+                color: #333 !important;
+            }
+
+            .header p {
+                color: #666 !important;
+            }
+
+            /* Remove any overflow constraints */
+            * {
+                overflow: visible !important;
+            }
+        }
+        </style>
+    </head>
+    <body>
+        <div id="bg">
+            <div class="header">
+                <h1 id="gallery-title">Family Photo Gallery</h1>
+                <p id="gallery-description">Hover over images to see face recognition data</p>
+            </div>
+            <div class="gallery-container">
+                <div id="gallery" class="masonry">
+                    <div class="loading">Loading images...</div>
+                </div>
+                <div id="sentinel" class="sentinel"></div>
+            </div>
+        </div>
+        <script>
+        let imageGallery;
+        let mydata = {
+            images: JSON.parse("[]"),
+            showOnlyPictures: false,
+            title: "Photo Gallery",
+            description: "Hover over images to see face recognition data",
+            actions: [],
+            canEdit: false,
+            canDelete: false,
+            // --- injected below ---
+            AutoScrollPixelsPerSecond: null,
+            AutoAnimateRectangles: false,
+            SingleColumnMode: false
+        };
+        // first randomize mydata.images
+        mydata.images = mydata.images.sort(() => Math.random() - 0.5);
+
+        // Toggle single column mode layout if enabled
+        function updateSingleColumnMode() {
+            const root = document.documentElement;
+            if (mydata.SingleColumnMode) {
+                root.classList.add('single-column-mode');
+            } else {
+                root.classList.remove('single-column-mode');
+            }
+        }
+        updateSingleColumnMode();
+
+        // Remove and collect all .gif images from MyData.images collection
+        let removedImages = [];
+        if (Array.isArray(mydata.images)) {
+            mydata.images = mydata.images.filter(image => {
+                if (image.path && image.path.endsWith('.gif')) {
+                    removedImages.push(image);
+                    return false; // Remove this image
+                }
+                return true; // Keep this image
+            });
+        }
+
+        // Reinsert them with a random distribution
+        if (removedImages.length > 0) {
+            const insertCount = removedImages.length;
+            for (let i = 0; i < insertCount; i++) {
+                const randomIndex = Math.floor(Math.random() * mydata.images.length);
+                mydata.images.splice(randomIndex, 0, removedImages[i]);
+            }
+        }
+                // --- AutoScrollPixelsPerSecond functionality ---
+        if (typeof mydata.AutoScrollPixelsPerSecond === 'number' && mydata.AutoScrollPixelsPerSecond > 0) {
+            let lastTimestamp = null;
+            let autoScrollActive = false;
+            let userInteracting = false;
+            let interactionTimeout = null;
+
+            function autoScrollStep(timestamp) {
+                if (!autoScrollActive || userInteracting) return;
+                requestAnimationFrame(autoScrollStep);
+                if (lastTimestamp === null) lastTimestamp = timestamp;
+                const elapsed = (timestamp - lastTimestamp) / 1000; // seconds
+                lastTimestamp = timestamp;
+                const scrollAmount = mydata.AutoScrollPixelsPerSecond * elapsed;
+                window.scrollBy({ top: scrollAmount, behavior: 'auto' });
+                // Stop if at bottom
+                if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 2) {
+                    // start from the top again
+                    window.scrollTo({ top: 0, behavior: 'auto' });
+                }
+            }
+
+            function startAutoScroll() {
+                if (autoScrollActive) return;
+                autoScrollActive = true;
+                lastTimestamp = null;
+                requestAnimationFrame(autoScrollStep);
+            }
+
+            function resumeAutoScroll() {
+                if (!autoScrollActive) return;
+                if (!userInteracting) return;
+                userInteracting = false;
+                lastTimestamp = null;
+                requestAnimationFrame(autoScrollStep);
+            }
+
+            function onUserScrollOrInput() {
+                userInteracting = true;
+                if (interactionTimeout) clearTimeout(interactionTimeout);
+                interactionTimeout = setTimeout(resumeAutoScroll, 10000); // 2s after last interaction
+            }
+
+            window.addEventListener('wheel', onUserScrollOrInput, { passive: true });
+            window.addEventListener('touchstart', onUserScrollOrInput, { passive: true });
+            window.addEventListener('keydown', onUserScrollOrInput, { passive: true });
+
+            window.addEventListener('DOMContentLoaded', startAutoScroll);
+        }
+
+        // --- AutoAnimateRectangles functionality ---
+        if (mydata.AutoAnimateRectangles) {
+            // Animation state for overlays
+            let lastOverlayUpdate;
+            // Minimal, robust rectangle animation: overlays match detected bounding boxes
+            const pastelColors = [
+                'lavender', 'thistle', 'plum', 'lightpink', 'mistyrose', 'honeydew', 'azure', 'aliceblue',
+                'lightcyan', 'palegreen', 'lightyellow', 'lemonchiffon', 'mintcream', 'beige', 'seashell',
+                'lightgoldenrodyellow', 'powderblue', 'paleturquoise', 'lightblue', 'lightsteelblue',
+                'wheat', 'cornsilk', 'oldlace', 'linen', 'blanchedalmond', 'papayawhip', 'peachpuff',
+                'moccasin', 'navajowhite', 'lavenderblush', 'floralwhite', 'ghostwhite', 'gainsboro',
+                'whitesmoke', 'snow', 'ivory', 'antiquewhite', 'khaki', 'lightgreen', 'aquamarine',
+                'palegoldenrod', 'palevioletred', 'lightcoral', 'lightsalmon', 'lightseagreen', 'mediumaquamarine'
+            ];
+            let overlays = [];
+            let idx = 0;
+            let lastCycle = 0;
+            let running = false;
+            // Overlay management: create overlays for each face/object in visible images, clean up old ones
+            let prevOverlayElements = [];
+            function getOrCreateOverlays() {
+                const overlays = [];
+                const visibleImages = Array.from(document.querySelectorAll('.gallery-item img'))
+                    .filter(img => {
+                        const rect = img.getBoundingClientRect();
+                        let bottomIsBelowViewportTop = rect.bottom > 0;
+                        let topIsAboveViewportBottom = rect.top < (window.innerHeight || document.documentElement.clientHeight);
+                        return bottomIsBelowViewportTop && topIsAboveViewportBottom;
+                    });
+                visibleImages.forEach((img, i) => {
+                    const container = img.parentElement;
+                    // Ensure container is relative and overlays are above the image
+                    container.style.position = 'relative';
+                    img.style.position = 'relative';
+                    img.style.zIndex = 0; // Lower z-index so overlays are above
+                    // Find face/object data for this image
+                    let imageIndex = -1;
+                    const m = /image-(\d+)/.exec(container.parentElement?.id || container.id || '');
+                    if (m) imageIndex = parseInt(m[1], 10);
+                    let faces = [], objects = [];
+                    // Use naturalWidth/naturalHeight from data if available, fallback to DOM, fallback to offsetWidth/offsetHeight
+                    let imageData = (window.imageGallery && imageIndex >= 0) ? window.imageGallery.images?.[imageIndex] : null;
+                    let imageNaturalWidth = (imageData && imageData.naturalWidth) ? imageData.naturalWidth : ((typeof img.naturalWidth === 'number' && img.naturalWidth > 0) ? img.naturalWidth : (img.width || img.offsetWidth));
+                    let imageNaturalHeight = (imageData && imageData.naturalHeight) ? imageData.naturalHeight : ((typeof img.naturalHeight === 'number' && img.naturalHeight > 0) ? img.naturalHeight : (img.height || img.offsetHeight));
+                    let imageDisplayWidth = img.offsetWidth;
+                    let imageDisplayHeight = img.offsetHeight;
+                    let scaleX = imageDisplayWidth / imageNaturalWidth;
+                    let scaleY = imageDisplayHeight / imageNaturalHeight;
+                    if (window.imageGallery && imageIndex >= 0) {
+                        const image = window.imageGallery.images?.[imageIndex];
+                        if (image) {
+                            faces = Array.isArray(image.people?.predictions) ? image.people.predictions : parsePsObjectArray(image.people?.predictions);
+                            objects = Array.isArray(image.objects?.objects) ? image.objects.objects : [];
+                        }
+                    }
+                    // If no faces/objects, just make one overlay for the image
+                    if ((!faces || faces.length === 0) && (!objects || objects.length === 0)) {
+                        let overlay = container.querySelector('.face-overlay[data-anim="true"]');
+                        if (!overlay) {
+                            overlay = document.createElement('div');
+                            overlay.className = 'face-overlay';
+                            overlay.setAttribute('data-anim', 'true');
+                            overlay.style.position = 'absolute';
+                            overlay.style.zIndex = 2;
+                            overlay.style.left = 0;
+                            overlay.style.top = 0;
+                            overlay.style.width = imageDisplayWidth + 'px';
+                            overlay.style.height = imageDisplayHeight + 'px';
+                            overlay.style.pointerEvents = 'none';
+                            container.style.position = 'relative';
+                            container.appendChild(overlay);
+                        }
+                        overlay.style.display = '';
+                        overlays.push(overlay);
+                    } else {
+                        // For each face, create overlay using bounding box if available
+                        faces.forEach((face, j) => {
+                            // Expect face to have bounding box: {x_min, y_min, x_max, y_max} in pixels or relative [0,1]
+                            let overlay = container.querySelector('.face-overlay[data-face-idx="' + j + '"][data-anim="true"]');
+                            if (!overlay) {
+                                overlay = document.createElement('div');
+                                overlay.className = 'face-overlay';
+                                overlay.setAttribute('data-face-idx', j);
+                                overlay.setAttribute('data-anim', 'true');
+                                overlay.style.position = 'absolute';
+                                overlay.style.zIndex = 2;
+                                container.style.position = 'relative';
+                                container.appendChild(overlay);
+                            }
+                            // Use bounding box if present (x_min, y_min, x_max, y_max)
+                            let l = 0, t = 0, w = imageDisplayWidth, h = imageDisplayHeight;
+                            if (face && typeof face === 'object' && 'x_min' in face && 'y_min' in face && 'x_max' in face && 'y_max' in face) {
+                                let x_min = face.x_min, y_min = face.y_min, x_max = face.x_max, y_max = face.y_max;
+                                // If values are 0-1, treat as relative
+                                if (x_min < 1 && y_min < 1 && x_max <= 1 && y_max <= 1) {
+                                    l = x_min * imageDisplayWidth;
+                                    t = y_min * imageDisplayHeight;
+                                    w = (x_max - x_min) * imageDisplayWidth;
+                                    h = (y_max - y_min) * imageDisplayHeight;
+                                } else {
+                                    l = x_min * scaleX;
+                                    t = y_min * scaleY;
+                                    w = (x_max - x_min) * scaleX;
+                                    h = (y_max - y_min) * scaleY;
+                                }
+                            }
+                            overlay.style.left = l + 'px';
+                            overlay.style.top = t + 'px';
+                            overlay.style.width = w + 'px';
+                            overlay.style.height = h + 'px';
+                            overlay.style.pointerEvents = 'none';
+                            overlay.style.display = '';
+                            overlays.push(overlay);
+                        });
+                        // For each object, create overlay using bounding box if available
+                        objects.forEach((obj, k) => {
+                            let overlay = container.querySelector('.object-overlay[data-object-idx="' + k + '"][data-anim="true"]');
+                            if (!overlay) {
+                                overlay = document.createElement('div');
+                                overlay.className = 'object-overlay';
+                                overlay.setAttribute('data-object-idx', k);
+                                overlay.setAttribute('data-anim', 'true');
+                                overlay.style.position = 'absolute';
+                                overlay.style.zIndex = 2;
+                                container.style.position = 'relative';
+                                container.appendChild(overlay);
+                            }
+                            let l = 0, t = 0, w = imageDisplayWidth, h = imageDisplayHeight;
+                            if (obj && typeof obj === 'object' && 'x_min' in obj && 'y_min' in obj && 'x_max' in obj && 'y_max' in obj) {
+                                let x_min = obj.x_min, y_min = obj.y_min, x_max = obj.x_max, y_max = obj.y_max;
+                                if (x_min < 1 && y_min < 1 && x_max <= 1 && y_max <= 1) {
+                                    l = x_min * imageDisplayWidth;
+                                    t = y_min * imageDisplayHeight;
+                                    w = (x_max - x_min) * imageDisplayWidth;
+                                    h = (y_max - y_min) * imageDisplayHeight;
+                                } else {
+                                    l = x_min * scaleX;
+                                    t = y_min * scaleY;
+                                    w = (x_max - x_min) * scaleX;
+                                    h = (y_max - y_min) * scaleY;
+                                }
+                            }
+                            overlay.style.left = l + 'px';
+                            overlay.style.top = t + 'px';
+                            overlay.style.width = w + 'px';
+                            overlay.style.height = h + 'px';
+                            overlay.style.pointerEvents = 'none';
+                            overlay.style.display = '';
+                            overlays.push(overlay);
+                        });
+                    }
+                });
+                // Clean up overlays that are no longer needed (only those created by animation)
+                prevOverlayElements.forEach(el => {
+                    if (el.getAttribute && el.getAttribute('data-anim') === 'true' && !overlays.includes(el)) {
+                        if (el.parentElement) el.parentElement.removeChild(el);
+                    }
+                });
+                prevOverlayElements = overlays;
+                return overlays;
+            }
+            function animateOverlaysRAF(ts) {
+                if (!running) return;
+                requestAnimationFrame(animateOverlaysRAF);
+                // Repopulate overlays every 2 seconds, but only if changed
+                if (typeof lastOverlayUpdate === 'undefined') lastOverlayUpdate = ts;
+                let overlaysChanged = false;
+                if (ts - lastOverlayUpdate > 1400) {
+                    const newOverlays = getOrCreateOverlays();
+                    if (newOverlays.length !== overlays.length || newOverlays.some((el, i) => el !== overlays[i])) {
+                        overlays = newOverlays;
+                        idx = 0; // Reset idx so animation always starts with a visible overlay
+                        overlaysChanged = true;
+                    }
+                    lastOverlayUpdate = ts;
+                }
+                if (overlays.length === 0) {
+                    idx = 0;
+                    lastCycle = ts;
+                    return;
+                }
+                if (!lastCycle) lastCycle = ts;
+                if (ts - lastCycle > 1500 || overlaysChanged) {
+                    overlays.forEach((el, i) => {
+                        el.style.transition = 'opacity 0.2s, border-color 0.2s, background-color 0.2s, color 0.2s';
+                        if (i === idx) {
+                            const color = pastelColors[i % pastelColors.length];
+                            el.style.opacity = '1';
+                            el.style.borderColor = color;
+                            el.style.backgroundColor = color;
+                            el.style.color = 'black';
+                            el.style.backgroundColor = color;
+                            el.style.mixBlendMode = 'normal';
+                            el.style.zIndex = 2;
+                            el.style.display = '';
+                            el.style.pointerEvents = 'none';
+                            el.style.backgroundColor = color;
+                            el.style.opacity = '0.5';
+                            // Add label if not present
+                            let label = el.querySelector('.overlay-label');
+                            if (!label) {
+                                label = document.createElement('div');
+                                label.className = 'overlay-label';
+                                label.style.position = 'absolute';
+                                label.style.left = '0';
+                                label.style.top = '0';
+                                label.style.width = '100%';
+                                label.style.textAlign = 'center';
+                                label.style.fontWeight = 'bold';
+                                label.style.fontSize = '13px';
+                                label.style.color = 'black';
+                                label.style.background = 'rgba(255,255,255,0.7)';
+                                label.style.pointerEvents = 'none';
+                                label.style.zIndex = 3;
+                                el.appendChild(label);
+                            }
+                            // Set label text
+                            let labelText = '';
+                            if (el.classList.contains('face-overlay') && el.hasAttribute('data-face-idx')) {
+                                const faceIdx = parseInt(el.getAttribute('data-face-idx'), 10);
+                                const container = el.parentElement;
+                                const m = /image-(\d+)/.exec(container.parentElement?.id || container.id || '');
+                                if (m && window.imageGallery) {
+                                    const imageIndex = parseInt(m[1], 10);
+                                    const image = window.imageGallery.images?.[imageIndex];
+                                    if (image && Array.isArray(image.people?.faces) && image.people.faces[faceIdx]) {
+                                        labelText = image.people.faces[faceIdx];
+                                    }
+                                }
+                                if (!labelText) labelText = 'Face';
+                            } else if (el.classList.contains('object-overlay') && el.hasAttribute('data-object-idx')) {
+                                const objIdx = parseInt(el.getAttribute('data-object-idx'), 10);
+                                const container = el.parentElement;
+                                const m = /image-(\d+)/.exec(container.parentElement?.id || container.id || '');
+                                if (m && window.imageGallery) {
+                                    const imageIndex = parseInt(m[1], 10);
+                                    const image = window.imageGallery.images?.[imageIndex];
+                                    if (image && Array.isArray(image.objects?.objects) && image.objects.objects[objIdx] && image.objects.objects[objIdx].label) {
+                                        labelText = image.objects.objects[objIdx].label;
+                                    }
+                                }
+                                if (!labelText) labelText = 'Object';
+                            }
+                            label.textContent = labelText;
+                        } else {
+                            el.style.opacity = '0';
+                            el.style.borderColor = '';
+                            el.style.backgroundColor = '';
+                            el.style.color = '';
+                            el.style.display = '';
+                            // Hide label if present
+                            let label = el.querySelector('.overlay-label');
+                            if (label) label.textContent = '';
+                        }
+                    });
+                    idx = overlays.length ? (idx + 1) % overlays.length : 0;
+                    lastCycle = ts;
+                }
+            }
+            function startOverlayAnimation() {
+                if (running) return;
+                running = true;
+                overlays = getOrCreateOverlays();
+                overlays.forEach(el => {
+                    el.style.transition = 'opacity 0.2s, border-color 0.2s, background-color 0.2s, color 0.2s';
+                    el.style.opacity = '0';
+                    el.style.borderColor = '';
+                    el.style.backgroundColor = '';
+                    el.style.color = '';
+                });
+                idx = 0;
+                lastCycle = 0;
+                lastOverlayUpdate = undefined;
+                requestAnimationFrame(animateOverlaysRAF);
+            }
+            function stopOverlayAnimation() {
+                running = false;
+            }
+            window.addEventListener('DOMContentLoaded', startOverlayAnimation);
+            window.addEventListener('visibilitychange', () => {
+                if (document.hidden) stopOverlayAnimation();
+                else startOverlayAnimation();
+            });
+        }
+
+        function parsePsObject(str) {
+            if (!str || typeof str !== 'string' || !str.startsWith('@{')) return null;
+            const content = str.substring(2, str.length - 1);
+            const obj = {};
+            const parts = content.split(';');
+            parts.forEach(part => {
+                const eqIndex = part.indexOf('=');
+                if (eqIndex > -1) {
+                    const key = part.substring(0, eqIndex).trim();
+                    const value = part.substring(eqIndex + 1).trim();
+                    obj[key] = isNaN(value) ? value : parseFloat(value);
+                }
+            });
+            return obj;
+        }
+
+        function parsePsObjectArray(str) {
+            if (Array.isArray(str)) return str;
+            if (!str || typeof str !== 'string') return [];
+
+            const objects = [];
+            const regex = /@\{.*?\}/g;
+            const matches = str.match(regex);
+
+            if (matches) {
+                matches.forEach(match => {
+                    const obj = parsePsObject(match);
+                    if (obj) {
+                        objects.push(obj);
+                    }
+                });
+            }
+            return objects;
+        }
+
+        // Mock API to simulate fetching images
+        async function fetchImages(page, pageSize) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            const images = [];
+            const startIndex = (page - 1) * pageSize;
+            for (let i = Math.max(0, Math.min(mydata.images, startIndex)); i < Math.min(mydata.images.length, startIndex + pageSize); i++) {
+
+                images.push(mydata.images[i]);
+
+            }
+            return images;
+        }
+        // Mock API to fetch all images for print
+        async function fetchAllImages(maxImages = 25) {
+
+            return mydata.images.slice(0, maxImages);
+        }
+
+        class ImageGallery {
+            constructor(mydata) {
+
+                this.images = [];
+                this.galleryElement = document.getElementById('gallery');
+                this.sentinel = document.getElementById('sentinel');
+                this.page = 1;
+                this.pageSize = 20;  // Increased from 10 to 20 for smoother scrolling
+                this.isLoading = false;
+                this.hasMore = true;
+                this.isPrinting = false;
+                this.init();
+            }
+
+            async init() {
+                if (typeof mydata !== 'undefined' && mydata.images && mydata.images.length > 0) {
+                    // Use provided image data
+                    this.images = mydata.images;
+                    this.hasMore = false; // Disable infinite scroll for provided data
+                    this.renderGallery();
+                } else {
+                    // Use mock data for testing
+                    await this.loadImages();
+                }
+
+                if (typeof mydata !== 'undefined') {
+                    if (mydata.title) {
+                        document.getElementById('gallery-title').textContent = mydata.title;
+                        document.title = mydata.title;
+                    }
+                    if (mydata.description) {
+                        document.getElementById('gallery-description').textContent = mydata.description;
+                    }
+                }
+
+                let resizeTimeout;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        this.repositionAllOverlays();
+                    }, 250);
+                });
+
+                // Handle print events
+                window.addEventListener('beforeprint', () => this.handleBeforePrint());
+                window.addEventListener('afterprint', () => this.handleAfterPrint());
+
+                this.setupIntersectionObserver();
+            }
+
+            setupIntersectionObserver() {
+                this.observer = new IntersectionObserver(
+                    entries => {
+                        if (entries[0].isIntersecting && !this.isLoading && this.hasMore && !this.isPrinting) {
+                            this.loadImages();
+                        }
+                    },
+                    {
+                        root: null,
+                        rootMargin: '1200px',  // Load content when sentinel is 1200px away from viewport
+                        threshold: 0.1
+                    }
+                );
+                this.observer.observe(this.sentinel);
+            }
+
+            async handleBeforePrint() {
+                this.isPrinting = true;
+                this.observer.disconnect(); // Disable infinite scroll
+                this.isLoading = true;
+                this.showLoading();
+
+                try {
+                    // Fetch all images (up to a reasonable limit, e.g., 25)
+                    const allImages = await fetchAllImages(25);
+                    this.images = allImages;
+                    this.hasMore = false;
+                    this.renderGallery();
+                } catch (error) {
+                    console.error('Error loading images for print:', error);
+                    this.showError();
+                } finally {
+                    this.isLoading = false;
+                    this.hideLoading();
+                }
+            }
+
+            handleAfterPrint() {
+                this.isPrinting = false;
+                this.images = []; // Reset images
+                this.page = 1;
+                this.hasMore = true;
+                this.loadImages(); // Reload initial set
+                this.setupIntersectionObserver(); // Re-enable infinite scroll
+            }
+
+            async loadImages() {
+                if (this.isLoading || !this.hasMore || this.isPrinting) return;
+                this.isLoading = true;
+                this.showLoading();
+
+                try {
+                    const newImages = await fetchImages(this.page, this.pageSize);
+                    if (newImages.length === 0) {
+                        this.hasMore = false;
+                        this.hideLoading();
+                        return;
+                    }
+
+                    this.images = [...this.images, ...newImages];
+                    this.page += 1;
+
+                    if (this.images.length === newImages.length) {
+                        this.renderGallery();
+                    } else {
+                        newImages.forEach((image, index) => {
+                            const globalIndex = this.images.length - newImages.length + index;
+                            const galleryItem = this.createGalleryItem(image, globalIndex);
+                            this.setupHandlers(image, galleryItem);
+                            this.galleryElement.appendChild(galleryItem);
+                        });
+                    }
+
+                    if (newImages.length < this.pageSize) {
+                        this.hasMore = false;
+                    }
+                } catch (error) {
+                    console.error('Error loading images:', error);
+                    this.showError();
+                } finally {
+                    this.isLoading = false;
+                    this.hideLoading();
+                }
+            }
+
+            showLoading() {
+                this.sentinel.classList.add('loading');
+                this.sentinel.innerHTML = 'Loading more images...';
+            }
+
+            hideLoading() {
+                this.sentinel.classList.remove('loading');
+                this.sentinel.innerHTML = '';
+            }
+
+            showError() {
+                this.sentinel.innerHTML = '<div class="no-images"><h3>Error loading images</h3></div>';
+            }
+
+            renderGallery() {
+                if (this.images.length === 0) {
+                    this.showNoImagesMessage();
+                    return;
+                }
+
+                this.galleryElement.innerHTML = '';
+
+                this.images.forEach((image, index) => {
+                    const galleryItem = this.createGalleryItem(image, index);
+                    this.setupHandlers(image, galleryItem)
+                    this.galleryElement.appendChild(galleryItem);
+                });
+            }
+
+            setupHandlers(image, item) {
+                return;
+                const imgEl = item.querySelector('img');
+                if (imgEl) {
+                    imgEl.style.cursor = 'pointer';
+                    let touchMoved = false;
+                    let touchStartY = 0;
+                    imgEl.addEventListener('touchstart', (e) => {
+                        if (e.touches && e.touches.length === 1) {
+                            touchMoved = false;
+                            touchStartY = e.touches[0].clientY;
+                        }
+                    });
+                    imgEl.addEventListener('touchmove', (e) => {
+                        if (e.touches && e.touches.length === 1) {
+                            if (Math.abs(e.touches[0].clientY - touchStartY) > 10) {
+                                touchMoved = true;
+                            }
+                        }
+                    });
+                    imgEl.addEventListener('touchend', (e) => {
+                        if (!touchMoved) {
+                            window.open(image.path, '_blank');
+                        }
+                    });
+                    imgEl.addEventListener('click', (e) => {
+                        // Only open if not a drag (mouse move is not handled here, so always open)
+                        window.open(image.path, '_blank');
+                    });
+                }
+            }
+
+            createGalleryItem(image, index) {
+                const item = document.createElement('div');
+                item.className = 'gallery-item' + (mydata.showOnlyPictures ? ' show-only-pictures' : '');
+                item.id = `image-${index}`;
+
+                let keywords = [];
+                if (typeof image.keywords === 'string' && image.keywords.startsWith('[')) {
+                    try {
+                        keywords = JSON.parse(image.keywords);
+                    } catch (e) {
+                        keywords = [];
+                    }
+                } else if (Array.isArray(image.keywords)) {
+                    keywords = image.keywords;
+                }
+
+                const faces = (typeof image.people?.faces === 'string') ? [image.people.faces] : (Array.isArray(image.people?.faces) ? image.people.faces : []);
+                const faceCount = image.people?.count || 0;
+
+                console.log('Processing image:', image.path);
+                console.log('People data:', image.people);
+                console.log('Faces array:', faces);
+                console.log('Face count:', faceCount);                const objects = Array.isArray(image.objects?.objects) ? image.objects.objects : [];
+                const objectCount = image.objects?.count || 0;
+                const objectCounts = (typeof image.objects?.object_counts === 'string') ? (parsePsObject(image.objects.object_counts) || {}) : (image.objects?.object_counts || {});                // Handle scene classification data
+                const scene = image.scenes?.scene || 'unknown';
+                const sceneConfidence = image.scenes?.confidence || 0;
+                const sceneConfidencePercentage = Math.round((sceneConfidence * 100)) || 0;
+                const sceneSuccess = image.scenes?.success || false;
+
+                // Determine alt/title for showOnlyPictures mode
+                let altTitle = '';
+                if (mydata.showOnlyPictures) {
+                    if (image.description && typeof image.description === 'object') {
+                        altTitle = image.description.long_description || image.description.title || image.description.short_description || '';
+                    }
+                }
+                item.innerHTML = `
+                    <div class="image-container">
+                        <img src="${this.escapeHtml(image.path)}"
+                             alt="${this.escapeHtml(mydata.showOnlyPictures ? altTitle : (image.description?.short_description || 'Image'))}"
+                             title="${this.escapeHtml(mydata.showOnlyPictures ? altTitle : '')}"
+                             loading="lazy"
+                             onload="imageGallery.onImageLoad(this, ${index})"
+                             onerror="imageGallery.onImageError(this)" />
+                    </div>
+                    <div class="content">
+                        <div class="description">
+                            <div class="short-description">${this.escapeHtml(image.description?.short_description || 'No description')}</div>
+                            <div class="long-description">${this.escapeHtml(image.description?.long_description || '')}</div>
+                        </div>                        <div class="metadata">
+                            ${faceCount > 0 ? `<span class="metadata-item people">${faceCount} ${faceCount === 1 ? 'person' : 'people'}</span>` : ''}
+                            ${faces.length > 0 ? `<span class="metadata-item faces">${faces.length} ${faces.length === 1 ? 'face' : 'faces'} recognized</span>` : ''}
+                            ${objectCount > 0 ? `<span class="metadata-item objects">${objectCount} ${objectCount === 1 ? 'object' : 'objects'} detected</span>` : ''}
+                            ${sceneSuccess && scene !== 'unknown' ? `<span class="metadata-item scene">Scene: ${scene.replace(/_/g, ' ')} (${sceneConfidencePercentage}%)</span>` : ''}
+                            <span class="metadata-item">${image.description?.picture_type || 'Photo'}</span>
+                            <span class="metadata-item">${image.description?.style_type || 'Unknown style'}</span>
+                        </div>
+                        ${keywords.length > 0 ? `
+                        <div class="keywords">
+                            <div class="keywords-label">Keywords:</div>
+                            ${keywords.map(keyword => `<span class="keyword-tag">${this.escapeHtml(keyword)}</span>`).join('')}
+                        </div>
+                        ` : ''}
+                        ${faces.length > 0 ? `
+                        <div class="recognized-faces">
+                            <div class="faces-label">Recognized faces:</div>
+                            ${faces.map((faceName, faceIndex) => {
+                                const clickHandler = (typeof mydata !== 'undefined' && mydata.canEdit)
+                                    ? ` onclick=\"imageGallery.editFace(${index}, '${this.escapeHtml(faceName)}', ${faceIndex})\" class=\"face-name-tag clickable\"`
+                                    : ' class="face-name-tag"';
+                                return `<button type="button"${clickHandler}>${this.escapeHtml(faceName)}</button>`;
+                            }).join('')}
+                        </div>                        ` : ''}
+                        ${Object.keys(objectCounts).length > 0 ? `
+                        <div class="detected-objects">
+                            <div class="objects-label">Detected objects:</div>
+                            ${Object.entries(objectCounts).map(([objectName, count]) => {
+                                const clickHandler = (typeof mydata !== 'undefined' && mydata.canEdit)
+                                    ? ` onclick="imageGallery.editObject(${index}, '${this.escapeHtml(objectName)}', ${count})" class="object-name-tag clickable"`
+                                    : ' class="object-name-tag"';
+                                return `<span${clickHandler}>${this.escapeHtml(objectName)} (${count})</span>`;
+                            }).join('')}
+                        </div>
+                        ` : ''}
+                        ${sceneSuccess && scene !== 'unknown' ? `
+                        <div class="scene-classification">
+                            <div class="scene-label">Scene classification:</div>
+                            ${(() => {
+                                const clickHandler = (typeof mydata !== 'undefined' && mydata.canEdit)
+                                    ? ` onclick="imageGallery.editScene(${index}, '${this.escapeHtml(scene)}', ${sceneConfidencePercentage})" class="scene-name-tag clickable"`
+                                    : ' class="scene-name-tag"';
+                                return `<span${clickHandler}>${this.escapeHtml(scene.replace(/_/g, ' '))} (${sceneConfidencePercentage}%)</span>`;
+                            })()}
+                        </div>
+                        ` : ''}
+                        <div class="actions">
+                            <button class="copy-path-btn" onclick="imageGallery.copyPath(${index})">Copy Path</button>
+                            <a href="${this.escapeHtml(image.path)}" target="_blank" class="view-original">View Original</a>
+                            ${(typeof mydata !== 'undefined' && mydata.canEdit) ? `<button class="edit-btn" onclick="imageGallery.editImage(${index})">Edit</button>` : ''}
+                            ${(typeof mydata !== 'undefined' && mydata.canDelete) ? `<button class="delete-btn" onclick="imageGallery.deleteImage(${index})">Delete</button>` : ''}
+                        </div>
+                    </div>
+                `;
+
+                return item;
+            }
+
+            onImageLoad(imgElement, imageIndex) {
+                console.log('Image loaded:', imageIndex, 'Adding face and object overlays...');
+                this.addFaceOverlays(imgElement, imageIndex);
+                this.addObjectOverlays(imgElement, imageIndex);
+            }
+
+            onImageError(imgElement) {
+                const container = imgElement.closest('.gallery-item');
+                imgElement.style.display = 'none';
+
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'image-error';
+                errorDiv.innerHTML = `
+                    <div style="padding: 40px; text-align: center; color: #e74c3c; background: #fff5f5;">
+                        <div style="font-size: 24px; margin-bottom: 8px;">📷</div>
+                        <div style="font-size: 12px;">Image not found</div>
+                    </div>
+                `;
+                imgElement.parentNode.appendChild(errorDiv);
+            }
+
+            addFaceOverlays(imgElement, imageIndex) {
+                const image = this.images[imageIndex];
+                console.log('addFaceOverlays called for image:', imageIndex, 'people data:', image.people);
+
+                const facePredictions = parsePsObjectArray(image.people?.predictions);
+                const faces = (typeof image.people?.faces === 'string') ? image.people.faces.split(' ').filter(Boolean) : (Array.isArray(image.people?.faces) ? image.people.faces : []);
+                const objectPredictions = image.objects?.objects || [];
+
+                console.log('Face predictions found:', facePredictions);
+                console.log('Faces found:', faces);
+                console.log('Object predictions found:', objectPredictions);
+
+                const personObjects = objectPredictions.filter(pred => pred.label === 'person');
+                console.log('Person objects found:', personObjects);
+
+                if (facePredictions.length === 0 && faces.length === 0 && personObjects.length === 0) {
+                    console.log('No faces, predictions, or person objects to overlay');
+                    return;
+                }
+
+                const container = imgElement.parentElement;
+                const displayWidth = imgElement.clientWidth;
+                const displayHeight = imgElement.clientHeight;
+                const originalWidth = imgElement.naturalWidth;
+                const originalHeight = imgElement.naturalHeight;
+
+                console.log('Display dimensions:', displayWidth, 'x', displayHeight);
+                console.log('Original dimensions:', originalWidth, 'x', originalHeight);
+
+                const mergedOverlays = this.createMergedOverlays(facePredictions, personObjects, faces);
+
+                mergedOverlays.forEach((overlayData, index) => {
+                    const overlay = document.createElement('div');
+                    overlay.className = 'face-overlay';
+
+                    const leftRatio = overlayData.x_min / originalWidth;
+                    const topRatio = overlayData.y_min / originalHeight;
+                    const widthRatio = (overlayData.x_max - overlayData.x_min) / originalWidth;
+                    const heightRatio = (overlayData.y_max - overlayData.y_min) / originalHeight;
+
+                    const left = leftRatio * displayWidth;
+                    const top = topRatio * displayHeight;
+                    const width = widthRatio * displayWidth;
+                    const height = heightRatio * displayHeight;
+
+                    overlay.style.left = left + 'px';
+                    overlay.style.top = top + 'px';
+                    overlay.style.width = width + 'px';
+                    overlay.style.height = height + 'px';
+
+                    overlay.setAttribute('data-bounds', JSON.stringify({
+                        x_min: overlayData.x_min,
+                        y_min: overlayData.y_min,
+                        x_max: overlayData.x_max,
+                        y_max: overlayData.y_max,
+                        confidence: overlayData.confidence
+                    }));
+
+                    const clickHandler = overlayData.type === 'face'
+                        ? `imageGallery.editFace(${imageIndex}, '${this.escapeHtml(overlayData.label)}', ${index})`
+                        : `imageGallery.editObject(${imageIndex}, '${this.escapeHtml(overlayData.label)}', ${index})`;
+
+                    const labelClass = overlayData.type === 'face' ? 'face-label' : 'object-label';
+                    overlay.innerHTML = `<span class="${labelClass} clickable" onclick="${clickHandler}">${this.escapeHtml(overlayData.label)}<br>confidence: ${Math.round(overlayData.confidence * 100)}%</span>`;
+                    container.appendChild(overlay);
+                });
+
+                if (mergedOverlays.length === 0 && faces.length > 0) {
+                    faces.forEach((faceName, index) => {
+                        const overlay = document.createElement('div');
+                        overlay.className = 'face-overlay';
+
+                        const facePositions = this.generateFacePositions(faces.length, displayWidth, displayHeight);
+                        const position = facePositions[index];
+
+                        overlay.style.left = position.left + 'px';
+                        overlay.style.top = position.top + 'px';
+                        overlay.style.width = position.width + 'px';
+                        overlay.style.height = position.height + 'px';
+
+                        overlay.innerHTML = `<span class="face-label">${this.escapeHtml(faceName)}<br>recognized</span>`;
+                        container.appendChild(overlay);
+                    });
+                }
+            }
+
+            createMergedOverlays(facePredictions, personObjects, faces) {
+                const mergedOverlays = [];
+                const usedPersonIndices = new Set();
+
+                facePredictions.forEach((facePred, faceIndex) => {
+                    let faceName = 'Unknown';
+                    if (facePred.userid) {
+                        faceName = facePred.userid.replace(/_\d+$/, '');
+                    } else if (faces && faces.length > faceIndex && faces[faceIndex] && faces[faceIndex].trim() !== '') {
+                        faceName = faces[faceIndex].trim();
+                    } else if (faces && faces.length > 0) {
+                        for (let i = 0; i < faces.length; i++) {
+                            if (faces[i] && faces[i].trim() !== '') {
+                                faceName = faces[i].trim();
+                                break;
+                            }
+                        }
+                    }
+
+                    mergedOverlays.push({
+                        x_min: facePred.x_min,
+                        y_min: facePred.y_min,
+                        x_max: facePred.x_max,
+                        y_max: facePred.y_max,
+                        confidence: facePred.confidence,
+                        label: faceName,
+                        type: 'face'
+                    });
+
+                    personObjects.forEach((personObj, personIndex) => {
+                        if (this.boundingBoxesOverlap(facePred, personObj)) {
+                            usedPersonIndices.add(personIndex);
+                        }
+                    });
+                });
+
+                personObjects.forEach((personObj, personIndex) => {
+                    if (!usedPersonIndices.has(personIndex)) {
+                        mergedOverlays.push({
+                            x_min: personObj.x_min,
+                            y_min: personObj.y_min,
+                            x_max: personObj.x_max,
+                            y_max: personObj.y_max,
+                            confidence: personObj.confidence,
+                            label: 'Person',
+                            type: 'person'
+                        });
+                    }
+                });
+
+                return mergedOverlays;
+            }
+
+            boundingBoxesOverlap(box1, box2) {
+                const overlapX = Math.max(0, Math.min(box1.x_max, box2.x_max) - Math.max(box1.x_min, box2.x_min));
+                const overlapY = Math.max(0, Math.min(box1.y_max, box2.y_max) - Math.max(box1.y_min, box2.y_min));
+                const overlapArea = overlapX * overlapY;
+
+                const box1Area = (box1.x_max - box1.x_min) * (box1.y_max - box1.y_min);
+                const box2Area = (box2.x_max - box2.x_min) * (box2.y_max - box2.y_min);
+                const smallerArea = Math.min(box1Area, box2Area);
+
+                return overlapArea > (smallerArea * 0.5);
+            }
+
+            generateFacePositions(faceCount, imgWidth, imgHeight) {
+                const positions = [];
+                const faceSize = Math.min(imgWidth, imgHeight) * 0.15;
+                const minFaceSize = 60;
+                const maxFaceSize = 120;
+
+                const actualFaceSize = Math.max(minFaceSize, Math.min(maxFaceSize, faceSize));
+
+                const faceAreas = [
+                    { x: 0.2, y: 0.15, w: 0.25, h: 0.4 },
+                    { x: 0.4, y: 0.1, w: 0.2, h: 0.35 },
+                    { x: 0.55, y: 0.15, w: 0.25, h: 0.4 },
+                    { x: 0.15, y: 0.4, w: 0.3, h: 0.35 },
+                    { x: 0.55, y: 0.4, w: 0.3, h: 0.35 },
+                    { x: 0.35, y: 0.45, w: 0.6, h: 0.35 }
+                ];
+
+                for (let i = 0; i < faceCount; i++) {
+                    const area = faceAreas[i % faceAreas.length];
+                    const randomX = Math.random() * 0.5;
+                    const randomY = Math.random() * 0.5;
+
+                    const left = (area.x + randomX * area.w) * imgWidth;
+                    const top = (area.y + randomY * area.h) * imgHeight;
+
+                    const maxLeft = imgWidth - actualFaceSize;
+                    const maxTop = imgHeight - actualFaceSize;
+
+                    positions.push({
+                        left: Math.max(0, Math.min(maxLeft, left)),
+                        top: Math.max(0, Math.min(maxTop, top)),
+                        width: actualFaceSize,
+                        height: actualFaceSize
+                    });
+                }
+
+                return positions;
+            }
+
+            addObjectOverlays(imgElement, imageIndex) {
+                const image = this.images[imageIndex];
+                console.log('addObjectOverlays called for image:', imageIndex, 'objects data:', image.objects);
+
+                const predictions = image.objects?.objects || [];
+                const facePredictions = parsePsObjectArray(image.people?.predictions);
+
+                console.log('Object predictions found:', predictions);
+
+                if (predictions.length === 0) {
+                    console.log('No object predictions to overlay');
+                    return;
+                }
+
+                const filteredPredictions = predictions.filter(objPred => {
+                    if (objPred.label !== 'person') {
+                        return true;
+                    }
+
+                    const hasOverlappingFace = facePredictions.some(facePred =>
+                        this.boundingBoxesOverlap(objPred, facePred)
+                    );
+
+                    return !hasOverlappingFace;
+                });
+
+                console.log('Filtered object predictions (excluding person objects with faces):', filteredPredictions);
+
+                const container = imgElement.parentElement;
+                const displayWidth = imgElement.clientWidth;
+                const displayHeight = imgElement.clientHeight;
+                const originalWidth = imgElement.naturalWidth;
+                const originalHeight = imgElement.naturalHeight;
+
+                console.log('Display dimensions:', displayWidth, 'x', displayHeight);
+                console.log('Original dimensions:', originalWidth, 'x', originalHeight);
+
+                filteredPredictions.forEach((prediction, index) => {
+                    const overlay = document.createElement('div');
+                    overlay.className = 'object-overlay';
+
+                    const leftRatio = prediction.x_min / originalWidth;
+                    const topRatio = prediction.y_min / originalHeight;
+                    const widthRatio = (prediction.x_max - prediction.x_min) / originalWidth;
+                    const heightRatio = (prediction.y_max - prediction.y_min) / originalHeight;
+
+                    const left = leftRatio * displayWidth;
+                    const top = topRatio * displayHeight;
+                    const width = widthRatio * displayWidth;
+                    const height = heightRatio * displayHeight;
+
+                    overlay.style.left = left + 'px';
+                    overlay.style.top = top + 'px';
+                    overlay.style.width = width + 'px';
+                    overlay.style.height = height + 'px';
+
+                    overlay.setAttribute('data-bounds', JSON.stringify({
+                        x_min: prediction.x_min,
+                        y_min: prediction.y_min,
+                        x_max: prediction.x_max,
+                        y_max: prediction.y_max,
+                        confidence: prediction.confidence,
+                        label: prediction.label
+                    }));
+
+                    const label = document.createElement('div');
+                    label.className = 'object-label';
+                    const confidence = (prediction.confidence * 100).toFixed(1);
+                    label.textContent = `${prediction.label} (${confidence}%)`;
+                    overlay.appendChild(label);
+
+                    container.appendChild(overlay);
+                    console.log(`Added object overlay for ${prediction.label} at (${left.toFixed(1)}, ${top.toFixed(1)}) with size ${width.toFixed(1)}x${height.toFixed(1)}`);
+                });
+            }            copyPath(index) {
+                const image = this.images[index];
+                const path = `"${image.originalPath || image.path}"`;
+
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(path).then(() => {
+                        this.showCopyFeedback(index, true);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        this.fallbackCopy(path, index);
+                    });
+                } else {
+                    this.fallbackCopy(path, index);
+                }
+            }            editImage(index) {
+                if (typeof mydata === 'undefined' || !mydata.canEdit) {
+                    console.warn('Edit action not allowed - canEdit is false or undefined');
+                    return;
+                }
+
+                const image = this.images[index];
+                const editAction = {
+                    action: "edit",
+                    path: image.originalPath || image.path
+                };
+
+                mydata.actions.push(editAction);
+                this.showEditFeedback(index);
+            }
+
+            showEditFeedback(index) {
+                const button = document.querySelector(`#image-${index} .edit-btn`);
+                if (!button) return;
+
+                const originalText = button.textContent;
+                button.textContent = 'Added to Queue';
+                button.style.backgroundColor = '#f39c12';
+
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.backgroundColor = '';
+                }, 1500);
+            }
+
+            editFace(imageIndex, faceName, faceIndex) {
+                if (typeof mydata === 'undefined' || !mydata.canEdit) {
+                    return;
+                }
+
+                const image = this.images[imageIndex];
+                const facePredictions = parsePsObjectArray(image.people?.predictions);
+                let boundingBox = null;
+
+                const matchingPrediction = facePredictions.find(pred => {
+                    const predName = pred.userid ? pred.userid.replace(/_\d+$/, '') : '';
+                    return predName === faceName;
+                });
+
+                if (matchingPrediction) {
+                    boundingBox = {
+                        x_min: matchingPrediction.x_min,
+                        y_min: matchingPrediction.y_min,
+                        x_max: matchingPrediction.x_max,
+                        y_max: matchingPrediction.y_max,
+                        width: matchingPrediction.x_max - matchingPrediction.x_min,
+                        height: matchingPrediction.y_max - matchingPrediction.y_min,
+                        confidence: matchingPrediction.confidence
+                    };
+                }
+
+                const editAction = {
+                    action: "edit",
+                    path: image.path,
+                    faceName: faceName,
+                    faceIndex: faceIndex,
+                    boundingBox: boundingBox,
+                    timestamp: new Date().toISOString()
+                };
+
+                mydata.actions.push(editAction);
+                console.log('Added face edit action:', editAction);
+                this.showTagClickFeedback(imageIndex, 'face', faceName);
+            }
+
+            editObject(imageIndex, objectName, count) {
+                if (typeof mydata === 'undefined' || !mydata.canEdit) {
+                    return;
+                }
+
+                const image = this.images[imageIndex];
+                const objectPredictions = image.objects?.objects || [];
+                const matchingObjects = objectPredictions.filter(pred => pred.label === objectName);
+
+                const boundingBoxes = matchingObjects.map(pred => ({
+                    x_min: pred.x_min,
+                    y_min: pred.y_min,
+                    x_max: pred.x_max,
+                    y_max: pred.y_max,
+                    width: pred.x_max - pred.x_min,
+                    height: pred.y_max - pred.y_min,
+                    confidence: pred.confidence
+                }));
+
+                const editAction = {
+                    action: "edit",
+                    path: image.path,
+                    objectName: objectName,
+                    count: count,
+                    boundingBox: boundingBoxes.length > 0 ? boundingBoxes[0] : null,
+                    timestamp: new Date().toISOString()
+                };
+
+                mydata.actions.push(editAction);
+                console.log('Added object edit action:', editAction);
+                this.showTagClickFeedback(imageIndex, 'object', objectName);
+            }
+
+            showTagClickFeedback(imageIndex, type, name) {
+                const selector = type === 'face'
+                    ? `#image-${imageIndex} .face-name-tag.clickable`
+                    : `#image-${imageIndex} .object-name-tag.clickable`;
+
+                const tags = document.querySelectorAll(selector);
+
+                tags.forEach(tag => {
+                    if (tag.textContent.includes(name)) {
+                        const originalBg = tag.style.backgroundColor;
+                        const originalText = tag.textContent;
+
+                        tag.style.backgroundColor = '#28a745';
+                        tag.style.color = 'white';
+                        tag.textContent = 'Edited!';
+
+                        setTimeout(() => {
+                            tag.style.backgroundColor = originalBg;
+                            tag.style.color = '';
+                            tag.textContent = originalText;
+                        }, 1500);
+                    }
+                });
+            }            deleteImage(index) {
+                const image = this.images[index];
+                const deleteAction = {
+                    action: "delete",
+                    path: image.originalPath || image.path
+                };
+
+                mydata.actions.push(deleteAction);
+                const imageTile = document.getElementById(`image-${index}`);
+                if (imageTile) {
+                    imageTile.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    imageTile.style.opacity = '0';
+                    imageTile.style.transform = 'scale(0.95)';
+
+                    setTimeout(() => {
+                        imageTile.remove();
+                    }, 300);
+                }
+
+                this.showDeleteFeedback(index);
+            }
+
+            showDeleteFeedback(index) {
+                const button = document.querySelector(`#image-${index} .delete-btn`);
+                if (!button) return;
+
+                const originalText = button.textContent;
+                button.textContent = 'Deleting...';
+                button.style.backgroundColor = '#e74c3c';
+                button.disabled = true;
+            }
+
+            fallbackCopy(text, index) {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                textArea.style.top = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+
+                try {
+                    const result = document.execCommand('copy');
+                    this.showCopyFeedback(index, result);
+                } catch (err) {
+                    console.error('Fallback copy failed:', err);
+                    this.showCopyFeedback(index, false);
+                }
+
+                document.body.removeChild(textArea);
+            }
+
+            showCopyFeedback(index, success) {
+                const button = document.querySelector(`#image-${index} .copy-path-btn`);
+                if (!button) return;
+
+                const originalText = button.textContent;
+                button.textContent = success ? 'Copied!' : 'Failed';
+                button.style.backgroundColor = success ? '#27ae60' : '#e74c3c';
+
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.backgroundColor = '';
+                }, 2000);
+            }
+
+            showNoImagesMessage() {
+                this.galleryElement.innerHTML = `
+                    <div class="no-images">
+                        <h3>No Images Found</h3>
+                    </div>
+                `;
+            }
+
+            escapeHtml(text) {
+
+                if (!text) return '';
+                if (text.indexOf('data:') === 0) {
+                    return text;
+                }
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            repositionAllOverlays() {
+                this.images.forEach((image, index) => {
+                    const imgElement = document.querySelector(`#image-${index} img`);
+                    if (imgElement && imgElement.complete && imgElement.naturalWidth > 0) {
+                        const existingFaceOverlays = document.querySelectorAll(`#image-${index} .face-overlay`);
+                        existingFaceOverlays.forEach(overlay => overlay.remove());
+
+                        const existingObjectOverlays = document.querySelectorAll(`#image-${index} .object-overlay`);
+                        existingObjectOverlays.forEach(overlay => overlay.remove());
+
+                        this.addFaceOverlays(imgElement, index);
+                        this.addObjectOverlays(imgElement, index);
+                    }
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (mydata && mydata.showOnlyPictures) {
+                document.body.classList.add('show-only-pictures');
+            }
+            imageGallery = new ImageGallery(mydata);
+        });
+
+        window.getActions = function () {
+            let results = [...mydata.actions];
+            mydata.actions = [];
+            return results;
+        };
+        </script>
+    </body>
+</html>

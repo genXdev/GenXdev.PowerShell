@@ -1,0 +1,109 @@
+Primary task:
+Analyze and fix a failed unit-test:
+
+$Prompt
+
+Secondary task:
+
+
+If the error resides in the tested script itself, let me know instead of outputing
+the corrected version, I will add it to the session for us to edit it together.
+
+Ensure compliance with these 22 requirements:
+
+1) Check for obvious coding bugs, technical debt, and language spelling errors.
+2) If no paramsetnames are used, and there are no positional attributes for
+   parameters, but adding them would improve functionality, add them.
+3) Functions must start and end with a line containing 80 hash (#) characters.
+4) Ensure the existence a simular line, with the right indent, with (#)
+   characters all the way, up and including column #79, between each parameter(!)
+   and function(!) you encounter.
+5) Don't add Pester configurations or change $VerbosePreference
+6) If you determine that a '| Out-Null' is unnecessary, remove it. However, if
+   adding to an ArrayList, ensure '| Out-Null' is used to suppress
+   index output.
+   Prefer: $null = Some-Command
+7) Variables used in test files should be set using the $Script:somevar
+   syntax. Preferably in global BeforeAll and AfterAll blocks
+8) Describe methods should add the CmdletName as first word in the description
+   followed by a space, this is might important to detect what function was
+   tested, since we need to parse the name from the Describe title!!
+9) Each line of code that is not trivially understandable must have a code
+   comment above it in plain English without capital letters.
+   Follow the guidelines from the book 'Code complete 2nd edition'
+   By reading only the code comments, one should fully understand what the
+    code does and how it does it.
+10) ONLY use BeforeAll or AfterAll or simular blocks inside a Describe blocks!
+11) Use the latest best practices for PowerShell, .NET, Windows, or any other
+    relevant API.
+12) Fix any code-smell issues.
+13) Use Microsoft.PowerShell.Utility\Write-Verbose to show essential informative messages without harming
+    performance.
+14) Always insert exactly one empty line after each opening curly brace
+   { before starting the code block's contents. Do not insert empty lines
+   before closing curly braces }. This provides clear visual separation of
+   code blocks while keeping closures compact. The first line of actual code
+   should always be preceded by one empty line after an opening brace.
+
+15) Never place an empty line between a code comment and its referenced code
+    line. And never commands on the same line, always above it.
+16) Always place at least one empty line between each code line or code line
+    and comment for a preceeding code line..
+17) Treat this as a refactoring: do not add, rename, or modify parameters or their
+    attributes (including ParameterSetName). Dependent code should remain working.
+    You can NOT introduce different behaviors, even if they are better code
+    practices. Only modify parameter documentation if it contains errors.
+18) Prefer [Prefer [System.IO] file routines above the standard PowerShell ones,
+    never use [System.IO.Path]::GetFullPath use 'GenXdev.FileSystem\Expand-Path $somevar' instead!
+19) function parameters start with Uppercase, internal variables start with
+    lowercase, enforce this.
+20) For readibility enforce that all code have new lines after '|' pipeline
+    symbols, and after parameters using back-ticks ` wraps.
+    Never use back-ticks to wrap items that are seperated by dots or when concating strings
+    this would break the code!!
+21) Enforce that each line is wrapped so that they dont exceed 80 characters,
+    just like this prompt text.
+    When wrapping string, make sure they are wrapped in parenthesis () !
+
+22) Use mocking when needed, use the correct form for -CommandName;
+    e.g: "GenXdev.AI\Start-AudioTranscription" instead of just the function
+    name!
+
+################################################################################
+
+If really necessary you can create a rule exception for ScriptAnalyzer rules:
+
+[CmdLetBinding(DefaultParameterSetName = "")]
+[System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "Get-SpotifyLyrics")]    [Alias("lyrics")]
+param(
+    # params
+)
+
+# function implementation
+
+################################################################################
+
+After processing, please:
+1. Provide a numbered checklist confirming each requirement was addressed
+2. Highlight any requirements that couldn't be fully met and explain why
+3. Summarize major changes made to meet requirements
+
+For each file modified, provide:
+1. Path as header
+2. Brief summary of changes
+3. Code block starting with filepath comment
+4. Use "# ...existing code..." for unchanged sections
+
+Never ask if I want to proceed, assume yes in those cases.
+Always proceed by implementing these changes systematically.
+
+After you are done, don't offer to run any command to check the results,
+this is already performed using scripting.
+
+Beware this is a script file from the scripts folder, and should NOT
+have a 'function somename' block arround it, as module scripts would have.
+
+IMPORTANT
+Whenever we finish discussing new updates to these rules,
+you update this text for me, with those rules, and update it in file
+.\Modules\GenXdev.Coding\3.33.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-ResolveFailedTest-sccript.txt

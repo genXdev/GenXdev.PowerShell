@@ -1,0 +1,177 @@
+````plaintext
+Primary task:
+Identify and fix unsafe `-Path` parameter usage in '$CmdletName' in '$ScriptFileName' by replacing with `-LiteralPath` where appropriate to prevent wildcard expansion and special character issues.
+
+Secondary task:
+Review all PowerShell cmdlet invocations that use `-Path` parameters and determine if they should use `-LiteralPath` instead for safer file and directory operations.
+
+UNSAFE -PATH USAGE DETECTION GUIDELINES:
+
+1) WHEN -PATH IS UNSAFE:
+   - When paths contain or might contain wildcard characters: *, ?, [], {}
+   - When paths come from variables that might contain special characters
+   - When paths include user input or dynamic content
+   - When you need exact literal path matching without pattern expansion
+   - When processing paths with square brackets [ ] in directory or file names
+   - When paths contain spaces followed by wildcard-like characters
+
+2) CMDLETS THAT SUPPORT -LITERALPATH:
+   The following cmdlets have both -Path and -LiteralPath parameters:
+   - Add-Content: Use -LiteralPath when content paths have special characters
+   - Clear-Content: Use -LiteralPath for exact file targeting
+   - Clear-Item: Use -LiteralPath to avoid accidental multiple item clearing
+   - Clear-ItemProperty: Use -LiteralPath for registry paths with brackets
+   - Convert-Path: Use -LiteralPath when converting paths with special chars
+   - ConvertFrom-Markdown: Use -LiteralPath for markdown files with brackets
+   - Copy-Item: Use -LiteralPath to prevent copying unintended files
+   - Copy-ItemProperty: Use -LiteralPath for precise property copying
+   - Export-Alias: Use -LiteralPath for export files with special names
+   - Export-Clixml: Use -LiteralPath for XML files with brackets
+   - Export-Csv: Use -LiteralPath for CSV files with special characters
+   - Export-FormatData: Use -LiteralPath for format files with brackets
+   - Format-Hex: Use -LiteralPath for binary files with special names
+   - Get-ChildItem: Use -LiteralPath when you want specific directory only
+   - Get-Content: Use -LiteralPath for files with brackets or wildcards in name
+   - Get-FileHash: Use -LiteralPath for files with special characters
+   - Get-Item: Use -LiteralPath when targeting one specific item
+   - Get-ItemProperty: Use -LiteralPath for registry keys with brackets
+   - Get-ItemPropertyValue: Use -LiteralPath for specific property access
+   - Import-Alias: Use -LiteralPath for alias files with special names
+   - Import-Clixml: Use -LiteralPath for XML files with brackets
+   - Import-Csv: Use -LiteralPath for CSV files with special characters
+   - Import-PowerShellDataFile: Use -LiteralPath for .psd1 files with brackets
+   - Invoke-Item: Use -LiteralPath to open specific file only
+   - Move-Item: Use -LiteralPath to prevent moving unintended items
+   - Move-ItemProperty: Use -LiteralPath for precise property moves
+   - New-ItemProperty: Use -LiteralPath for registry path precision
+   - Out-File: Use -LiteralPath for output files with special names
+   - Push-Location: Use -LiteralPath for directories with brackets
+   - Remove-Item: Use -LiteralPath to avoid deleting unintended files
+   - Remove-ItemProperty: Use -LiteralPath for precise property removal
+   - Rename-Item: Use -LiteralPath for items with special characters
+   - Rename-ItemProperty: Use -LiteralPath for property name precision
+   - Resolve-Path: Use -LiteralPath when resolving paths with brackets
+   - Select-String: Use -LiteralPath for files with brackets in names
+   - Select-Xml: Use -LiteralPath for XML files with special characters
+   - Set-Content: Use -LiteralPath for files with brackets or wildcards
+   - Set-Item: Use -LiteralPath for precise item targeting
+   - Set-ItemProperty: Use -LiteralPath for registry precision
+   - Set-Location: Use -LiteralPath for directories with special characters
+   - Show-Markdown: Use -LiteralPath for markdown files with brackets
+   - Split-Path: Use -LiteralPath when splitting paths with special chars
+   - Tee-Object: Use -LiteralPath for output files with special names
+   - Test-Json: Use -LiteralPath for JSON files with brackets
+   - Test-Path: Use -LiteralPath when testing specific path existence
+   - Unblock-File: Use -LiteralPath for files with special characters
+
+3) RISK SCENARIOS:
+
+   HIGH RISK - Variables containing paths:
+   ```powershell
+   # UNSAFE: $filePath might contain wildcards
+   Get-Content -Path $filePath
+
+   # SAFE: Treats path literally
+   Get-Content -LiteralPath $filePath
+   ```
+
+   HIGH RISK - Paths with brackets:
+   ```powershell
+   # UNSAFE: [1] is treated as character class wildcard
+   Get-Item -Path "C:\Folder[1]\file.txt"
+
+   # SAFE: [1] is treated as literal characters
+   Get-Item -LiteralPath "C:\Folder[1]\file.txt"
+   ```
+
+   MEDIUM RISK - User input or constructed paths:
+   ```powershell
+   # UNSAFE: User input might contain wildcards
+   $userPath = Read-Host "Enter path"
+   Remove-Item -Path $userPath
+
+   # SAFE: User input treated literally
+   Remove-Item -LiteralPath $userPath
+   ```
+
+4) WHEN -PATH IS APPROPRIATE:
+   - When you intentionally want wildcard expansion
+   - When using literal string paths with no special characters
+   - When implementing search functionality with wildcards
+   - When the cmdlet doesn't support -LiteralPath parameter
+
+5) DETECTION PATTERNS:
+   Look for these patterns that indicate unsafe -Path usage:
+   - `-Path $variable` where variable might contain special characters
+   - `-Path` followed by variables containing user input
+   - Paths that might include brackets, asterisks, or question marks
+   - Dynamic path construction that could introduce wildcards
+   - Registry paths that might contain bracket characters
+
+6) TRANSFORMATION EXAMPLES:
+
+   BEFORE (unsafe variable usage):
+   ```powershell
+   $configFile = "C:\Config[Test]\app.config"
+   Get-Content -Path $configFile
+   ```
+
+   AFTER (safe literal path):
+   ```powershell
+   $configFile = "C:\Config[Test]\app.config"
+   Get-Content -LiteralPath $configFile
+   ```
+
+   BEFORE (unsafe constructed path):
+   ```powershell
+   $basePath = "C:\Data"
+   $fileName = Get-UserInput  # might contain wildcards
+   $fullPath = Join-Path $basePath $fileName
+   Remove-Item -Path $fullPath
+   ```
+
+   AFTER (safe literal path):
+   ```powershell
+   $basePath = "C:\Data"
+   $fileName = Get-UserInput  # might contain wildcards
+   $fullPath = Join-Path $basePath $fileName
+   Remove-Item -LiteralPath $fullPath
+   ```
+
+7) REGISTRY PATH SAFETY:
+   Registry paths often contain brackets which are wildcard characters:
+   ```powershell
+   # UNSAFE: Brackets treated as wildcards
+   Get-ItemProperty -Path "HKLM:\Software\Microsoft\.NETFramework\v4.0.30319"
+
+   # SAFE: Brackets treated literally
+   Get-ItemProperty -LiteralPath "HKLM:\Software\Microsoft\.NETFramework\v4.0.30319"
+   ```
+
+8) PERFORMANCE CONSIDERATIONS:
+   - -LiteralPath is often faster as it skips wildcard processing
+   - No performance penalty when no wildcards are involved
+   - Safer for automated scripts and background processing
+
+IMPLEMENTATION STEPS:
+1. Identify all cmdlet invocations using -Path parameter
+2. Analyze if the path might contain special characters or wildcards
+3. Check if the cmdlet supports -LiteralPath parameter
+4. Replace -Path with -LiteralPath where appropriate
+5. Test to ensure functionality remains correct
+6. Add comments explaining the safety improvement where helpful
+
+IMPORTANT: Only change -Path to -LiteralPath when:
+- The cmdlet supports -LiteralPath parameter
+- The path might contain special characters or comes from variables
+- You want to prevent unintended wildcard expansion
+- The operation should target exactly one specific item
+
+Remember: The goal is to prevent accidental file operations on unintended files due to wildcard expansion while maintaining the exact same intended functionality.
+
+$Prompt
+````
+IMPORTANT
+Whenever we finish discussing new updates to these rules,
+you update this text for me, with those rules, and update it in file
+.\Modules\GenXdev.Coding\3.33.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-UnsafePathUsage.txt

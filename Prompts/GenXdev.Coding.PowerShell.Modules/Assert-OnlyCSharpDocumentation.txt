@@ -1,0 +1,179 @@
+Primary task:
+Improve documentation and XML comments in C# cmdlet '$CmdletName' in '$ScriptFileName'.
+
+Secondary task:
+Ensure compliance with these 24 requirements:
+
+1) IMPORTANT HEADER RULE: Do not modify any header lines, especially those starting with // ################################################################################ or ending with ################################################################################. The header block ends with the line containing ################################################################################ followed by appropriate spacing. All documentation and code changes must be made after this header separator to preserve automatic header generation integrity.
+
+2) The file must start with copyright header and end with appropriate file closure.
+3) Convert any existing class-level XML comments (/// <summary>,
+   /// <remarks>, /// <para type="synopsis">, etc.) and /// <param
+   name="..."> tags into a single [System.ComponentModel.Description(@"...")]
+   attribute placed directly above the [Cmdlet(...)] attribute. Use the
+   old text as a base — improve it where needed. AFTER the new
+   [Description] attribute is in place, REMOVE all the old class-level
+   XML comments and /// <param> tags. HelpMessage in [Parameter()]
+   replaces the parameter doc role. This is the NEW help system for
+   GenXdev C# cmdlets. The reference implementation is Find-Item.Cmdlet.cs.
+   The reference implementation is Find-Item.Cmdlet.cs. The attribute value
+   uses standard PowerShell comment-based help syntax:
+     - .SYNOPSIS — one-line summary
+     - .DESCRIPTION — detailed description with bullet points using *
+     - .PARAMETER ParamName — per-parameter help text (optional, can also
+       use /// <summary> on the property)
+     - .EXAMPLE — code block + description
+   IMPORTANT: The Description attribute string spans multiple lines and uses
+   PowerShell verbatim string syntax (no C# escape sequences needed). Each
+   help section line should be indented to align with the opening @" marker.
+   Example:
+   ```csharp
+   [System.ComponentModel.Description(@"
+   .SYNOPSIS
+   Brief description.
+   .DESCRIPTION
+   * Bullet point one
+   * Bullet point two
+   .EXAMPLE
+   ```powershell
+   Verb-Noun -Param value
+   ```
+
+   Description of the example.
+   ")]
+   [Cmdlet(VerbsCommon.Get, "Example")]
+   ```
+4) Each parameter property should have:
+   - Proper C# parameter attributes ([Parameter], [Alias], etc.) vertically aligned
+   - When using [Alias], specify all aliases in a single attribute: [Alias("alias1", "alias2", ...)]
+   - XML documentation comments (///) above each parameter
+   - Parameter names following PascalCase convention
+   - Switch parameters should use SwitchParameter type and come after regular parameters
+5) Class must inherit from PSGenXdevCmdlet (not PSCmdlet directly) and
+   implement BeginProcessing(), ProcessRecord(), and EndProcessing()
+   methods. If a method is empty, do not add code comments.
+6) Each line of code that is not trivially understandable must have a code comment above it in plain English.
+   Follow the guidelines from the book 'Code complete 2nd edition'
+7) By reading only the code comments and XML documentation, one should fully understand what the code does and how it does it.
+8) Use WriteVerbose() for essential informative messages without harming performance.
+9) Always insert exactly one empty line after each opening curly brace { before starting the code block's contents. Do not insert empty lines before closing curly braces }. This provides clear visual separation of code blocks while keeping closures compact.
+10) Never place an empty line between a code comment and its referenced code line. Comments should be immediately above the code they describe.
+11) Always place at least one empty line between each code line or code block for readability.
+12) DO NOT MODIFY ANY FUNCTIONAL CODE. Only add/modify XML comments, code comments, and formatting (line wrapping/indentation).
+    All existing code including parameter attributes, validation, variables, logic, and functionality must remain exactly as-is.
+13) Properties and methods use PascalCase, private fields use camelCase, enforce this.
+14) For readability enforce that long lines are wrapped appropriately, avoiding excessive line lengths.
+    When wrapping method calls or expressions, maintain logical grouping.
+15) Enforce that each line is wrapped so that they don't exceed 100 characters for better readability.
+    When wrapping strings or expressions, use appropriate continuation.
+16) Use proper .NET exception handling patterns with try-catch blocks where appropriate.
+17) Make sure all parameters are represented in the XML documentation comments.
+
+18) Never add comments indicating changes made, such as '// <--- Comment added here' or similar markers.
+
+19) Ensure proper using statements below the header block at the top of the file for all referenced namespaces, organized appropriately.
+20) Avoid building scripts as strings with parameter values to prevent escaping issues and reliance on valid input. For simple cmdlet invocations that return a single value, use the InvokeScript<T>(string script) base method. For scripts with parameters, use ScriptBlock.Create() with a param block and Invoke() with object arguments for safe script execution. Examples:
+   - Simple lookup: `var port = InvokeScript<int>("GenXdev.Webbrowser\\Get-ChromeRemoteDebuggingPort");`
+   - With parameters: `var script = ScriptBlock.Create("param($p1) Some-Cmdlet -Param $p1"); script.Invoke(value);`
+
+21) Inside a ScriptBlock, PowerShell script cannot have normal double-quoted strings spanning multiple lines. Multi-line strings should be constructed using parentheses and string concatenation with + at the end of lines for continuation.
+22) For path expansion, always enforce the use of invoking GenXdev.FileSystem\Expand-Path using ScriptBlock.Create with parameters to maintain exact PowerShell path resolution behavior, as it considers the current PowerShell location rather than the process working directory.
+
+23) When converting $PSScriptRoot-relative paths in .ps1 files, ModuleBase is always 2 levels up from $PSScriptRoot in GenXdev modules. Subtract 2 from the number of '..' in the original PowerShell path. For example, if .ps1 uses $($MyInvocation.MyCommand.Module.ModuleBase)\..\..\..\Path (5 ..), use Path.GetFullPath(Path.Combine(ModuleBase, "..", "..", "..", "Path")) (3 ..). This ensures identical path resolution while using ModuleBase for compiled cmdlets.
+
+24) Prefer native C# implementations for operations that can be done directly in .NET without calling PowerShell, such as setting TLS protocols, basic string operations, or simple .NET API calls. Only use ScriptBlock.Create() or InvokeCommand when the operation requires PowerShell-specific functionality or when exact PowerShell behavior must be preserved.
+
+IMPORTANT HEADER NOTE: Do not modify any header lines, especially those starting with // ################################################################################ or ending with ################################################################################. The header block ends with appropriate spacing. All documentation and code changes must be made after this header separator to preserve automatic header generation integrity.
+
+
+An example of how it should look technically and cosmetically.
+The reference implementation is:
+  Functions\GenXdev.FileSystem\Find-Item.Cmdlet.cs
+
+```csharp
+
+using System.Collections;
+using System.Management.Automation;
+
+namespace GenXdev.FileSystem
+{
+
+    [Cmdlet(VerbsCommon.Get, "Example")]
+    [OutputType(typeof(string))]
+    [System.ComponentModel.Description(@"
+.SYNOPSIS
+Brief description of the cmdlet.
+.DESCRIPTION
+* Detailed description bullet one
+* Detailed description bullet two
+.EXAMPLE
+```powershell
+Get-Example -ParamName value
+```
+
+Description of the example.
+")]
+    public partial class GetExampleCommand : PSGenXdevCmdlet
+    {
+
+        /// <summary>
+        /// Description of the parameter.
+        /// </summary>
+        [Parameter(
+            Mandatory = true,
+            Position = 0,
+            HelpMessage = "Description of parameter")]
+        [ValidateNotNullOrEmpty]
+        public string ParamName { get; set; }
+
+        /// <summary>
+        /// Begin processing — initialization logic
+        /// </summary>
+        protected override void BeginProcessing()
+        {
+
+            WriteVerbose("Starting cmdlet execution");
+        }
+
+        /// <summary>
+        /// Process record — main cmdlet logic
+        /// </summary>
+        protected override void ProcessRecord()
+        {
+
+            // Implementation here
+            WriteObject("result");
+        }
+
+        /// <summary>
+        /// End processing — cleanup logic
+        /// </summary>
+        protected override void EndProcessing()
+        {
+
+            // Cleanup if needed
+        }
+    }
+}
+```
+
+After processing, please:
+1. Provide a numbered checklist confirming each requirement was addressed
+2. Highlight any requirements that couldn't be fully met and explain why
+3. Summarize major changes made to meet requirements
+
+For each file modified, provide:
+1. Path as header
+2. Brief summary of changes
+3. Code block starting with filepath comment
+4. Use "# ...existing code..." for unchanged sections
+
+Never ask if I want to proceed, assume yes in those cases.
+Always proceed by implementing these changes systematically.
+
+$Prompt
+
+IMPORTANT
+Whenever we finish discussing new rules for improving C# cmdlet documentation,
+you update this text for me, with those rules, and update it in file
+.\Modules\GenXdev.Coding\3.33.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-OnlyCSharpDocumentation.txt

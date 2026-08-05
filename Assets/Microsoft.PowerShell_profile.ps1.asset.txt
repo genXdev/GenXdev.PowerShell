@@ -1,0 +1,73 @@
+$OldLocation = $PWD
+try {
+
+
+    Import-Module 'Microsoft.PowerShell.Management'
+    # Import-Module 'GenXdev.Local'
+
+    Initialize-SearchPaths
+
+    # append local scripts and modules paths to environment path
+    $scriptsPath = [System.IO.Path]::Combine(
+        [System.IO.Path]::GetDirectoryName($profile),
+        'Scripts')
+    $modulesPath =  GenXdev\Expand-Path "$($Env:LOCALAPPDATA)\GenXdev.PowerShell\" `
+        -CreateDirectory
+    $env:Path = "$scriptsPath;$modulesPath;$($env:Path);${env:ProgramFiles}\7-Zip\"
+
+    Set-GenXdevCommandNotFoundAction 
+
+    $Global:HostedInVsCode = [System.Environment]::CommandLine -contains 'PowerShellEditorServices.VSCode';
+}
+finally {
+
+    Set-Location $OldLocation
+}
+
+###############################################################################
+if (($PWD -like 'c:\windows\system32') -or ($PWD -like (Expand-Path '~\'))) {
+
+    Set-Location $PSScriptRoot
+}
+
+$PSDefaultParameterValues = @{
+
+     # auto unload models to safe memory after 15 minutes of inactivity
+    'Invoke-LLMQuery:TTLSeconds'              = 900
+
+    # set 70b parameter model for script error fix prompts
+    'Get-ScriptExecutionErrorFixPrompt:Model' = '*70b*'
+
+    # make sure Get-ChildItem works smoothly
+    'Get-ChildItem:ErrorAction'               = 'Continue'
+    'Get-ChildItem:Force'                     = $true
+
+    # keep last results in variable
+    'Out-Default:OutVariable'                 = 'LastOut'
+
+    # set default for Open-Webbrowser
+    'Open-Webbrowser:Url'                     = 'https://grok.com/?referrer=website'
+    'Open-WebbrowserSideBySide:Url'           = 'https://grok.com/?referrer=website'
+
+    # use different browser for youtube videos
+    # so killing browsers will not close youtube videos
+    'Open-AllYoutubeVideos:Chrome'            = $true
+
+    # open in secondary monitor if available
+    'Open-Webbrowser:Monitor'                 = -2;
+
+    # open in side by side mode
+    'Open-CloudLLMChat:SideBySide'            = $true
+    'Open-SearchEngine:SideBySide'            = $true
+}
+
+function Edit-Profile {
+
+    [CmdletBinding()]
+    [Alias('editprofile')]
+    param()
+
+    & "$PSScriptRoot\scripts\p.ps1" -c
+    VSCode '.\Microsoft.PowerShell_profile.ps1'
+    VSCode $profile.CurrentUserAllHosts
+}

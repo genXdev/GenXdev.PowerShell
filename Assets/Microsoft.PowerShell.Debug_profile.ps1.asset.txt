@@ -1,0 +1,38 @@
+try {
+
+    # Set-PSBreakpoint -Script "$PSScriptRoot\Microsoft.PowerShell.Debug_profile.ps1" -Line 8
+
+    "Now debugging - press F10 to continue and continue debugging other scripts,
+    by first setting breakpoints in scriptfiles and then by entering the corresponding command on the (now focused) debug prompt" | Microsoft.PowerShell.Core\Out-Host
+
+    ############################################################################################################
+    $PSDebugPreference = "continue"
+    $ErrorActionPreference = 'SilentlyContinue'
+    $verbosePreference = "SilentlyContinue"
+    $verbosePreference = "SilentlyContinue"
+    $WarningPreference = "SilentlyContinue"
+    $ErrorView = 'DetailedView'
+    ############################################################################################################
+
+    . "$PSScriptRoot\Microsoft.PowerShell_profile.ps1"
+
+    ############################################################################################################
+    $PSDebugPreference = "Inquire"
+    $verbosePreference = "Continue"
+    $ErrorActionPreference = 'Break'
+    $WarningPreference = "Break"
+    ############################################################################################################
+    # letsfixthis -ShowWindow -Script {    }
+
+    ############################################################################################################
+    rungenxdevtests -TestFailedAction SolveWithAI -IncludeScripts
+    ############################################################################################################
+}
+Catch {
+
+    Microsoft.PowerShell.Utility\Write-Host @"
+$($PSItem.Exception) $($PSItem.InvocationInfo.PositionMessage)
+$($PSItem.InvocationInfo.Line)
+$($PSItem.InvocationInfo.ScriptStackTrace)
+"@
+}

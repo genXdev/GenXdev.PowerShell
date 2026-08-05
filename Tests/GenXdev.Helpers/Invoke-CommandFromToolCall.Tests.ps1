@@ -1,0 +1,112 @@
+Pester\Describe 'Invoke-CommandFromToolCall cmdlet tests' {
+
+    Pester\BeforeAll {
+        # store test variables in script scope
+        $Script:testFunctions = @(
+            @{
+                function = @{
+                    name       = 'Get-Movies'
+                    parameters = @{
+                        required   = @('path')
+                        properties = @{
+                            path = @{ type = 'string' }
+                        }
+                    }
+                    # fixed callback to return proper movie data
+                    callback   = {
+                        param($path)
+                        return @{
+                            movies = @(
+                                'Movie1',
+                                'Movie2'
+                            )
+                            path   = $path
+                        } | Microsoft.PowerShell.Utility\ConvertTo-Json
+                    }
+                }
+            }
+        )
+
+        $Script:testCmdlets = @(
+            [GenXdev.Helpers.ExposedCmdletDefinition]@{
+                Name          = 'Get-Movies'
+                AllowedParams = @('path')
+                Confirm       = $false
+            }
+        )
+
+        $Script:testToolCall = @{
+            function = @{
+                name      = 'Get-Movies'
+                arguments = '{"path":"B:\\"}'
+            }
+        }
+    }
+
+    Pester\It 'Should reject invalid parameters' {
+        # create test call with invalid parameter
+        $invalidCall = @{
+            function = @{
+                name      = 'Get-Movies'
+                arguments = '{"invalidParam":"test"}'
+            }
+        }
+
+        $result = GenXdev\Invoke-CommandFromToolCall `
+            -ToolCall $invalidCall `
+            -Functions $Script:testFunctions
+
+        $result.CommandExposed | Pester\Should -Be $false
+        $result.Reason | Pester\Should -Not -BeNullOrEmpty
+    }
+
+    Pester\It 'Should require confirmation by default' {
+        # mock host UI for confirmation prompt
+        Pester\Mock -CommandName 'Read-Host' -ModuleName 'GenXdev' -MockWith { return 'y' }
+
+        $result = GenXdev\Invoke-CommandFromToolCall `
+            -ToolCall $Script:testToolCall `
+            -Functions $Script:testFunctions `
+            -ExposedCmdLets $Script:testCmdlets
+
+        $result.CommandExposed | Pester\Should -Be $true
+        $result.Output | Pester\Should -Not -BeNullOrEmpty
+    }
+
+    Pester\It 'Should handle missing required parameters' {
+        # create test call without required parameter
+        $invalidCall = @{
+            function = @{
+                name      = 'Get-Movies'
+                arguments = '{}'
+            }
+        }
+
+        $result = GenXdev\Invoke-CommandFromToolCall `
+            -ToolCall $invalidCall `
+            -Functions $Script:testFunctions
+
+        $result.CommandExposed | Pester\Should -Be $false
+        $result.Reason | Pester\Should -BeLike '*Missing required parameter*'
+    }
+
+    Pester\It 'Should execute command with proper output format' {
+        $result = GenXdev\Invoke-CommandFromToolCall `
+            -ToolCall $Script:testToolCall `
+            -Functions $Script:testFunctions `
+            -ExposedCmdLets $Script:testCmdlets `
+            -NoConfirmationToolFunctionNames @('Get-Movies')
+
+        # verify successful execution
+        $result.CommandExposed | Pester\Should -Be $true
+        $result.Output | Pester\Should -Not -BeNullOrEmpty
+
+        # parse and verify JSON output
+        $jsonOutput = $result.Output | Microsoft.PowerShell.Utility\ConvertFrom-Json
+        $jsonOutput.movies | Pester\Should -Not -BeNullOrEmpty
+        $jsonOutput.movies.Count | Pester\Should -Be 2
+        $jsonOutput.movies[0] | Pester\Should -Be 'Movie1'
+        $jsonOutput.movies[1] | Pester\Should -Be 'Movie2'
+        $jsonOutput.path | Pester\Should -Be 'B:\'
+    }
+}

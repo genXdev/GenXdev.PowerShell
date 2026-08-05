@@ -1,0 +1,643 @@
+using System.Collections.Concurrent;
+using System.Management.Automation;
+
+namespace GenXdev.FileSystem
+{
+
+    public partial class FindItem : PSGenXdevCmdlet
+    {
+        /// <summary>
+        /// Sets up parallelism configuration based on user input or system defaults,
+        /// including thread pool sizing and dynamic worker scaling.
+        /// </summary>
+        private void InitializeParallelismConfiguration()
+        {
+
+            // determine actions
+            matchingFileContent = Content != null && Content.Length > 0 && (
+                (Content.Any(c => c != ".*" && !SimpleMatch.ToBool()) ||
+                (Content.Any(c => c != "*" && SimpleMatch.ToBool()))));
+
+            // how many files at once? what user wants, or default to core count
+            baseTargetWorkerCount =
+                MaxDegreeOfParallelism <= 0 ?
+                GetCoreCount() :
+                Math.Max(1, MaxDegreeOfParallelism / 2);
+
+            buffersFull = () =>
+            {
+                return VerboseQueue.Count > 100000 || OutputQueue.Count > 100000;
+            };
+
+            // stop finding files when the queues get too full
+            maxDirectoryWorkersInParallel = () =>
+            {
+                int minDirectoryProcessors =
+                    isStarted && matchingFileContent && !MatchContentProcessors.IsEmpty ?
+                    0 : (DirQueue.IsEmpty ? 0 : 1);
+
+                // we are thinking about the memory being used
+                // for storing paths to process
+                // On first call (before initial workers start), skip buffer check
+                // After that, check all queues including verbose to prevent overflow
+                if (!initialWorkerStarted)
+                {
+                    return Math.Max(minDirectoryProcessors, Math.Min(
+                        DirQueue.Count + (DirQueue.Count > 0 ? 0 :
+                            Interlocked.Read(ref filesFound) > 0 ? 0 :
+                            UpwardsDirQueue.Count),
+                        Math.Max(
+                            baseTargetWorkerCount,
+                            (int)Interlocked.Read(ref recommendedDirectoryWorkers)
+                        )
+                    ));
+                }
+
+                // After initial worker started, check buffers before allowing more
+                return Math.Max(minDirectoryProcessors,
+                    buffersFull() ? 0 :
+                    Math.Min(
+                        DirQueue.Count + (DirQueue.Count > 0 ? 0 :
+                            Interlocked.Read(ref filesFound) > 0 ? 0 :
+                            UpwardsDirQueue.Count),
+                        Math.Max(
+                            baseTargetWorkerCount,
+                            (int)Interlocked.Read(ref recommendedDirectoryWorkers)
+                        )
+                    )
+                );
+            };
+
+
+            // dynamicly scale according to how full buffers are getting
+            maxMatchWorkersInParallel = () =>
+            {
+                if (!matchingFileContent) return 0;
+                int minDirectoryProcessors =
+                    matchingFileContent && !MatchContentProcessors.IsEmpty ?
+                    0 : DirQueue.IsEmpty ? 0 : 1;
+                int minContentProcessors = matchingFileContent &&
+                   minDirectoryProcessors == 0 ? 1 : 0;
+
+                int recMatchWorkers = (int)Interlocked.Read(ref recommendedMatchWorkers);
+                return Math.Max(minDirectoryProcessors,
+                    Math.Min(
+                    Math.Min(
+                            // idealy as much as possible
+                            FileContentMatchQueue.Count,
+                            // if user wants one we take one
+                            MaxDegreeOfParallelism == 1 ? 1 : int.MaxValue
+                    ),
+                    Math.Max(
+                        Math.Min(
+                            // idealy as much as possible
+                            FileContentMatchQueue.Count,
+                            // limit to twice the target worker count (or throughput recommendation)
+                            Math.Max(baseTargetWorkerCount * 2, recMatchWorkers)
+                            // and share it with directory workers
+                            // so when they get throttled, we can use more for matching
+                            ) - maxDirectoryWorkersInParallel(),
+                        Math.Min(
+                            // idealy as much as possible
+                            FileContentMatchQueue.Count,
+                            // limit to twice the target worker count (or throughput recommendation)
+                            Math.Max(baseTargetWorkerCount, recMatchWorkers)
+                        )
+                    )
+                ));
+            };
+
+            // we will only temporarily change the thread pool size
+            ThreadPool.GetMaxThreads(out this.oldMaxWorkerThread,
+                out this.oldMaxCompletionPorts);
+
+            int workerThreads = Math.Max(1,
+                Math.Max(this.oldMaxWorkerThread, maxDirectoryWorkersInParallel() * 2));
+            int completionPortThreads = Math.Max(1,
+                Math.Max(this.oldMaxCompletionPorts, maxMatchWorkersInParallel()));
+
+            // increase thread pool size if needed
+            ThreadPool.SetMaxThreads(
+
+                // worker threads
+                // used for Directory processors and Match processors
+                workerThreads,
+
+                // used after async IO operations
+                completionPortThreads
+             );
+
+            if (UseVerboseOutput)
+            {
+                VerboseQueue.Enqueue(
+                    $"Max worker threads set to {workerThreads}, " +
+                    $"completion port threads set to {completionPortThreads}");
+                VerboseQueue.Enqueue($"Base target worker count: {baseTargetWorkerCount}");
+                VerboseQueue.Enqueue($"Using content matching: {matchingFileContent}");
+                if (matchingFileContent)
+                {
+                    VerboseQueue.Enqueue(
+                        $"Max match workers in parallel: {maxMatchWorkersInParallel()}");
+                }
+                VerboseQueue.Enqueue(
+                    $"Max directory workers in parallel: {maxDirectoryWorkersInParallel()}");
+                VerboseQueue.Enqueue(
+                    $"Throughput-based adaptive scaling enabled with 1000ms measurement intervals");
+            }
+
+            // Initialize throughput-based recommendations with baseline values (thread-safe)
+            Interlocked.Exchange(ref recommendedDirectoryWorkers, baseTargetWorkerCount);
+            Interlocked.Exchange(ref recommendedMatchWorkers, baseTargetWorkerCount);
+            Interlocked.Exchange(ref lastThroughputMeasurement, DateTime.UtcNow.Ticks);
+        }
+
+        /// <summary>
+        /// Initializes the search by processing provided name patterns and preparing
+        /// search directories, including support for multiple masks and upward searches.
+        /// </summary>
+        private void InitializeProvidedNames()
+        {
+
+            // process each unique search mask provided
+            if (Name != null && Name.Length > 0)
+            {
+                // loop through each mask
+                foreach (var name in Name)
+                {
+                    foreach (var namePart in name.Split(";"))
+                    {
+
+                        // check if mask already processed to avoid duplicates
+                        if (VisitedNodes.TryAdd("start;" + namePart, true))
+                        {
+
+                            // log processing of mask if verbose enabled
+                            if (UseVerboseOutput)
+                            {
+                                VerboseQueue.Enqueue($"Processing name: {namePart}");
+                            }
+
+                            // prepare search starting point
+                            InitializeSearchDirectory(namePart, true);
+                        }
+                        else if (UseVerboseOutput)
+                        {
+
+                            // log skipping duplicate mask
+                            WriteWarning($"Skipping duplicate name: {namePart}");
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets up a cancellation token source with optional timeout configuration
+        /// to allow graceful termination of long-running search operations.
+        /// </summary>
+        protected void InitializeCancellationToken()
+        {
+
+            // create token source
+            // Set up cancellation with optional timeout
+            cts = new CancellationTokenSource();
+
+            // apply timeout if specified and greater than 0
+            if (TimeoutSeconds.HasValue && TimeoutSeconds.Value > 0)
+            {
+                cts.CancelAfter(TimeSpan.FromSeconds(TimeoutSeconds.Value));
+
+                // log timeout if verbose
+                if (UseVerboseOutput)
+                {
+                    VerboseQueue.Enqueue($"Search timeout set to {TimeoutSeconds.Value} seconds");
+                }
+            }
+            else if (UseVerboseOutput && TimeoutSeconds.HasValue)
+            {
+                VerboseQueue.Enqueue($"Search timeout set to 0 seconds (no timeout)");
+            }
+        }
+
+        /// <summary>
+        /// Configures memory buffering limits based on available system RAM to prevent
+        /// memory exhaustion during large file searches while maintaining performance.
+        /// </summary>
+        protected void InitializeBufferingConfiguration()
+        {
+
+            // calculate max file size from ram
+            // Calculate max file size based on available RAM to prevent memory
+            // issues
+            baseMemoryPerWorker = Math.Max(
+                // minimal 2MB
+                1024 * 1024 * 2,
+                Math.Min(
+                    // max 10 mb
+                    1024 * 1024 * 50,
+
+                        (int)Math.Round(
+
+                            // shoot for approximately max 5% of free ram available
+                            // for this user invoced PowerShell search
+                            (
+                                GetFreeRamInBytes() * 0.05d
+
+                             ) / Math.Max(1, Convert.ToDouble(baseTargetWorkerCount)),
+                            0
+                        )
+                )
+            );
+
+            if (UseVerboseOutput)
+            {
+                VerboseQueue.Enqueue(
+                    $"Base memory per worker set to {baseMemoryPerWorker / (1024 * 1024)} MB");
+            }
+        }
+
+        /// <summary>
+        /// Resolves and normalizes the relative base directory path for search operations,
+        /// handling both absolute and relative path specifications.
+        /// </summary>
+        /// <remarks>
+        /// Ensure InitializeCurrentDirectory() is called before this method to set CurrentDirectory.
+        /// </remarks>
+        protected void InitializeRelativeBaseDir()
+        {
+
+            // declare base dir
+            string baseDir;
+
+            // check if base path provided
+            if (!string.IsNullOrEmpty(RelativeBasePath))
+            {
+
+                // use full path if rooted
+                if (Path.IsPathRooted(RelativeBasePath))
+                {
+                    baseDir = Path.GetFullPath(RelativeBasePath);
+                }
+                else
+                {
+
+                    // combine with current if relative
+                    if (string.IsNullOrEmpty(CurrentDirectory))
+                    {
+                        throw new InvalidOperationException("CurrentDirectory must be initialized before calling InitializeRelativeBaseDir. Call InitializeCurrentDirectory() first.");
+                    }
+                    baseDir = Path.GetFullPath(Path.Combine(CurrentDirectory, RelativeBasePath));
+                }
+            }
+            else
+            {
+
+                // default to current
+                baseDir = Path.GetFullPath(CurrentDirectory);
+            }
+
+            // set relative base
+            RelativeBasePath = baseDir;
+
+            if (UseVerboseOutput)
+            {
+                VerboseQueue.Enqueue($"Using relative base directory: {RelativeBasePath}");
+            }
+        }
+
+        /// <summary>
+        /// Safely determines and validates the current working directory by querying
+        /// PowerShell's location, with fallback to user profile if invalid.
+        /// </summary>
+        protected void InitializeCurrentDirectory()
+        {
+
+            // get powershell location
+            // Get current PowerShell location for base directory
+            var psLocation = InvokeScript<string>("(Get-Location).Path");
+
+            // declare safe dir
+            string safeDir = null;
+
+            // declare validity
+            bool isValid = false;
+
+            // try to validate
+            try
+            {
+
+                if (psLocation.StartsWith("Microsoft.PowerShell.Core\\FileSystem::\\\\"))
+                {
+                    // For UNC paths, use the path as-is since Path.GetFullPath can modify UNC paths
+                    psLocation = psLocation.Substring("Microsoft.PowerShell.Core\\FileSystem::".Length);
+                }
+
+                // get full path
+                // Validate and get full path
+                safeDir = Path.GetFullPath(psLocation);
+
+                // check existence
+                isValid = System.IO.Directory.Exists(safeDir);
+            }
+            catch
+            {
+
+                // log invalid if verbose
+                if (UseVerboseOutput)
+                {
+                    VerboseQueue.Enqueue($"Invalid current directory path: {psLocation}");
+                }
+
+                // set invalid
+                isValid = false;
+            }
+
+            // use if valid
+            if (isValid)
+            {
+                CurrentDirectory = safeDir;
+
+                // log if verbose
+                if (UseVerboseOutput)
+                {
+                    VerboseQueue.Enqueue($"Using current directory: {CurrentDirectory}");
+                }
+            }
+            else
+            {
+
+                // default to profile
+                // Default to user profile if current directory invalid
+                CurrentDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+                // log default if verbose
+                if (UseVerboseOutput)
+                {
+                    VerboseQueue.Enqueue($"Defaulted to user profile directory: {CurrentDirectory}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets up wildcard patterns for excluding files and directories from the search,
+        /// with platform-aware case sensitivity and default exclusions.
+        /// </summary>
+        protected void InitializeExcludePatterns()
+        {
+
+            // set options based on casing
+            this.CurrentWildCardOptions = CaseNameMatching == MatchCasing.PlatformDefault ? (
+                         // windows or linux based?
+                         Environment.OSVersion.Platform == PlatformID.Win32NT ?
+                         WildcardOptions.IgnoreCase |
+                         WildcardOptions.CultureInvariant : WildcardOptions.CultureInvariant
+                    ) : CaseNameMatching == MatchCasing.CaseInsensitive ? (
+                       WildcardOptions.IgnoreCase |
+                       WildcardOptions.CultureInvariant
+                    ) : WildcardOptions.CultureInvariant;
+
+            // create file exclude patterns
+            FileExcludePatterns = Exclude.Select(
+                p => WildcardPattern.Get(p, CurrentWildCardOptions)
+            ).ToArray();
+
+            // create dir exclude patterns
+            DirectoryExcludePatterns = Exclude.Select(
+                p => WildcardPattern.Get(p.EndsWith("\\") ? p.TrimEnd('\\') : p, CurrentWildCardOptions)
+            ).ToArray();
+
+            // default git exclusion if none
+            if (DirectoryExcludePatterns.Length == 0)
+            {
+                DirectoryExcludePatterns = new WildcardPattern[1] {
+                    new WildcardPattern(EscapeBracketsInPattern("*\\.git"), CurrentWildCardOptions) };
+            }
+
+            if (UseVerboseOutput)
+            {
+                VerboseQueue.Enqueue(
+                    $"Using {FileExcludePatterns.Length} file exclude patterns and " +
+                    $"{DirectoryExcludePatterns.Length} directory exclude patterns.");
+                foreach (var pattern in Exclude)
+                {
+                    VerboseQueue.Enqueue($" Exclude pattern: '{pattern}'");
+                }
+
+                if (DirectoryExcludePatterns.Length == 1 && Exclude.Length == 0)
+                {
+                    VerboseQueue.Enqueue($" Defaulted to exclude pattern: '*.git'");
+                }
+
+                if (matchingFileContent && !IncludeNonTextFileMatching.ToBool())
+                {
+                    VerboseQueue.Enqueue(
+                        $"Skipping non text file content based on file-extensions, " +
+                        $"use -IncludeNonTextFileMatching to disable");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Initializes the wildcard matching system by deduplicating exclude patterns
+        /// and preparing for efficient pattern matching operations.
+        /// </summary>
+        protected void InitializeWildcardMatcher()
+        {
+
+            // deduplicate excludes if present
+            if (Exclude != null && Exclude.Length > 0)
+            {
+                Exclude = Exclude.Distinct().ToArray();
+            }
+            else
+            {
+
+                // set empty if none
+                Exclude = Array.Empty<string>();
+            }
+        }
+
+        /// <summary>
+        /// Sets up the visited nodes tracking dictionary with appropriate string comparer
+        /// based on case sensitivity settings to prevent duplicate processing.
+        /// </summary>
+        protected void InitializeVisitedNodes()
+        {
+
+            // create dictionary with casing comparer
+            VisitedNodes = new ConcurrentDictionary<string, bool>(
+                comparer: (
+                       this.CaseNameMatching == MatchCasing.PlatformDefault ?
+                       (
+                            // windows or linux based?
+                            Environment.OSVersion.Platform == PlatformID.Win32NT ?
+                            StringComparer.OrdinalIgnoreCase :
+                            StringComparer.Ordinal
+                       ) : (
+
+                            this.CaseNameMatching == MatchCasing.CaseInsensitive ?
+                                StringComparer.OrdinalIgnoreCase :
+                                StringComparer.Ordinal
+                       )
+                    )
+            );
+        }
+
+        /// <summary>
+        /// Initializes allowed root paths when LimitToRoot is enabled
+        /// </summary>
+        protected void InitializeLimitToRoot()
+        {
+            if (!LimitToRoot.ToBool()) return;
+
+            // Create case-appropriate comparer
+            var comparer = CaseNameMatching == MatchCasing.CaseSensitive
+                ? StringComparer.Ordinal
+                : StringComparer.OrdinalIgnoreCase;
+
+            allowedRootPaths = new HashSet<string>(comparer);
+
+            // Add provided Root paths
+            if (Root != null && Root.Length > 0)
+            {
+                foreach (var root in Root)
+                {
+                    var normalized = Path.GetFullPath(root).TrimEnd('\\');
+                    allowedRootPaths.Add(normalized);
+                    if (UseVerboseOutput)
+                    {
+                        VerboseQueue.Enqueue($"LimitToRoot: Allowed root '{normalized}'");
+                    }
+                }
+            }
+            else
+            {
+                // Default to current directory if no Root specified
+                var normalized = CurrentDirectory.TrimEnd('\\');
+                allowedRootPaths.Add(normalized);
+                if (UseVerboseOutput)
+                {
+                    VerboseQueue.Enqueue($"LimitToRoot: Allowed root '{normalized}' (current directory)");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Initializes the verbose output setting by checking both explicit -Verbose
+        /// switch and $VerbosePreference to determine logging level.
+        /// </summary>
+        protected void InitializeVerboseOutput()
+        {
+
+            // attempt to set verbose
+            try
+            {
+
+                // check verbose switch
+                // Check for -Verbose switch
+                bool verboseSwitch = MyInvocation.BoundParameters.ContainsKey("Verbose");
+
+                // check preference if no switch
+                // Fall back to VerbosePreference if no switch
+                if (!verboseSwitch)
+                {
+
+                    // get preference value
+                    var verbosePref = InvokeScript<string>("Write-Output ($VerbosePreference)");
+
+                    // evaluate preference
+                    verboseSwitch = !string.IsNullOrEmpty(verbosePref) &&
+                                   !verbosePref.Equals("SilentlyContinue", StringComparison.OrdinalIgnoreCase);
+                }
+
+                // set flag
+                UseVerboseOutput = verboseSwitch;
+            }
+            catch
+            {
+
+                // default to false on error
+                UseVerboseOutput = false;
+            }
+        }
+
+        /// <summary>
+        /// Prepares a search directory from the provided name mask, handling path normalization,
+        /// upward searches, and multiple root configurations.
+        /// </summary>
+        /// <param name="name">The search mask to process.</param>
+        /// <param name="allowUpwardsSearch">Whether to enable upward directory searching.</param>
+        protected void InitializeSearchDirectory(string name, bool allowUpwardsSearch)
+        {
+
+            // normalize separators
+            // Normalize separators to backslashes for consistency
+            name = name.Replace("/", "\\");
+
+            if (name.EndsWith("\\"))
+            {
+                name += "*";
+            }
+
+            // normalize path
+            // Normalize the path part for processing
+            var normPath = NormalizePathForNonFileSystemUse(name);
+
+            // handle direct current root references
+            if (name.StartsWith("\\") && !name.StartsWith("\\\\"))
+            {
+                name = CurrentDirectory.Substring(0, 2) + name;
+            }
+
+            // adjust trailing recurse
+            // Adjust for trailing recursive patterns
+            if (RecurseEndPatternWithSlashAtStartMatcher.IsMatch(normPath))
+            {
+                normPath += "\\";
+            }
+
+            // determine path types
+            // Determine path type for correct handling
+            bool isRooted = Path.IsPathRooted(normPath);
+            bool isUncPath = normPath.StartsWith(@"\\");
+            bool isRelative = !isRooted && !isUncPath && !normPath.StartsWith("~");
+
+            // add it
+            if (UseVerboseOutput)
+            {
+                VerboseQueue.Enqueue($"Adding name: '{name}'");
+            }
+
+            AddToSearchQueue(name);
+
+            // prepare upwards searches
+            if (isRelative && allowUpwardsSearch && MaxSearchUpDepth > 0)
+            {
+                UpwardsDirQueue[name] = 0;
+            }
+
+            // add more roots?
+            if (isRelative && Root != null && Root.Length > 0)
+            {
+                foreach (string path in Root)
+                {
+                    if (UseVerboseOutput)
+                    {
+                        VerboseQueue.Enqueue($"Adding for path '{path}' with name: '{name}'");
+                    }
+                    AddToSearchQueue(Path.Combine(path, name));
+                }
+            }
+
+            // Process search for each specified drive
+            foreach (var root in GetRootsToSearch())
+            {
+                if (UseVerboseOutput)
+                {
+                    VerboseQueue.Enqueue($"Adding for root '{root}' with name: '{name}'");
+                }
+                AddToSearchQueue(Path.Combine(root, name));
+            }
+        }
+    }
+}

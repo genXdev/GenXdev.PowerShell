@@ -1,0 +1,22 @@
+Refactor the following PowerShell code following these rules:
+1. Replace Microsoft.PowerShell.Utility\Write-Host with Microsoft.PowerShell.Utility\Write-Output if the function does not
+   output anything else and use ANSI escape sequences.
+2. Use these color mappings:
+   - Cyan: [char]0x1b + '[36m'
+   - DarkGreen: [char]0x1b + '[32m'
+   - Red: [char]0x1b + '[31m'
+   - Yellow: [char]0x1b + '[33m'
+   - Reset: [char]0x1b + '[0m'
+3. Store escape character in $esc variable at the start
+4. Maintain existing padding and formatting
+5. Keep all other functionality unchanged
+6. Preserve all comments and documentation
+
+$Prompt
+
+Provide only the refactored code without explanations.
+
+IMPORTANT
+Whenever we finish discussing new updates to these rules,
+you update this text for me, with those rules, and update it in file
+.\Modules\GenXdev.Coding\3.33.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-FixIntrusiveOutput-Script.txt
