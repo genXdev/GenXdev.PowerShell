@@ -76,17 +76,17 @@ atomic file writes, duplicate detection, and project-wide text replacement.
 
 ### Features
 
-- ☐ [P1] Find files with Find-Item -> l
+* Find files with Find-Item -> l
     * Fast multi-threaded search with advanced pattern matching
     * Content searching via Select-String integration
     * Multi-drive support with extensive filtering options
-- ☐ [P1] Pretty good wrapper for robocopy: Start-RoboCopy -> rc, xc
+* Pretty good wrapper for robocopy: Start-RoboCopy -> rc, xc
     * Folder synchronization, long path support, restartable mode
     * Multi-threaded copying, network compression, recovery mode
-- ☐ [P1] Easily change directories with Set-FoundLocation -> lcd
-- ☐ [P1] Text replacement throughout a project directory: Rename-InProject -> rip
-- ☐ [P1] Delete complete directory contents with Remove-AllItems -> sdel
-- ☐ [P1] Move files and directories with Move-ItemWithTracking
+* Easily change directories with Set-FoundLocation -> lcd
+* Text replacement throughout a project directory: Rename-InProject -> rip
+* Delete complete directory contents with Remove-AllItems -> sdel
+* Move files and directories with Move-ItemWithTracking
 
 [Read more →](README-GenXdev.FileSystem.md)
 
