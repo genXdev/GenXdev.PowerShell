@@ -221,7 +221,7 @@ function Assert-GenXdevCmdlet {
                 $baseDestinationParts = "$($($selected)[0].Label)".Split('.');
                 $baseDestinationModule = $baseDestinationParts[0] + '.' + $baseDestinationParts[1];
                 $ModuleName = "$($($selected)[0].Label)"
-                $destination = GenXdev\Expand-Path "$($MyInvocation.MyCommand.Module.ModuleBase)\..\..\\$baseDestinationModule\3.33.0\Functions\$ModuleName\$CmdletName.ps1" -CreateDirectory
+                $destination = GenXdev\Expand-Path "$($MyInvocation.MyCommand.Module.ModuleBase)\..\..\\$baseDestinationModule\3.34.0\Functions\$ModuleName\$CmdletName.ps1" -CreateDirectory
 
                 # move the script file
                 GenXdev\Move-ItemWithTracking -Path $cmdlet.ScriptFilePath -Destination $destination
@@ -248,7 +248,7 @@ function Assert-GenXdevCmdlet {
                 }
 
                 # add dot source reference to corresponding psm1 file
-                GenXdev\_SplitUpPsm1File -Path "$($MyInvocation.MyCommand.Module.ModuleBase)\..\..\$baseDestinationModule\3.33.0\$ModuleName.psm1"
+                GenXdev\_SplitUpPsm1File -Path "$($MyInvocation.MyCommand.Module.ModuleBase)\..\..\$baseDestinationModule\3.34.0\$ModuleName.psm1"
 
                 . GenXdev\Invoke-OnEachGenXdevModule {
 

@@ -31,7 +31,7 @@ Get-GitChangedFiles [-PassThru] [<CommonParameters>]
 Get-GitChangedFiles
 ```
 
-Returns relative paths like .\Modules\GenXdev.AI\3.33.0\README.md
+Returns relative paths like .\Modules\GenXdev.AI\3.34.0\README.md
 
 ### Examples 2
 

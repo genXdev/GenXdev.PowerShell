@@ -74,7 +74,7 @@ function Invoke-CommandElevated {
         $command = @"
         `$ErrorOccurred = `$false;
         `$Host.UI.RawUI.WindowTitle = "$JobDescriptionEscaped"
-Import-Module -Name GenXdev -Version '3.33.0';
+Import-Module -Name GenXdev -Version '3.34.0';
 GenXdev\Set-WindowPosition -X $($CurrentWindow.Left) -Y $($CurrentWindow.Top) -Width $($CurrentWindow.Width) -Height $($CurrentWindow.Height) -SetRestored -SetForeground;
 GenXdev\Set-WindowPosition -Process (Get-Process -Pid `$PID) -X $($CurrentWindow.Left) -Y $($CurrentWindow.Top) -Width $($CurrentWindow.Width) -Height $($CurrentWindow.Height) -SetRestored -SetForeground;
 try {

@@ -2,7 +2,7 @@
 # Part of PowerShell module : GenXdev.Windows.WireGuard
 # Original cmdlet filename  : EnsureWireGuard.Tests.ps1
 # Original author           : René Vaessen / GenXdev
-# Version                   : 3.33.0
+# Version                   : 3.34.0
 ###############################################################################
 
 Pester\BeforeAll {

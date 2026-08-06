@@ -34,7 +34,7 @@ Copy ALL parameters except those causing wrong behaviors. Remove default values 
 ## MCP Server Integration
 Add PowerShell cmdlets to `Start-GenXdevMCPServer` to make them available as MCP tools:
 - Enables AI integration and remote PowerShell execution
-- Source: `.\Modules\GenXdev.AI\3.33.0\Functions\GenXdev\Start-GenXdevMCPServer.ps1`
+- Source: `.\Modules\GenXdev.AI\3.34.0\Functions\GenXdev\Start-GenXdevMCPServer.ps1`
 - Use `[GenXdev.Helpers.ExposedCmdletDefinition]` with Name, Description, AllowedParams, JsonDepth
 - Set `Confirm: false` and `OutputText: true` for most cmdlets
 

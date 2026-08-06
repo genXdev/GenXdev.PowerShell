@@ -115,7 +115,7 @@ function EnsureDefaultGenXdevRefactors {
             $null = GenXdev\New-Refactor `
                 -Name "Documentation" `
                 -PromptKey "OnlyDocumentation" `
-                -SelectionScript "GenXdev\Find-Item `"$($MyInvocation.MyCommand.Module.ModuleBase)\..\..\GenXdev.*\3.33.0\functions\*.ps1`" -PassThru -Exclude `"*\_*`" | Sort-Object -property LastWriteTime" `
+                -SelectionScript "GenXdev\Find-Item `"$($MyInvocation.MyCommand.Module.ModuleBase)\..\..\GenXdev.*\3.34.0\functions\*.ps1`" -PassThru -Exclude `"*\_*`" | Sort-Object -property LastWriteTime" `
                 -AutoAddModifiedFiles `
                 -Priority 0
         }
@@ -142,7 +142,7 @@ function EnsureDefaultGenXdevRefactors {
             $null = GenXdev\New-Refactor `
                 -Name "DocumentationCSharp" `
                 -PromptKey "OnlyCSharpDocumentation" `
-                -SelectionScript "GenXdev\Find-Item `"$($MyInvocation.MyCommand.Module.ModuleBase)\..\..\GenXdev.*\3.33.0\functions\*.cs`" -PassThru -Exclude `"*\_*`" | Sort-Object -property LastWriteTime" `
+                -SelectionScript "GenXdev\Find-Item `"$($MyInvocation.MyCommand.Module.ModuleBase)\..\..\GenXdev.*\3.34.0\functions\*.cs`" -PassThru -Exclude `"*\_*`" | Sort-Object -property LastWriteTime" `
                 -AutoAddModifiedFiles `
                 -Priority 0
         }
@@ -169,7 +169,7 @@ function EnsureDefaultGenXdevRefactors {
             $null = GenXdev\New-Refactor `
                 -Name "MissingDocumentation" `
                 -PromptKey "OnlyDocumentation" `
-                -SelectionScript "GenXdev\Find-Item `"$($MyInvocation.MyCommand.Module.ModuleBase)\..\..\GenXdev.*\3.33.0\functions\*.ps1`" -PassThru -Exclude `"*\_*`" -Quiet -NotMatch -Content `"SYNOPSIS`" | Sort-Object -property LastWriteTime" `
+                -SelectionScript "GenXdev\Find-Item `"$($MyInvocation.MyCommand.Module.ModuleBase)\..\..\GenXdev.*\3.34.0\functions\*.ps1`" -PassThru -Exclude `"*\_*`" -Quiet -NotMatch -Content `"SYNOPSIS`" | Sort-Object -property LastWriteTime" `
                 -AutoAddModifiedFiles `
                 -Priority 2000
         }
@@ -195,7 +195,7 @@ function EnsureDefaultGenXdevRefactors {
             $null = GenXdev\New-Refactor `
                 -Name "MissingDocumentationCSharp" `
                 -PromptKey "OnlyCSharpDocumentation" `
-                -SelectionScript "GenXdev\Find-Item `"$($MyInvocation.MyCommand.Module.ModuleBase)\..\..\GenXdev.*\3.33.0\functions\*.cs`" -PassThru -Exclude `"*\_*`" -Quiet -NotMatch -Content `"SYNOPSIS`" | Sort-Object -property LastWriteTime" `
+                -SelectionScript "GenXdev\Find-Item `"$($MyInvocation.MyCommand.Module.ModuleBase)\..\..\GenXdev.*\3.34.0\functions\*.cs`" -PassThru -Exclude `"*\_*`" -Quiet -NotMatch -Content `"SYNOPSIS`" | Sort-Object -property LastWriteTime" `
                 -AutoAddModifiedFiles `
                 -Priority 2000
         }
@@ -248,7 +248,7 @@ function EnsureDefaultGenXdevRefactors {
             $null = GenXdev\New-Refactor `
                 -Name "ConvertToCSharp" `
                 -PromptKey "ConvertToCSharp" `
-                -SelectionScript "GenXdev\Find-Item `"$($MyInvocation.MyCommand.Module.ModuleBase)\..\..\GenXdev.*\3.33.0\functions\*-*.ps1`" -PassThru -Exclude `"*\_*`", `"*Ensure*`" | ? { `$dir = [io.path]::GetDirectoryName(`$_); `$fn = [io.path]::GetFileNameWithoutExtension(`$_); if (-not (Test-Path -LiteralPath `"`$dir\`${fn}.cs`")) { if (-not ([IO.file]::ReadAllText(`$_).Contains('dontrefactor'))) { `$_ } } } | Sort-Object Length" `
+                -SelectionScript "GenXdev\Find-Item `"$($MyInvocation.MyCommand.Module.ModuleBase)\..\..\GenXdev.*\3.34.0\functions\*-*.ps1`" -PassThru -Exclude `"*\_*`", `"*Ensure*`" | ? { `$dir = [io.path]::GetDirectoryName(`$_); `$fn = [io.path]::GetFileNameWithoutExtension(`$_); if (-not (Test-Path -LiteralPath `"`$dir\`${fn}.cs`")) { if (-not ([IO.file]::ReadAllText(`$_).Contains('dontrefactor'))) { `$_ } } } | Sort-Object Length" `
                 -AutoAddModifiedFiles:$false `
                 -Priority 1000
         }
@@ -301,7 +301,7 @@ function EnsureDefaultGenXdevRefactors {
             $null = GenXdev\New-Refactor `
                 -Name "CheckCSharpInvocations" `
                 -PromptKey "CheckCSharpInvocations" `
-                -SelectionScript "GenXdev\Find-Item `"$($MyInvocation.MyCommand.Module.ModuleBase)\..\..\GenXdev.*\3.33.0\functions\*.cs`" -PassThru -Exclude `"*\_*`" -Quiet -Content 'Confirm-InstallationConsent|Get-Variable|Copy-IdenticalParamValues|Expand-Path|LOCALAPPDATA|\.\.\\\.\.\\|\\Scripts' | Sort-Object Length" `
+                -SelectionScript "GenXdev\Find-Item `"$($MyInvocation.MyCommand.Module.ModuleBase)\..\..\GenXdev.*\3.34.0\functions\*.cs`" -PassThru -Exclude `"*\_*`" -Quiet -Content 'Confirm-InstallationConsent|Get-Variable|Copy-IdenticalParamValues|Expand-Path|LOCALAPPDATA|\.\.\\\.\.\\|\\Scripts' | Sort-Object Length" `
                 -AutoAddModifiedFiles:$false `
                 -Priority 1500
         }

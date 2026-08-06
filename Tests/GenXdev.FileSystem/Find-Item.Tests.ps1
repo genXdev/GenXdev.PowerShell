@@ -409,7 +409,7 @@ Pester\Describe 'Find-Item 1' {
 
     Pester\It 'Should match the pattern' {
 
-        $found = @(GenXdev\Find-Item -SearchMask "$PSScriptRoot\..\..\..\..\..\**\Genx*\3.33.0\Functions\GenXdev*\*.cs" -PassThru | Microsoft.PowerShell.Utility\Select-Object -ExpandProperty FullName)
+        $found = @(GenXdev\Find-Item -SearchMask "$PSScriptRoot\..\..\..\..\..\**\Genx*\3.34.0\Functions\GenXdev*\*.cs" -PassThru | Microsoft.PowerShell.Utility\Select-Object -ExpandProperty FullName)
 
         $found | Pester\Should -Contain (GenXdev\Expand-Path "$PSScriptRoot\..\..\Functions\GenXdev.FileSystem\Find-Item.Cmdlet.cs")
         $found | Pester\Should -Contain (GenXdev\Expand-Path "$PSScriptRoot\..\..\Functions\GenXdev.AI\Receive-RealTimeSpeechToText.cs")

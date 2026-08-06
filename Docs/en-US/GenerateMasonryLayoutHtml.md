@@ -19,14 +19,14 @@ displaying images. Features include:
 ## Syntax
 
 ```powershell
-GenerateMasonryLayoutHtml -Images <IEnumerable`1[[GenXdev.Helpers.ImageSearchResult, GenXdev, Version=3.33.0.0, Culture=neutral, PublicKeyToken=null]]> [[-FilePath] <String>] [-AutoAnimateRectangles] [-AutoScrollPixelsPerSecond <Int32>] [-CanDelete] [-CanEdit] [-Description <String>] [-EmbedImages] [-ImageUrlPrefix <String>] [-MaxPrintImages <Int32>] [-PageSize <Int32>] [-RootMargin <String>] [-ShowOnlyPictures] [-SingleColumnMode] [-Threshold <Double>] [-Title <String>] [<CommonParameters>]
+GenerateMasonryLayoutHtml -Images <IEnumerable`1[[GenXdev.Helpers.ImageSearchResult, GenXdev, Version=3.34.0.0, Culture=neutral, PublicKeyToken=null]]> [[-FilePath] <String>] [-AutoAnimateRectangles] [-AutoScrollPixelsPerSecond <Int32>] [-CanDelete] [-CanEdit] [-Description <String>] [-EmbedImages] [-ImageUrlPrefix <String>] [-MaxPrintImages <Int32>] [-PageSize <Int32>] [-RootMargin <String>] [-ShowOnlyPictures] [-SingleColumnMode] [-Threshold <Double>] [-Title <String>] [<CommonParameters>]
 ```
 
 ## Parameters
 
 | Name | Type | Required | Description |
 |:---|:---|:---:|:---|
-| `-Images` | IEnumerable`1[[GenXdev.Helpers.ImageSearchResult, GenXdev, Version=3.33.0.0, Culture=neutral, PublicKeyToken=null]] | ✅ | Array of image objects with path, keywords<br>and description |
+| `-Images` | IEnumerable`1[[GenXdev.Helpers.ImageSearchResult, GenXdev, Version=3.34.0.0, Culture=neutral, PublicKeyToken=null]] | ✅ | Array of image objects with path, keywords<br>and description |
 | `-FilePath` | String | ☐ | Output path for the generated HTML file |
 | `-Title` | String | ☐ | Title for the gallery |
 | `-Description` | String | ☐ | Description for the gallery |
@@ -71,7 +71,7 @@ $html = GenerateMasonryLayoutHtml $images
 
 ## Parameter Details
 
-### `-Images <IEnumerable`1[[GenXdev.Helpers.ImageSearchResult, GenXdev, Version=3.33.0.0, Culture=neutral, PublicKeyToken=null]]>`
+### `-Images <IEnumerable`1[[GenXdev.Helpers.ImageSearchResult, GenXdev, Version=3.34.0.0, Culture=neutral, PublicKeyToken=null]]>`
 
 > Array of image objects with path, keywords and description
 

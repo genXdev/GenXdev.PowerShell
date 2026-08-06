@@ -241,11 +241,11 @@ function Assert-RefactorFile {
 
             # construct paths for functions and tests directories
             $functionsPath = GenXdev\Expand-Path `
-                "$modulesPath\$baseModuleName\3.33.0\Functions\" `
+                "$modulesPath\$baseModuleName\3.34.0\Functions\" `
                 -CreateDirectory
 
             $testsPath = GenXdev\Expand-Path `
-                "$modulesPath\$baseModuleName\3.33.0\Tests\" `
+                "$modulesPath\$baseModuleName\3.34.0\Tests\" `
                 -CreateDirectory
 
             # determine the specific module context based on file location

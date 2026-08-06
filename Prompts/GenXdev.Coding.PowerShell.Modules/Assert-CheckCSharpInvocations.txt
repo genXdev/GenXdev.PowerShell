@@ -213,19 +213,19 @@ SetPreferencesDatabasePath(databasePath, skipSession, sessionOnly, clearSession)
 7. GetGenXdevModulesBase ( replacement for $($MyInvocation.MyCommand.Module.ModuleBase)\..\..\ )
 8. GetPowerShellProfilePath ( replacement for $($MyInvocation.MyCommand.Module.ModuleBase)\..\..\ )
 9. GetPowerShellScriptsPath ( replacement for $($MyInvocation.MyCommand.Module.ModuleBase)\..\..\Scripts )
-10. GetGenXdevModuleBase ( replacement for $($MyInvocation.MyCommand.Module.ModuleBase)\..\..\somemodulename\3.33.0\ )
+10. GetGenXdevModuleBase ( replacement for $($MyInvocation.MyCommand.Module.ModuleBase)\..\..\somemodulename\3.34.0\ )
 
 Focus on files that show signs of using these old patterns - look for ScriptBlock.Create,
 InvokeCommand.InvokeScript, or direct cmdlet invocations that match the base methods.
 
 ## Analyze what is available in:
-.\Modules\GenXdev.FileSystem\3.33.0\Functions\GenXdev.FileSystem\PSGenXdevCmdlet.cs
-.\Modules\GenXdev.FileSystem\3.33.0\Functions\GenXdev.FileSystem\PSGenXdevCmdlet.FindItem.cs
-.\Modules\GenXdev.FileSystem\3.33.0\Functions\GenXdev.FileSystem\PSGenXdevCmdlet.KeyValueStore.cs
-.\Modules\GenXdev.FileSystem\3.33.0\Functions\GenXdev.FileSystem\PSGenXdevCmdlet.Preferences.cs
-.\Modules\GenXdev.FileSystem\3.33.0\Functions\GenXdev.FileSystem\PSGenXdevCmdlet.Utilities.cs
+.\Modules\GenXdev.FileSystem\3.34.0\Functions\GenXdev.FileSystem\PSGenXdevCmdlet.cs
+.\Modules\GenXdev.FileSystem\3.34.0\Functions\GenXdev.FileSystem\PSGenXdevCmdlet.FindItem.cs
+.\Modules\GenXdev.FileSystem\3.34.0\Functions\GenXdev.FileSystem\PSGenXdevCmdlet.KeyValueStore.cs
+.\Modules\GenXdev.FileSystem\3.34.0\Functions\GenXdev.FileSystem\PSGenXdevCmdlet.Preferences.cs
+.\Modules\GenXdev.FileSystem\3.34.0\Functions\GenXdev.FileSystem\PSGenXdevCmdlet.Utilities.cs
 
 ## Check
 With exception of the Find-Item cmdlet, most cmdlets where ported from .ps1 cmdlet to .cs cmdlet
 with AI Assistence and human validation, feel free to check if the requirements by which this
-happened are still up-to-date with the current ones in file: '.\Modules\GenXdev.Coding\3.33.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-ConvertToCSharp.txt'
+happened are still up-to-date with the current ones in file: '.\Modules\GenXdev.Coding\3.34.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-ConvertToCSharp.txt'

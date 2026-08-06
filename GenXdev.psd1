@@ -12,7 +12,7 @@
 RootModule = 'GenXdev.psm1'
 
 # Version number of this module.
-ModuleVersion = '3.33.0'
+ModuleVersion = '3.34.0'
 
 # Supported PSEditions
 CompatiblePSEditions = 'Core'
@@ -352,10 +352,10 @@ FileList = 'Afterinstall.ps1', 'cmdlets-meta.json', 'default-llmproviders.json',
                'lib\runtimes\win-x64\ggml-cpu-whisper.dll', 
                'lib\runtimes\win-x64\ggml-whisper.dll', 
                'lib\runtimes\win-x64\whisper.dll', 
-               'Assets\Modules\GenXdev.Local\3.33.0\GenXdev.Local.psd1.asset.txt', 
-               'Assets\Modules\GenXdev.Local\3.33.0\GenXdev.Local.psm1.asset.txt', 
-               'Assets\Modules\GenXdev.Local\3.33.0\powershell.jpg.asset.txt', 
-               'Assets\Modules\GenXdev.Local\3.33.0\README.md.asset.txt', 
+               'Assets\Modules\GenXdev.Local\3.34.0\GenXdev.Local.psd1.asset.txt', 
+               'Assets\Modules\GenXdev.Local\3.34.0\GenXdev.Local.psm1.asset.txt', 
+               'Assets\Modules\GenXdev.Local\3.34.0\powershell.jpg.asset.txt', 
+               'Assets\Modules\GenXdev.Local\3.34.0\README.md.asset.txt', 
                'lib\runtimes\noavx\win-x64\ggml-base-whisper.dll', 
                'lib\runtimes\noavx\win-x64\ggml-cpu-whisper.dll', 
                'lib\runtimes\noavx\win-x64\ggml-whisper.dll', 

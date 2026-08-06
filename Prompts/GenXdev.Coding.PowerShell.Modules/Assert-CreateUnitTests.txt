@@ -113,4 +113,4 @@ $Prompt
 IMPORTANT
 Whenever we finish discussing new updates to these rules,
 you update this text for me, with those rules, and update it in file
-.\Modules\GenXdev.Coding\3.33.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-CreateUnitTests.txt
+.\Modules\GenXdev.Coding\3.34.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-CreateUnitTests.txt

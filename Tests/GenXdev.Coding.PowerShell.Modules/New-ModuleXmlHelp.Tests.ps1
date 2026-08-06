@@ -206,7 +206,7 @@ Pester\Describe 'New-ModuleXmlHelp — Find-Item (C# cmdlet) MAML XML' {
         $null = GenXdev\New-ModuleXmlHelp -ModuleName GenXdev -Force `
             -Language en-US -ErrorAction Stop
 
-        $helpPath = 'c:\Users\renev\Documents\PowerShell\Modules\GenXdev\3.33.0\en-US\GenXdev.dll-Help.xml'
+        $helpPath = 'c:\Users\renev\Documents\PowerShell\Modules\GenXdev\3.34.0\en-US\GenXdev.dll-Help.xml'
         $script:fiXml = [xml](Microsoft.PowerShell.Management\Get-Content $helpPath -Raw)
         $script:fiNs = Microsoft.PowerShell.Utility\New-Object Xml.XmlNamespaceManager $script:fiXml.NameTable
         $script:fiNs.AddNamespace('cmd', 'http://schemas.microsoft.com/maml/dev/command/2004/10')
@@ -402,7 +402,7 @@ Pester\Describe 'New-ModuleXmlHelp — Find-Image (.ps1 cmdlet) MAML XML' {
         $null = GenXdev\New-ModuleXmlHelp -ModuleName GenXdev -Force `
             -Language en-US -ErrorAction Stop
 
-        $helpPath = 'c:\Users\renev\Documents\PowerShell\Modules\GenXdev\3.33.0\en-US\GenXdev-help.xml'
+        $helpPath = 'c:\Users\renev\Documents\PowerShell\Modules\GenXdev\3.34.0\en-US\GenXdev-help.xml'
         $script:fimXml = [xml](Microsoft.PowerShell.Management\Get-Content $helpPath -Raw)
         $script:fimNs = Microsoft.PowerShell.Utility\New-Object Xml.XmlNamespaceManager $script:fimXml.NameTable
         $script:fimNs.AddNamespace('cmd', 'http://schemas.microsoft.com/maml/dev/command/2004/10')
@@ -563,7 +563,7 @@ Pester\Describe 'New-ModuleXmlHelp — Code blocks identical across languages' {
         $null = GenXdev\New-ModuleXmlHelp -ModuleName GenXdev -Force `
             -Language en-US -SkipTranslation -ErrorAction Stop
 
-        $moduleRoot = 'c:\Users\renev\Documents\PowerShell\Modules\GenXdev\3.33.0'
+        $moduleRoot = 'c:\Users\renev\Documents\PowerShell\Modules\GenXdev\3.34.0'
 
         # Load reference (en-US) XML
         $refPath = Microsoft.PowerShell.Management\Join-Path $moduleRoot 'en-US\GenXdev.dll-Help.xml'

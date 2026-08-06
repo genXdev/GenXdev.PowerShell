@@ -139,7 +139,7 @@ function Invoke-OnEachGenXdevModule {
             $ModuleName = @('GenXdev.Scripts')
         }
 
-        $allGenXdevModules = @(Microsoft.PowerShell.Management\Get-ChildItem "$modulesPath\GenXdev*.psd1" -Recurse | Microsoft.PowerShell.Core\Where-Object { $_.FullName -like "*\3.33.0\GenXdev*" } | Microsoft.PowerShell.Core\ForEach-Object { [IO.Path]::GetFileNameWithoutExtension($_.FullName) }) +
+        $allGenXdevModules = @(Microsoft.PowerShell.Management\Get-ChildItem "$modulesPath\GenXdev*.psd1" -Recurse | Microsoft.PowerShell.Core\Where-Object { $_.FullName -like "*\3.34.0\GenXdev*" } | Microsoft.PowerShell.Core\ForEach-Object { [IO.Path]::GetFileNameWithoutExtension($_.FullName) }) +
         @("GenXdev.Scripts")
 
         $genXdevModules = $allGenXdevModules
@@ -178,13 +178,13 @@ function Invoke-OnEachGenXdevModule {
                             continue
                         }
 
-                        if ([IO.File]::Exists(([IO.Path]::GetFullPath("$($MyInvocation.MyCommand.Module.ModuleBase)\..\..\$module\3.33.0\$module.psd1")))) {
+                        if ([IO.File]::Exists(([IO.Path]::GetFullPath("$($MyInvocation.MyCommand.Module.ModuleBase)\..\..\$module\3.34.0\$module.psd1")))) {
 
                             $module
 
                         }
                     }
-                    elseif (Microsoft.PowerShell.Management\Test-Path "$($MyInvocation.MyCommand.Module.ModuleBase)\..\..\$module\3.33.0\Functions\$moduleToFind" -ErrorAction SilentlyContinue) {
+                    elseif (Microsoft.PowerShell.Management\Test-Path "$($MyInvocation.MyCommand.Module.ModuleBase)\..\..\$module\3.34.0\Functions\$moduleToFind" -ErrorAction SilentlyContinue) {
 
                         $module
                     }
@@ -212,11 +212,11 @@ function Invoke-OnEachGenXdevModule {
 
                 # construct expected license file path for published modules
                 $licenseFilePath = (
-                    "$($ModuleObj.FullName)\3.33.0\LICENSE")
+                    "$($ModuleObj.FullName)\3.34.0\LICENSE")
 
                 # construct expected readme file path for published modules
                 $readmeFilePath = (
-                    "$($ModuleObj.FullName)\3.33.0\README.md")
+                    "$($ModuleObj.FullName)\3.34.0\README.md")
 
                 # skip license and readme checks for scripts directory
                 if ($ModuleObj.FullName -eq $scriptsPath) {

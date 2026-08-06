@@ -76,7 +76,7 @@ Ensure compliance with these 53 requirements for C# cmdlet conversion:
 
 10) Class must inherit from PSGenXdevCmdlet and implement BeginProcessing(), ProcessRecord(), and EndProcessing() methods. If a method is empty, do not add code comments.
 
-11) Read up on these instructions on how to refactor away certain old patterns in file: '.\Modules\GenXdev.Coding\3.33.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-CheckCSharpInvocations.txt'
+11) Read up on these instructions on how to refactor away certain old patterns in file: '.\Modules\GenXdev.Coding\3.34.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-CheckCSharpInvocations.txt'
 
 12) Use InvokeCommand.InvokeScript() with ScriptBlock.Create() to call other PowerShell functions and cmdlets from within the C# implementation. Always expect results from InvokeCommand.InvokeScript or ScriptBlock.Invoke to be returned as PSObject (System.Management.Automation.PSObject), not as raw .BaseObject or primitive types. All code and documentation must reflect this expectation, and all result handling must use PSObject semantics for compatibility with PowerShell pipeline and type system. IMPORTANT: For simple cmdlet invocations that return a single value, ALWAYS use the base method InvokeScript<T>(string script) instead of verbose ScriptBlock.Create().Invoke() patterns. Example: Use `var port = InvokeScript<int>("GenXdev.Webbrowser\\Get-ChromeRemoteDebuggingPort");` instead of creating a ScriptBlock, invoking it, and extracting the value from the result collection.
 
@@ -115,7 +115,7 @@ same blocks, keep the same parameter and their attributes exactly. Convert Power
 
 28) Use base methods from PSGenXdevCmdlet for common operations instead of InvokeCommand when available. For parameter copying, use CopyIdenticalParamValues("FunctionName") instead of invoking GenXdev.FileSystem\Copy-IdenticalParamValues via InvokeCommand.
 
-29) When in doubt about styling cmdlet '.\Modules\GenXdev.FileSystem\3.33.0\Functions\GenXdev.FileSystem\Find-Item.*.cs' may always serve as an ideal example.
+29) When in doubt about styling cmdlet '.\Modules\GenXdev.FileSystem\3.34.0\Functions\GenXdev.FileSystem\Find-Item.*.cs' may always serve as an ideal example.
 
 30) Each line of code that is not trivially understandable must have a code comment above it in plain English. Follow the guidelines from the book 'Code complete 2nd edition'
 
@@ -488,6 +488,6 @@ so I can reconcider one of your points.
 IMPORTANT
 Whenever we finish discussing new updates to these rules,
 you update this text for me, with those rules, and update it in file
-.\Modules\GenXdev.Coding\3.33.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-ConvertToCSharp.txt
+.\Modules\GenXdev.Coding\3.34.0\Prompts\GenXdev.Coding.PowerShell.Modules\Assert-ConvertToCSharp.txt
 
 For rules related to formatting, documentation, and style (such as header handling, XML documentation, code comments, naming conventions, line wrapping, etc.), update both this file and Assert-OnlyCSharpDocumentation.txt to maintain consistency.
