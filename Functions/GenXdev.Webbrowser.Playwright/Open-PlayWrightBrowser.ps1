@@ -823,16 +823,6 @@ function Open-PlayWrightBrowser {
             $launchOptions.Args.Add('--no-first-run')
             $launchOptions.Args.Add('--no-default-browser-check')
 
-            # FIX THE GRAY BOX: Instead of a null viewport with forced scaling,
-            # we explicitly specify a massive default viewport boundary.
-            # This forces Chrome to render the document canvas all the way to the edges.
-            $launchOptions.ViewportSize = [Microsoft.Playwright.ViewportSize]::new()
-            if ($useRealBrowser) {
-
-                $launchOptions.ViewportSize.Width = -1
-                $launchOptions.ViewportSize.Height = -1
-            }
-
             # When using a real browser in headed mode, start maximized
             # so the window manager handles native sizing correctly
             if ($script:useRealBrowser -and (-not $Headless.ToBool()) -and

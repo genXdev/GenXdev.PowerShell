@@ -30,7 +30,7 @@ namespace GenXdev.Helpers
             get
             {
 
-                if (Description == null) return new List<string>();
+                if (Description == null) return [];
 
                 return Description.Keywords;
             }
@@ -40,9 +40,10 @@ namespace GenXdev.Helpers
                 if (Description == null) Description = new ImageSearchResultDescription();
                 if (value == null) return;
 
-                Description = new ImageSearchResultDescription();
-
-                Description.Keywords = value;
+                Description = new ImageSearchResultDescription
+                {
+                    Keywords = value
+                };
             }
         }
 
@@ -71,7 +72,7 @@ namespace GenXdev.Helpers
         public bool? Has_Nudity { get; set; } = null;
 
         [JsonProperty("keywords", NullValueHandling = NullValueHandling.Ignore)]
-        public List<string> Keywords { get; set; } = new List<string>();
+        public List<string> Keywords { get; set; } = [];
 
         [JsonProperty("long_description", NullValueHandling = NullValueHandling.Ignore)]
         public string Long_Description { get; set; } = string.Empty;
@@ -91,50 +92,50 @@ namespace GenXdev.Helpers
         [JsonProperty("GPS", NullValueHandling = NullValueHandling.Ignore)]
         public ImageSearchResultGps Gps { get; set; } = new ImageSearchResultGps();
 
-        [JsonProperty("Basic", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(Basic), NullValueHandling = NullValueHandling.Ignore)]
         public ImageSearchResultBasic Basic { get; set; } = new ImageSearchResultBasic();
 
-        [JsonProperty("Author", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(Author), NullValueHandling = NullValueHandling.Ignore)]
         public ImageSearchResultAuthor Author { get; set; } = new ImageSearchResultAuthor();
 
-        [JsonProperty("Exposure", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(Exposure), NullValueHandling = NullValueHandling.Ignore)]
         public ImageSearchResultExposure Exposure { get; set; } = new ImageSearchResultExposure();
 
-        [JsonProperty("DateTime", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(DateTime), NullValueHandling = NullValueHandling.Ignore)]
         public ImageSearchResultDateTime DateTime { get; set; } = new ImageSearchResultDateTime();
 
-        [JsonProperty("Other", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(Other), NullValueHandling = NullValueHandling.Ignore)]
         public ImageSearchResultOther Other { get; set; } = new ImageSearchResultOther();
 
-        [JsonProperty("Camera", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(Camera), NullValueHandling = NullValueHandling.Ignore)]
         public ImageSearchResultCamera Camera { get; set; } = new ImageSearchResultCamera();
     }
 
     // GPS: latitude, longitude, etc.
     public partial class ImageSearchResultGps
     {
-        [JsonProperty("Latitude", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(Latitude), NullValueHandling = NullValueHandling.Ignore)]
         public double? Latitude { get; set; }
 
-        [JsonProperty("Longitude", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(Longitude), NullValueHandling = NullValueHandling.Ignore)]
         public double? Longitude { get; set; }
 
-        [JsonProperty("Altitude", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(Altitude), NullValueHandling = NullValueHandling.Ignore)]
         public double? Altitude { get; set; }
 
-        [JsonProperty("LatitudeDMS", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(LatitudeDMS), NullValueHandling = NullValueHandling.Ignore)]
         public string LatitudeDMS { get; set; } = string.Empty;
 
-        [JsonProperty("LongitudeDMS", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(LongitudeDMS), NullValueHandling = NullValueHandling.Ignore)]
         public string LongitudeDMS { get; set; } = string.Empty;
 
-        [JsonProperty("LatitudeError", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(LatitudeError), NullValueHandling = NullValueHandling.Ignore)]
         public string LatitudeError { get; set; } = string.Empty;
 
-        [JsonProperty("LongitudeError", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(LongitudeError), NullValueHandling = NullValueHandling.Ignore)]
         public string LongitudeError { get; set; } = string.Empty;
 
-        [JsonProperty("AltitudeError", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(AltitudeError), NullValueHandling = NullValueHandling.Ignore)]
         public string AltitudeError { get; set; } = string.Empty;
     }
 
@@ -142,131 +143,131 @@ namespace GenXdev.Helpers
     // Author: Contains artist, copyright, etc. (string properties, may be empty)
     public partial class ImageSearchResultAuthor
     {
-        [JsonProperty("Artist", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(Artist), NullValueHandling = NullValueHandling.Ignore)]
         public string Artist { get; set; } = string.Empty;
 
-        [JsonProperty("Copyright", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(Copyright), NullValueHandling = NullValueHandling.Ignore)]
         public string Copyright { get; set; } = string.Empty;
     }
 
     // Basic: dimensions, format, etc.
     public partial class ImageSearchResultBasic
     {
-        [JsonProperty("Width", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(Width), NullValueHandling = NullValueHandling.Ignore)]
         public long Width { get; set; }
 
-        [JsonProperty("Height", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(Height), NullValueHandling = NullValueHandling.Ignore)]
         public long Height { get; set; }
 
-        [JsonProperty("PixelFormat", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(PixelFormat), NullValueHandling = NullValueHandling.Ignore)]
         public string PixelFormat { get; set; } = string.Empty;
 
-        [JsonProperty("Format", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(Format), NullValueHandling = NullValueHandling.Ignore)]
         public string Format { get; set; } = string.Empty;
 
-        [JsonProperty("HorizontalResolution", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(HorizontalResolution), NullValueHandling = NullValueHandling.Ignore)]
         public double HorizontalResolution { get; set; }
 
-        [JsonProperty("VerticalResolution", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(VerticalResolution), NullValueHandling = NullValueHandling.Ignore)]
         public double VerticalResolution { get; set; }
 
-        [JsonProperty("FileSizeBytes", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(FileSizeBytes), NullValueHandling = NullValueHandling.Ignore)]
         public long FileSizeBytes { get; set; }
 
-        [JsonProperty("FileName", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(FileName), NullValueHandling = NullValueHandling.Ignore)]
         public string FileName { get; set; } = string.Empty;
 
-        [JsonProperty("FileExtension", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(FileExtension), NullValueHandling = NullValueHandling.Ignore)]
         public string FileExtension { get; set; } = string.Empty;
     }
 
     // Exposure: aperture, shutter speed, ISO, etc.
     public partial class ImageSearchResultExposure
     {
-        [JsonProperty("FNumber", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(FNumber), NullValueHandling = NullValueHandling.Ignore)]
         public double? FNumber { get; set; }
 
-        [JsonProperty("ExposureTime", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(ExposureTime), NullValueHandling = NullValueHandling.Ignore)]
         public double? ExposureTime { get; set; }
 
-        [JsonProperty("ISOSpeedRatings", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(ISOSpeedRatings), NullValueHandling = NullValueHandling.Ignore)]
         public int? ISOSpeedRatings { get; set; }
 
-        [JsonProperty("FocalLength", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(FocalLength), NullValueHandling = NullValueHandling.Ignore)]
         public double? FocalLength { get; set; }
 
-        [JsonProperty("ExposureProgram", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(ExposureProgram), NullValueHandling = NullValueHandling.Ignore)]
         public int? ExposureProgram { get; set; }
 
-        [JsonProperty("MeteringMode", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(MeteringMode), NullValueHandling = NullValueHandling.Ignore)]
         public int? MeteringMode { get; set; }
 
-        [JsonProperty("Flash", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(Flash), NullValueHandling = NullValueHandling.Ignore)]
         public int? Flash { get; set; }
     }
 
     // Camera: make, model, etc.
     public partial class ImageSearchResultCamera
     {
-        [JsonProperty("Make", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(Make), NullValueHandling = NullValueHandling.Ignore)]
         public string Make { get; set; } = string.Empty;
 
-        [JsonProperty("Model", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(Model), NullValueHandling = NullValueHandling.Ignore)]
         public string Model { get; set; } = string.Empty;
 
-        [JsonProperty("Software", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(Software), NullValueHandling = NullValueHandling.Ignore)]
         public string Software { get; set; } = string.Empty;
     }
 
     // DateTime: when taken, modified, etc.
     public partial class ImageSearchResultDateTime
     {
-        [JsonProperty("DateTimeOriginal", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(DateTimeOriginal), NullValueHandling = NullValueHandling.Ignore)]
         public string DateTimeOriginal { get; set; } = String.Empty;
 
-        [JsonProperty("DateTimeDigitized", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(DateTimeDigitized), NullValueHandling = NullValueHandling.Ignore)]
         public string DateTimeDigitized { get; set; } = String.Empty;
     }
 
     // GPS: latitude, longitude, etc.
     public partial class ImageSearchResultGPS
     {
-        [JsonProperty("Latitude", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(Latitude), NullValueHandling = NullValueHandling.Ignore)]
         public double? Latitude { get; set; }
 
-        [JsonProperty("Longitude", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(Longitude), NullValueHandling = NullValueHandling.Ignore)]
         public double? Longitude { get; set; }
 
-        [JsonProperty("Altitude", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(Altitude), NullValueHandling = NullValueHandling.Ignore)]
         public double? Altitude { get; set; }
 
-        [JsonProperty("LatitudeDMS", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(LatitudeDMS), NullValueHandling = NullValueHandling.Ignore)]
         public string LatitudeDMS { get; set; } = string.Empty;
 
-        [JsonProperty("LongitudeDMS", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(LongitudeDMS), NullValueHandling = NullValueHandling.Ignore)]
         public string LongitudeDMS { get; set; } = string.Empty;
     }
 
     // Other: software, comments, errors, etc. (dynamic, so use dictionary)
     public partial class ImageSearchResultOther
     {
-        [JsonProperty("Software", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(Software), NullValueHandling = NullValueHandling.Ignore)]
         public string Software { get; set; } = string.Empty;
 
-        [JsonProperty("ColorSpace", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(ColorSpace), NullValueHandling = NullValueHandling.Ignore)]
         public string ColorSpace { get; set; } = string.Empty;
 
-        [JsonProperty("ResolutionUnit", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty(nameof(ResolutionUnit), NullValueHandling = NullValueHandling.Ignore)]
         public string ResolutionUnit { get; set; } = string.Empty;
     }
 
     public partial class ImageSearchResultObjects
     {
-        [JsonProperty("objects", NullValueHandling = NullValueHandling.Ignore)]
-        public List<ImageSearchResultObject> objects { get; set; } = new List<ImageSearchResultObject>();
+        [JsonProperty(nameof(objects), NullValueHandling = NullValueHandling.Ignore)]
+        public List<ImageSearchResultObject> objects { get; set; } = [];
 
-        [JsonProperty("object_counts", NullValueHandling = NullValueHandling.Ignore)]
-        public Dictionary<string, int> object_counts { get; set; } = new Dictionary<string, int>();
+        [JsonProperty(nameof(object_counts), NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<string, int> object_counts { get; set; } = [];
 
         [JsonProperty("count", NullValueHandling = NullValueHandling.Ignore)]
         public long Count { get; set; }
@@ -317,7 +318,7 @@ namespace GenXdev.Helpers
     public partial class ImageSearchResultPeople
     {
         [JsonProperty("faces", NullValueHandling = NullValueHandling.Ignore)]
-        public List<string> Faces { get; set; } = new List<string>();
+        public List<string> Faces { get; set; } = [];
 
         [JsonProperty("success", NullValueHandling = NullValueHandling.Ignore)]
         public bool Success { get; set; }
@@ -326,7 +327,7 @@ namespace GenXdev.Helpers
         public long Count { get; set; }
 
         [JsonProperty("predictions", NullValueHandling = NullValueHandling.Ignore)]
-        public List<ImageSearchResultFacePrediction> Predictions { get; set; } = new List<ImageSearchResultFacePrediction>();
+        public List<ImageSearchResultFacePrediction> Predictions { get; set; } = [];
     }
 
     public partial class ImageSearchResultScenes
@@ -360,7 +361,7 @@ namespace GenXdev.Helpers
 
     internal static class ImageSearchResultConverter
     {
-        public static readonly JsonSerializerSettings Settings = new JsonSerializerSettings
+        public static readonly JsonSerializerSettings Settings = new()
         {
             MetadataPropertyHandling = MetadataPropertyHandling.Ignore,
             MissingMemberHandling = MissingMemberHandling.Ignore,

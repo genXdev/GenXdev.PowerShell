@@ -43,7 +43,7 @@ namespace GenXdev.FileSystem
                 if (!initialWorkerStarted)
                 {
                     return Math.Max(minDirectoryProcessors, Math.Min(
-                        DirQueue.Count + (DirQueue.Count > 0 ? 0 :
+                        DirQueue.Count + (!DirQueue.IsEmpty ? 0 :
                             Interlocked.Read(ref filesFound) > 0 ? 0 :
                             UpwardsDirQueue.Count),
                         Math.Max(
@@ -57,7 +57,7 @@ namespace GenXdev.FileSystem
                 return Math.Max(minDirectoryProcessors,
                     buffersFull() ? 0 :
                     Math.Min(
-                        DirQueue.Count + (DirQueue.Count > 0 ? 0 :
+                        DirQueue.Count + (!DirQueue.IsEmpty ? 0 :
                             Interlocked.Read(ref filesFound) > 0 ? 0 :
                             UpwardsDirQueue.Count),
                         Math.Max(
@@ -329,7 +329,7 @@ namespace GenXdev.FileSystem
                 if (psLocation.StartsWith("Microsoft.PowerShell.Core\\FileSystem::\\\\"))
                 {
                     // For UNC paths, use the path as-is since Path.GetFullPath can modify UNC paths
-                    psLocation = psLocation.Substring("Microsoft.PowerShell.Core\\FileSystem::".Length);
+                    psLocation = psLocation["Microsoft.PowerShell.Core\\FileSystem::".Length..];
                 }
 
                 // get full path
@@ -397,20 +397,20 @@ namespace GenXdev.FileSystem
                     ) : WildcardOptions.CultureInvariant;
 
             // create file exclude patterns
-            FileExcludePatterns = Exclude.Select(
+            FileExcludePatterns = [.. Exclude.Select(
                 p => WildcardPattern.Get(p, CurrentWildCardOptions)
-            ).ToArray();
+            )];
 
             // create dir exclude patterns
-            DirectoryExcludePatterns = Exclude.Select(
+            DirectoryExcludePatterns = [.. Exclude.Select(
                 p => WildcardPattern.Get(p.EndsWith("\\") ? p.TrimEnd('\\') : p, CurrentWildCardOptions)
-            ).ToArray();
+            )];
 
             // default git exclusion if none
             if (DirectoryExcludePatterns.Length == 0)
             {
-                DirectoryExcludePatterns = new WildcardPattern[1] {
-                    new WildcardPattern(EscapeBracketsInPattern("*\\.git"), CurrentWildCardOptions) };
+                DirectoryExcludePatterns = [
+                    new(EscapeBracketsInPattern("*\\.git"), CurrentWildCardOptions) ];
             }
 
             if (UseVerboseOutput)
@@ -447,13 +447,13 @@ namespace GenXdev.FileSystem
             // deduplicate excludes if present
             if (Exclude != null && Exclude.Length > 0)
             {
-                Exclude = Exclude.Distinct().ToArray();
+                Exclude = [.. Exclude.Distinct()];
             }
             else
             {
 
                 // set empty if none
-                Exclude = Array.Empty<string>();
+                Exclude = [];
             }
         }
 
@@ -586,7 +586,7 @@ namespace GenXdev.FileSystem
             // handle direct current root references
             if (name.StartsWith("\\") && !name.StartsWith("\\\\"))
             {
-                name = CurrentDirectory.Substring(0, 2) + name;
+                name = CurrentDirectory[..2] + name;
             }
 
             // adjust trailing recurse

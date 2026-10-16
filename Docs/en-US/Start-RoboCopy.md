@@ -28,7 +28,7 @@ Key Features:
 
 
 ```powershell
-Start-RoboCopy -Source <String> [[-DestinationDirectory] <String>] [[-Files] <String[]>] [[-Override] <String>] [-AttributeExcludeFilter <String>] [-AttributeIncludeFilter <String>] [-CompressibleContent] [-CopyOnlyDirectoryTreeStructureAndEmptyFiles] [-CopySymbolicLinksAsLinks] [-ExactTimestamps] [-FileExcludeFilter <String[]>] [-Force] [-IncludeSecurity] [-LargeFiles] [-LogAllFileNames] [-LogDirectoryNames] [-LogfileOverwrite] [-LogFilePath <String>] [-MaxFileAge <Int32>] [-MaxFileSize <Int32>] [-MaxLastAccessAge <Int32>] [-MinFileAge <Int32>] [-MinFileSize <Int32>] [-MinLastAccessAge <Int32>] [-Mirror] [-MonitorMode] [-MonitorModeRunHoursFrom <Int32>] [-MonitorModeRunHoursUntil <Int32>] [-MonitorModeThresholdMinutes <Int32>] [-MonitorModeThresholdNrOfChanges <Int32>] [-Move] [-MultiThreaded] [-RecoveryMode] [-RemoveAttributesAfterCopy <String>] [-ResetArchiveAttributeAfterSelection] [-SetAttributesAfterCopy <String>] [-SkipAllSymbolicLinks] [-SkipFilesWithoutArchiveAttribute] [-SkipSymbolicFileLinks] [-Unicode] [<CommonParameters>]
+Start-RoboCopy -Source <String> [[-DestinationDirectory] <String>] [[-Files] <String[]>] [[-Override] <String>] [-AttributeExcludeFilter <String>] [-AttributeIncludeFilter <String>] [-CompressibleContent] [-CopyOnlyDirectoryTreeStructureAndEmptyFiles] [-CopySymbolicLinksAsLinks] [-ExactTimestamps] [-FileExcludeFilter <String[]>] [-Force] [-IncludeSecurity] [-LargeFiles] [-LogAllFileNames] [-LogDirectoryNames] [-LogfileOverwrite] [-LogFilePath <String>] [-MaxFileAge <Int32>] [-MaxFileSize <Int32>] [-MaxLastAccessAge <Int32>] [-MinFileAge <Int32>] [-MinFileSize <Int32>] [-MinLastAccessAge <Int32>] [-Mirror] [-MirrorWithSourceMask] [-MonitorMode] [-MonitorModeRunHoursFrom <Int32>] [-MonitorModeRunHoursUntil <Int32>] [-MonitorModeThresholdMinutes <Int32>] [-MonitorModeThresholdNrOfChanges <Int32>] [-Move] [-MultiThreaded] [-RecoveryMode] [-RemoveAttributesAfterCopy <String>] [-ResetArchiveAttributeAfterSelection] [-SetAttributesAfterCopy <String>] [-SkipAllSymbolicLinks] [-SkipFilesWithoutArchiveAttribute] [-SkipSymbolicFileLinks] [-Unicode] [<CommonParameters>]
 
 Start-RoboCopy [-SkipDirectories] [<CommonParameters>]
 
@@ -43,6 +43,7 @@ Start-RoboCopy [-CopyJunctionsAsJunctons] [-CopyOnlyDirectoryTreeStructure] [-Di
 | `-DestinationDirectory` | String | ☐ | The destination directory to place the copied<br>files and directories into. If this directory<br>does not exist yet, all missing directories<br>will be created. Default value = `".\` |
 | `-Files` | String[] | ☐ | Optional searchmask for selecting the files<br>that need to be copied. Default value = '* 🌐<br>wildcards |
 | `-Mirror` | SwitchParameter | ☐ | Synchronizes the content of specified<br>directories, will also delete any files and<br>directories in the destination that do not<br>exist in the source |
+| `-MirrorWithSourceMask` | SwitchParameter | ☐ | Mirrors even when the source names a file<br>mask or a file, where robocopy would also<br>delete destination directories that do not<br>match the mask |
 | `-Move` | SwitchParameter | ☐ | Will move instead of copy all files from<br>source to destination |
 | `-IncludeSecurity` | SwitchParameter | ☐ | Will also copy ownership, security<br>descriptors and auditing information of files<br>and directories |
 | `-SkipDirectories` | SwitchParameter | ☐ | Copies only files from source and skips<br>sub-directories (no recurse) |
@@ -155,6 +156,21 @@ Start-RoboCopy -Source "C:\Documents" -DestinationDirectory "\\server\share" `
 ### `-Mirror`
 
 > Synchronizes the content of specified directories, will also delete any files and directories in the destination that do not exist in the source
+
+| Property | Value |
+|:---|:---|
+| **Required?** | No |
+| **Position?** | Named |
+| **Default value** | *(none)* |
+| **Accept pipeline input?** | False |
+| **Aliases** | *(none)* |
+| **Accept wildcard characters?** | No |
+
+<hr/>
+
+### `-MirrorWithSourceMask`
+
+> Mirrors even when the source names a file mask or a file, where robocopy would also delete destination directories that do not match the mask
 
 | Property | Value |
 |:---|:---|

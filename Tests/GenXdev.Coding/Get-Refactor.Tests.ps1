@@ -1,6 +1,41 @@
 ###############################################################################
 Pester\Describe 'Get-Refactor' {
 
+    Pester\BeforeAll {
+
+        # These tests call EnsureDefaultGenXdevRefactors, which resolves LLM
+        # settings through the preference layer. Point that layer at a temp
+        # database and seed every query type, so the cmdlets resolve settings
+        # locally instead of falling through to the interactive settings
+        # prompt (forbidden under test) and never touch the real user store.
+        $script:testRoot = GenXdev\Expand-Path (
+            [System.IO.Path]::GetTempPath() +
+            "\GenXdev.GetRefactor.Tests\$([DateTime]::UtcNow.Ticks)\") `
+            -CreateDirectory
+
+        GenXdev\Set-GenXdevPreferencesDatabasePath $script:testRoot
+
+        $allTypes = @(
+            'SimpleIntelligence', 'Knowledge', 'Pictures',
+            'TextTranslation', 'Coding', 'ToolUse'
+        )
+
+        foreach ($type in $allTypes) {
+
+            $null = GenXdev\Set-AILLMSettings -LLMQueryType $type `
+                -Model 'test-model' `
+                -ApiEndpoint 'https://test.example.com/v1' `
+                -ApiKey 'sk-test'
+        }
+    }
+
+    Pester\AfterAll {
+
+        GenXdev\Set-GenXdevPreferencesDatabasePath -ClearSession
+        GenXdev\Remove-AllItems -Confirm:$false $script:testRoot `
+            -DeleteFolder -ErrorAction SilentlyContinue
+    }
+
     Pester\It 'should pass PSScriptAnalyzer rules' {
 
         # get the script path for analysis

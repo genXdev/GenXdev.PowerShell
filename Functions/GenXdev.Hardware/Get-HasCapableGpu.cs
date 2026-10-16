@@ -59,7 +59,7 @@ Checks if the system has a CUDA-capable GPU with sufficient memory.
                 var controllers = searcher.Get();
                 int capableGpuCount = 0;
 
-                foreach (ManagementObject controller in controllers)
+                foreach (ManagementObject controller in controllers.Cast<ManagementObject>())
                 {
                     var adapterRam = controller["AdapterRAM"] as ulong?;
                     if (adapterRam.HasValue && adapterRam.Value >= requiredMemory)

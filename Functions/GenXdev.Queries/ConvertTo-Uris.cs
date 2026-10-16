@@ -83,7 +83,7 @@ Pipes a text string to the cmdlet for URI parsing.
             foreach (var line in Text)
             {
                 // Get first 30 chars of line for logging
-                var previewText = line.Length > 30 ? line.Substring(0, 30) : line;
+                var previewText = line.Length > 30 ? line[..30] : line;
 
                 WriteVerbose($"Processing text line: {previewText}...");
 

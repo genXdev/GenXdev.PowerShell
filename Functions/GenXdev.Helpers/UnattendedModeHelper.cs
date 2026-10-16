@@ -26,12 +26,12 @@ namespace GenXdev.Helpers
         {
 
             // Define environment variables that indicate automation environments
-            string[] automationEnvVars = new[]
-            {
+            string[] automationEnvVars =
+            [
                 "JENKINS_URL", "GITHUB_ACTIONS", "TF_BUILD", "CI", "BUILD_ID",
                 "RUNNER_OS", "SYSTEM_TEAMPROJECT", "TEAMCITY_VERSION", "TRAVIS",
                 "APPVEYOR", "CIRCLECI", "GITLAB_CI", "AZURE_PIPELINES"
-            };
+            ];
 
             // Check if any automation environment variable is set
             bool hasAutomationEnv = automationEnvVars.Any(envVar =>

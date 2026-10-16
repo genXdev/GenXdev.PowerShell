@@ -73,7 +73,7 @@ Retrieves the full path to the Windows Defender command-line tool.
                 // If executable not found, throw descriptive error
                 string errorMsg = $"Windows Defender executable not found at: {this.mpCmdRunPath}";
 
-                ErrorRecord errorRecord = new ErrorRecord(
+                ErrorRecord errorRecord = new(
                     new FileNotFoundException(errorMsg),
                     "MpCmdRunNotFound",
                     ErrorCategory.ObjectNotFound,

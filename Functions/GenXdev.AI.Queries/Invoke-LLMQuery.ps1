@@ -1571,20 +1571,30 @@ ${example}
                             $parsedOutput = $null
                             $finalDepth = $targetDepth
 
-                            # Try progressively smaller depths until it fits or we reach minimum depth of 2
-                            $foundValidDepth = $false
-                            while ($finalDepth -ge 2) {
-                                $parsedOutput = $invocationResult.Output | Microsoft.PowerShell.Utility\ConvertTo-Json -Depth $finalDepth -Compress -ErrorAction SilentlyContinue
+                            # The invoker already serialized json output, so re-encoding that
+                            # string would escape the whole payload a second time
+                            if ($invocationResult.Output -is [string]) {
 
-                                if ($parsedOutput.Length -le $MaxToolcallBackLength) {
-                                    # Found a depth that works
-                                    $foundValidDepth = $true
-                                    if ($finalDepth -lt $targetDepth) {
-                                        Microsoft.PowerShell.Utility\Write-Verbose "Tool '$($toolCall.function.name)' JSON output depth reduced from $targetDepth to $finalDepth to fit within $MaxToolcallBackLength characters"
+                                $parsedOutput = $invocationResult.Output
+                                $foundValidDepth = $parsedOutput.Length -le $MaxToolcallBackLength
+                            }
+                            else {
+
+                                # Try progressively smaller depths until it fits or we reach minimum depth of 2
+                                $foundValidDepth = $false
+                                while ($finalDepth -ge 2) {
+                                    $parsedOutput = $invocationResult.Output | Microsoft.PowerShell.Utility\ConvertTo-Json -Depth $finalDepth -Compress -ErrorAction SilentlyContinue
+
+                                    if ($parsedOutput.Length -le $MaxToolcallBackLength) {
+                                        # Found a depth that works
+                                        $foundValidDepth = $true
+                                        if ($finalDepth -lt $targetDepth) {
+                                            Microsoft.PowerShell.Utility\Write-Verbose "Tool '$($toolCall.function.name)' JSON output depth reduced from $targetDepth to $finalDepth to fit within $MaxToolcallBackLength characters"
+                                        }
+                                        break
                                     }
-                                    break
+                                    $finalDepth--
                                 }
-                                $finalDepth--
                             }
 
                             # If we found a depth that works, use it

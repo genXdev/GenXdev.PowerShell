@@ -50,6 +50,9 @@ Optional searchmask for selecting the files that need to be copied.
 .PARAMETER Mirror
 Synchronizes the content of specified directories, will also delete any files and directories in the destination that do not exist in the source
 
+.PARAMETER MirrorWithSourceMask
+Mirrors even when the source names a file mask or a file. Without this switch, such a source turns Mirror off, because robocopy would also delete destination directories that the mask does not match.
+
 .PARAMETER Move
 Will move instead of copy all files from source to destination
 
@@ -259,6 +262,14 @@ function Start-RoboCopy {
             HelpMessage = 'Synchronizes the content of specified directories, will also delete any files and directories in the destination that do not exist in the source'
         )]
         [switch] $Mirror,
+        ########################################################################
+
+        [Parameter(
+            Mandatory = $false,
+            ValueFromPipeline = $false,
+            HelpMessage = 'Mirrors even when the source names a file mask or a file, where robocopy would also delete destination directories that do not match the mask'
+        )]
+        [switch] $MirrorWithSourceMask,
         ########################################################################
 
         [Parameter(
@@ -613,6 +624,7 @@ Multiple overrides:
 
         # initialize settings
         $RobocopyPath = "$env:SystemRoot\system32\robocopy.exe";
+        $MirrorSkippedWarning = '';
 
         # normalize to current directory
         $Source = GenXdev\Expand-Path $Source
@@ -638,7 +650,15 @@ Multiple overrides:
                     }
                 }
 
-                $Mirror = $false;
+                if ((@('*', '*.*') -notcontains $SourceSearchMask) -and ($MirrorWithSourceMask -eq $false)) {
+
+                    if ($Mirror -eq $true) {
+
+                        $MirrorSkippedWarning = "Mirror was skipped for source '$Source': robocopy would also delete destination directories that the mask '$SourceSearchMask' does not match. Add -MirrorWithSourceMask to mirror anyway."
+                    }
+
+                    $Mirror = $false;
+                }
             }
 
             # reconfigure
@@ -1092,7 +1112,7 @@ Multiple overrides:
         if ([string]::IsNullOrWhiteSpace($RemoveAttributesAfterCopy) -eq $false) {
 
             $Filter = "$((SanitizeAttributeSet $RemoveAttributesAfterCopy 'RemoveAttributesAfterCopy'))";
-            $ParamAttrRemove = "/A+:$Filter" #            █ remove the given Attributes from copied files.
+            $ParamAttrRemove = "/A-:$Filter" #            █ remove the given Attributes from copied files.
         }
 
         # -MaxSubDirTreeLevelDepth ➜ Only copy the top n levels of the source directory tree
@@ -1110,7 +1130,7 @@ Multiple overrides:
         # -MaxFileSize ➜ Skip files that are larger then n bytes
         if ($MaxFileSize -ge 0) {
 
-            $ParamMAX = "/MAX:$MinFileSize" #             █ MAXimum file size - exclude files bigger than n bytes.
+            $ParamMAX = "/MAX:$MaxFileSize" #             █ MAXimum file size - exclude files bigger than n bytes.
         }
 
         # -MinFileAge ➜ Skip files that are not at least: n days old OR created before n date (if n < 1900 then n = n days, else n = YYYYMMDD date)
@@ -1190,9 +1210,9 @@ Multiple overrides:
             # -MonitorModeRunHoursFrom ➜ Run hours - times when new copies may be started, start-time, range 0000:2359
             if ($MonitorModeRunHoursFrom -ge 0) {
 
-                $MonitorModeRunHoursFromStr = "$MonitorModeRunHoursFrom".PadLeft('0', 4);
+                $MonitorModeRunHoursFromStr = "$MonitorModeRunHoursFrom".PadLeft(4, '0');
                 [int] $FromMinute = $MonitorModeRunHoursFromStr.Substring(2, 2);
-                if ($FromMinute -lt 59) {
+                if ($FromMinute -gt 59) {
 
                     throw "Could not parse '-MonitorModeRunHoursFrom $MonitorModeRunHoursFromStr' parameter, range 0000:2359"
                 }
@@ -1204,10 +1224,10 @@ Multiple overrides:
             # -MonitorModeRunHoursUntil ➜ Run hours - times when new copies may be started, end-time, range 0000:2359
             if ($MonitorModeRunHoursUntil -ge 0) {
 
-                $MonitorModeRunHoursUntilStr = "$MonitorModeRunHoursUntil".PadLeft('0', 4);
+                $MonitorModeRunHoursUntilStr = "$MonitorModeRunHoursUntil".PadLeft(4, '0');
                 [int] $UntilMinute = $MonitorModeRunHoursUntilStr.Substring(2, 2);
 
-                if ($UntilMinute -lt 59) {
+                if ($UntilMinute -gt 59) {
 
                     throw "Could not parse '-MonitorModeRunHoursUntil $MonitorModeRunHoursUntilStr' parameter, range 0000:2359"
                 }
@@ -1285,6 +1305,12 @@ Multiple overrides:
 
         $switches = "$ParamDirs /TS /FP $ParamMode /DCOPY:DAT $ParamMT $ParamMOV $ParamMIR $ParamSECFIX $ParamCOPY $ParamXO $ParamIM $ParamIT $ParamIS $ParamEFSRAW $ParamNOOFFLOAD $ParamR $ParamW $paramJ $ParamNDL $ParamX $ParamV $ParamCREATE $ParamXJ $ParamXJD $ParamXJF $ParamSJ $ParamSL $ParamArchive $ParamIA $ParamXA $ParamAttrSet $ParamAttrRemove $ParamLEV $ParamMIN $ParamMAX $ParamMINAGE $ParamMaxAGE $ParamLOG $ParamTee $ParamUnicode $ParamRH $ParamMON $ParamMON $ParamMAXLAD $ParamMINLAD $ParamCOMPRESS $ParamXF $ParamXD $ParamFFT".Replace('  ', ' ').Trim();
         $switchesCleaned = overrideAndCleanSwitches($switches)
+
+        if ($switchesCleaned.Split(' ') -contains '/MIR') {
+
+            $MirrorSkippedWarning = '';
+        }
+
         $FilesArgs = ConstructFileFilterSet $Files 'FileMask'
         $cmdLine = "& '$($RobocopyPath.Replace("'", "''"))' '$($Source.Replace("'", "''"))' '$($DestinationDirectory.Replace("'", "''"))' $FilesArgs $switchesCleaned"
     }
@@ -1353,5 +1379,10 @@ Multiple overrides:
         Microsoft.PowerShell.Utility\Write-Verbose "Executing RoboCopy command: $cmdLine"
 
         Microsoft.PowerShell.Utility\Invoke-Expression $cmdLine
+
+        if ([string]::IsNullOrWhiteSpace($MirrorSkippedWarning) -eq $false) {
+
+            Microsoft.PowerShell.Utility\Write-Warning $MirrorSkippedWarning
+        }
     }
 }

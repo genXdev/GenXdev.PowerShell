@@ -171,7 +171,7 @@ namespace GenXdev.Helpers
         /// </para>
         /// </summary>
         public static readonly JsonSerializerSettings Settings =
-            new JsonSerializerSettings
+            new()
             {
 
                 MetadataPropertyHandling = MetadataPropertyHandling.Ignore,

@@ -101,7 +101,7 @@ Writes with custom retry: up to 10 attempts with 500ms between each.
             Mandatory = false,
             Position = 1,
             HelpMessage = "The byte array to write to the file.")]
-        public byte[] Data { get; set; } = new byte[0];
+        public byte[] Data { get; set; } = [];
 
         /// <summary>
         /// The maximum number of retry attempts for the atomic write

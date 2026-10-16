@@ -22,7 +22,7 @@ namespace GenXdev.Helpers
             }
 
             // For non-zero offset, format with timezone and remove the colon from the offset
-            StringBuilder builder = new StringBuilder(dateTime.ToString("ddd, dd MMM yyyy HH:mm:ss zzz", CultureInfo.InvariantCulture));
+            StringBuilder builder = new(dateTime.ToString("ddd, dd MMM yyyy HH:mm:ss zzz", CultureInfo.InvariantCulture));
 
             builder.Remove(builder.Length - 3, 1);
 

@@ -19,10 +19,10 @@ consenting to the installation at their own risk.
 
 Preferences are stored using the GenXdev preferences system
 (Get-GenXdevPreference / Set-GenXdevPreference), allowing users to set
-"always allow" for specific applications or enable global consent for
-all GenXdev third-party installations, making it convenient while
-remaining legally sound. Preferences are stored locally only and are not
-synced with OneDrive.
+"always allow" for a specific application or for every GenXdev
+third-party installation. Each of those can be scoped to this machine
+only, or to all machines through the preferences database inside the
+OneDrive folder, making it convenient while remaining legally sound.
 
 If consent is denied (or preference is set to deny), the function returns $false and does not
 proceed with installation. If allowed, it returns $true.
@@ -50,7 +50,7 @@ preference key like "AllowInstall_DockerDesktop".
 
 .PARAMETER Source
 The source of the installation (e.g., "Winget", "PowerShell Gallery",
-"apt-get in WSL", "dotnet CLI"). This is included in the explanation
+"apt-get in WSL", "DotNet CLI"). This is included in the explanation
 prompt for transparency.
 
 .PARAMETER Description
@@ -86,9 +86,14 @@ Prompts with detailed information before installing the Pester module.
   removed for simplicity).
 - Global consent key is "AllowInstall_GenXdevGlobal" which applies to all
   third-party installations.
-- Preferences are stored locally using the GenXdev preferences system
-  (Get-GenXdevPreference / Set-GenXdevPreference) and are not synced
-  with OneDrive.
+- Choices scoped to this machine are stored in the local preferences
+  database. Choices scoped to all machines are stored under the same key in
+  the preferences database inside the OneDrive folder, so they travel with
+  the user (see Get-GenXdevPreferencesDatabasePath and the
+  -PreferencesDatabasePath parameter).
+- The prompt offers consent for this session, always for just this
+  application, or always for every application, each of the latter two
+  either on this machine only or on all machines, plus No and Help.
 - If denied, no installation occurs, and the function returns $false.
 - For legal soundness: The prompt explicitly requires user consent,
   disclaims liability, and explains risks (e.g., third-party software may
@@ -162,6 +167,14 @@ function Confirm-InstallationConsent {
         # create preference key for this application
         $preferenceKey = "AllowInstall_${safeAppName}"
 
+        # the choices scoped to all machines live in the same preferences database
+        # name underneath OneDrive, so they travel with the user
+        $syncedPreferencesPath = $null
+        if (-not [string]::IsNullOrEmpty($env:OneDrive)) {
+            $syncedPreferencesPath = Microsoft.PowerShell.Management\Join-Path $env:OneDrive `
+                'GenXdev.PowerShell\Preferences'
+        }
+
         Microsoft.PowerShell.Utility\Write-Verbose "Checking consent for installing '${ApplicationName}' from '${Source}'."
     }
 
@@ -175,7 +188,7 @@ function Confirm-InstallationConsent {
             -BoundParameters $PSBoundParameters `
             -FunctionName 'GenXdev\Get-GenXdevPreference'
 
-        # check if global genxdev consent is set
+        # check the global and the per application consent in both stores
         $globalConsentKey = "AllowInstall_GenXdevGlobal"
         $globalConsent = GenXdev\Get-GenXdevPreference @getPreferencesParams -Name $globalConsentKey
 
@@ -198,12 +211,40 @@ function Confirm-InstallationConsent {
                     $autoConcent = $true
                 }
             }
+
+            # the synced store carries the allowances granted for all machines
+            if (-not $autoConcent -and $null -ne $syncedPreferencesPath) {
+
+                $syncedGlobalConsent = GenXdev\Get-GenXdevPreference @getPreferencesParams `
+                    -Name $globalConsentKey -PreferencesDatabasePath $syncedPreferencesPath
+
+                if ($syncedGlobalConsent -eq 'true') {
+
+                    Microsoft.PowerShell.Utility\Write-Verbose "Synced global consent allows installation of '${ApplicationName}'."
+                    $autoConcent = $true
+                }
+                else {
+
+                    $syncedAppConsent = GenXdev\Get-GenXdevPreference @getPreferencesParams `
+                        -Name $preferenceKey -PreferencesDatabasePath $syncedPreferencesPath
+
+                    if ($syncedAppConsent -eq 'true') {
+
+                        Microsoft.PowerShell.Utility\Write-Verbose "Synced consent allows installation of '${ApplicationName}'."
+                        $autoConcent = $true
+                    }
+                }
+            }
         }
 
         $setPreferencesParams = GenXdev\Copy-IdenticalParamValues `
             -BoundParameters $PSBoundParameters `
             -FunctionName 'GenXdev\Set-GenXdevPreference';
 
+        $syncedSetParams = @{}
+        if ($null -ne $syncedPreferencesPath) {
+            $syncedSetParams['PreferencesDatabasePath'] = $syncedPreferencesPath
+        }
 
         if ($autoConcent) {
 
@@ -220,6 +261,9 @@ function Confirm-InstallationConsent {
                 Microsoft.PowerShell.Utility\Write-Verbose "Automatic consent granted and persistent allowance set for '${ApplicationName}'."
                 return $true
             }
+
+            Microsoft.PowerShell.Utility\Write-Verbose "Allowance for '${ApplicationName}' was already stored."
+            return $true
         }
 
         # prepare to prompt user for consent
@@ -264,75 +308,116 @@ function Confirm-InstallationConsent {
         ) -ForegroundColor White
         Microsoft.PowerShell.Utility\Write-Host ""
 
-        # set up prompt for user choice
-        $title = "Installation Consent for '${ApplicationName}'"
-        $message = "Do you consent to install this third-party software?"
+        # warn when the all machines choices cannot travel with the user
+        if ($null -eq $syncedPreferencesPath) {
+            Microsoft.PowerShell.Utility\Write-Warning (
+                'OneDrive is not available, so the choices for all machines are ' +
+                'stored on this machine only.'
+            )
+        }
 
-        $choices = @(
-            Microsoft.PowerShell.Utility\New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Yes (this time only)"
-            Microsoft.PowerShell.Utility\New-Object System.Management.Automation.Host.ChoiceDescription "&Always", "Always allow (set persistent preference)"
-            Microsoft.PowerShell.Utility\New-Object System.Management.Automation.Host.ChoiceDescription "&Global", "Always consent with GenXdev (allow all GenXdev third-party installations)"
-            Microsoft.PowerShell.Utility\New-Object System.Management.Automation.Host.ChoiceDescription "&No", "No (this time only)"
-            Microsoft.PowerShell.Utility\New-Object System.Management.Automation.Host.ChoiceDescription "&Help", "Show additional help information"
-        )
+        # keep asking until a decision is made, so Help can be requested
+        while ($true) {
 
-        $defaultChoice = 3  # Default to "No"
-        $choice = $Host.UI.PromptForChoice($title, $message, $choices, $defaultChoice)
+            # set up prompt for user choice
+            $title = "Installation Consent for '${ApplicationName}'"
+            $message = "Do you consent to install this third-party software?"
 
-        # handle user choice
-        switch ($choice) {
-            0 {
-                # Yes
-                GenXdev\Set-GenXdevPreference @setPreferencesParams -Name $preferenceKey -Value 'true' -SessionOnly
-                Microsoft.PowerShell.Utility\Write-Verbose "User consented for this installation only."
-                return $true
+            $choices = @(
+                Microsoft.PowerShell.Utility\New-Object System.Management.Automation.Host.ChoiceDescription "&Yes, this session", "Yes (this session only)"
+                Microsoft.PowerShell.Utility\New-Object System.Management.Automation.Host.ChoiceDescription "&Always — this app, this machine", "Always allow this application on this machine"
+                Microsoft.PowerShell.Utility\New-Object System.Management.Automation.Host.ChoiceDescription "&Every machine — this app", "Always allow this application on all machines, through OneDrive"
+                Microsoft.PowerShell.Utility\New-Object System.Management.Automation.Host.ChoiceDescription "&System-wide — all apps, this machine", "Always allow all third-party software on this machine"
+                Microsoft.PowerShell.Utility\New-Object System.Management.Automation.Host.ChoiceDescription "&Global — all apps, every machine", "Always allow all third-party software on all machines, through OneDrive"
+                Microsoft.PowerShell.Utility\New-Object System.Management.Automation.Host.ChoiceDescription "&No, just this time", "No (this time only)"
+                Microsoft.PowerShell.Utility\New-Object System.Management.Automation.Host.ChoiceDescription "&Help", "Show additional help information"
+            )
+
+            $defaultChoice = 5  # Default to "No"
+            # queued keystrokes must not answer this prompt on your behalf
+            if (-not [Console]::IsInputRedirected) {
+                while ([Console]::KeyAvailable) { $null = [Console]::ReadKey() }
             }
-            1 {
-                # Always
-                GenXdev\Set-GenXdevPreference @setPreferencesParams -Name $preferenceKey -Value 'true'
-                Microsoft.PowerShell.Utility\Write-Host "Persistent allowance set for '${ApplicationName}'." -ForegroundColor Green
-                Microsoft.PowerShell.Utility\Write-Verbose "User set persistent allowance for '${ApplicationName}'."
-                return $true
-            }
-            2 {
-                # Global
-                GenXdev\Set-GenXdevPreference @setPreferencesParams -Name $globalConsentKey -Value 'true'
-                Microsoft.PowerShell.Utility\Write-Host (
-                    "Global GenXdev consent enabled for all third-party software installations."
-                ) -ForegroundColor Green
-                Microsoft.PowerShell.Utility\Write-Verbose "User enabled global GenXdev consent for all third-party installations."
-                return $true
-            }
-            3 {
-                # No
-                Microsoft.PowerShell.Utility\Write-Host "Installation denied for this time." -ForegroundColor Yellow
-                return $false
-            }
-            4 {
-                # Help
-                Microsoft.PowerShell.Utility\Write-Host "`nAdditional Help:" -ForegroundColor Cyan
-                Microsoft.PowerShell.Utility\Write-Host (
-                    "• Choosing 'Always' options saves your preference via the GenXdev preferences system."
-                ) -ForegroundColor White
-                Microsoft.PowerShell.Utility\Write-Host (
-                    "• 'Global' option enables automatic consent for ALL GenXdev third-party installations."
-                ) -ForegroundColor White
-                Microsoft.PowerShell.Utility\Write-Host (
-                    "• You can manage preferences with Get-GenXdevPreference and Set-GenXdevPreference."
-                ) -ForegroundColor White
-                Microsoft.PowerShell.Utility\Write-Host (
-                    "• This prompt ensures your explicit consent to avoid any automatic installations."
-                ) -ForegroundColor White
-                Microsoft.PowerShell.Utility\Write-Host (
-                    "• The preference key for this application is: ${preferenceKey}"
-                ) -ForegroundColor White
-                Microsoft.PowerShell.Utility\Write-Host (
-                    "• The global preference key is: ${globalConsentKey}"
-                ) -ForegroundColor White
-            }
-            default {
-                Microsoft.PowerShell.Utility\Write-Warning "Invalid choice. Treating as denial."
-                return $false
+
+            $choice = $Host.UI.PromptForChoice($title, $message, $choices, $defaultChoice)
+
+            # handle user choice
+            switch ($choice) {
+                0 {
+                    # Yes, this session
+                    GenXdev\Set-GenXdevPreference @setPreferencesParams -Name $preferenceKey -Value 'true' -SessionOnly
+                    Microsoft.PowerShell.Utility\Write-Verbose "User consented for this session only."
+                    return $true
+                }
+                1 {
+                    # Always, this application, this machine
+                    GenXdev\Set-GenXdevPreference @setPreferencesParams -Name $preferenceKey -Value 'true'
+                    Microsoft.PowerShell.Utility\Write-Host (
+                        "Allowance for '${ApplicationName}' stored on this machine."
+                    ) -ForegroundColor Green
+                    return $true
+                }
+                2 {
+                    # Always, this application, all machines
+                    GenXdev\Set-GenXdevPreference @setPreferencesParams @syncedSetParams `
+                        -Name $preferenceKey -Value 'true'
+                    Microsoft.PowerShell.Utility\Write-Host (
+                        "Allowance for '${ApplicationName}' stored for all machines."
+                    ) -ForegroundColor Green
+                    return $true
+                }
+                3 {
+                    # Always, all applications, this machine
+                    GenXdev\Set-GenXdevPreference @setPreferencesParams `
+                        -Name $globalConsentKey -Value 'true'
+                    Microsoft.PowerShell.Utility\Write-Host (
+                        "Allowance for all third-party software stored on this machine."
+                    ) -ForegroundColor Green
+                    return $true
+                }
+                4 {
+                    # Always, all applications, all machines
+                    GenXdev\Set-GenXdevPreference @setPreferencesParams @syncedSetParams `
+                        -Name $globalConsentKey -Value 'true'
+                    Microsoft.PowerShell.Utility\Write-Host (
+                        "Allowance for all third-party software stored for all machines."
+                    ) -ForegroundColor Green
+                    return $true
+                }
+                5 {
+                    # No
+                    Microsoft.PowerShell.Utility\Write-Host "Installation denied for this time." -ForegroundColor Yellow
+                    return $false
+                }
+                6 {
+                    # Help
+                    Microsoft.PowerShell.Utility\Write-Host "`nAdditional Help:" -ForegroundColor Cyan
+                    Microsoft.PowerShell.Utility\Write-Host (
+                        "• 'Yes, this session' allows this installation until the session ends."
+                    ) -ForegroundColor White
+                    Microsoft.PowerShell.Utility\Write-Host (
+                        "• The two 'this app' choices allow just this application, either on this machine only or on every machine through OneDrive."
+                    ) -ForegroundColor White
+                    Microsoft.PowerShell.Utility\Write-Host (
+                        "• The two 'all apps' choices allow every third-party installation, again either on this machine only or on every machine through OneDrive."
+                    ) -ForegroundColor White
+                    Microsoft.PowerShell.Utility\Write-Host (
+                        "• Allowances for all machines are stored in the preferences database underneath your OneDrive folder, so they follow you between machines."
+                    ) -ForegroundColor White
+                    Microsoft.PowerShell.Utility\Write-Host (
+                        "• Manage them with Get-GenXdevPreference, Get-GenXdevPreferenceNames and Remove-GenXdevPreference."
+                    ) -ForegroundColor White
+                    Microsoft.PowerShell.Utility\Write-Host (
+                        "• Preference key for this application: ${preferenceKey}"
+                    ) -ForegroundColor White
+                    Microsoft.PowerShell.Utility\Write-Host (
+                        "• Preference key for all applications: ${globalConsentKey}"
+                    ) -ForegroundColor White
+                }
+                default {
+                    Microsoft.PowerShell.Utility\Write-Warning "Invalid choice. Treating as denial."
+                    return $false
+                }
             }
         }
     }

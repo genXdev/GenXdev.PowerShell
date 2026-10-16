@@ -487,12 +487,25 @@ function Invoke-WindowsUpdate {
                             PowerShellGet\Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted -Confirm:$false
                         }
 
-                        if (-not $NoBanner) {
-                            Microsoft.PowerShell.Utility\Write-Host (
-                                "Running Update-Module -AcceptLicense...") -ForegroundColor Yellow
+                        $updateModuleArgs = @{
+                            ErrorAction = 'Continue'
+                            Confirm     = $false
                         }
 
-                        PowerShellGet\Update-Module -AcceptLicense -ErrorAction Continue -Confirm:$false
+                        $updateModuleCommand = Microsoft.PowerShell.Core\Get-Command `
+                            -Name PowerShellGet\Update-Module
+
+                        if ($updateModuleCommand.Parameters.ContainsKey('AcceptLicense')) {
+
+                            $updateModuleArgs.AcceptLicense = $true
+                        }
+
+                        if (-not $NoBanner) {
+                            Microsoft.PowerShell.Utility\Write-Host (
+                                "Running Update-Module...") -ForegroundColor Yellow
+                        }
+
+                        PowerShellGet\Update-Module @updateModuleArgs
 
                         if (-not $NoBanner) {
                             Microsoft.PowerShell.Utility\Write-Host (
@@ -842,6 +855,11 @@ function Invoke-WindowsUpdate {
             foreach ($update in $optionalUpdates) {
 
                 if ($update.IsHidden -eq $false) {
+
+                    # queued keystrokes must not install an update on your behalf
+                    if (-not [Console]::IsInputRedirected) {
+                        while ([Console]::KeyAvailable) { $null = [Console]::ReadKey() }
+                    }
 
                     $choice = $host.ui.PromptForChoice(
                         'Optional Update',

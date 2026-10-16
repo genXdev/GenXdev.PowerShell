@@ -61,7 +61,7 @@ Gets the total number of logical CPU cores.
             WriteVerbose($"Retrieved {processors.Count} physical processors");
 
             // Sum cores from each processor
-            foreach (ManagementObject processor in processors)
+            foreach (ManagementObject processor in processors.Cast<ManagementObject>())
             {
                 int cores = (int)(uint)processor["NumberOfCores"];
                 totalPhysicalCores += cores;

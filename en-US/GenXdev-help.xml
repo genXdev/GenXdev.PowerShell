@@ -84,7 +84,7 @@ formatting.</maml:para>
             <maml:name>SwitchParameter</maml:name>
             <maml:uri />
           </dev:type>
-          <dev:defaultValue>$false</dev:defaultValue>
+          <dev:defaultValue>False</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>NewLine</maml:name>
@@ -95,7 +95,18 @@ formatting.</maml:para>
             <maml:name>SwitchParameter</maml:name>
             <maml:uri />
           </dev:type>
-          <dev:defaultValue>$false</dev:defaultValue>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>NoEmptyLines</maml:name>
+          <maml:description>
+            <maml:para>Prevents empty lines</maml:para>
+          </maml:description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
         </command:parameter>
       </command:syntaxItem>
     </command:syntax>
@@ -165,7 +176,7 @@ formatting.</maml:para>
           <maml:name>SwitchParameter</maml:name>
           <maml:uri />
         </dev:type>
-        <dev:defaultValue>$false</dev:defaultValue>
+        <dev:defaultValue>False</dev:defaultValue>
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>NewLine</maml:name>
@@ -177,7 +188,19 @@ formatting.</maml:para>
           <maml:name>SwitchParameter</maml:name>
           <maml:uri />
         </dev:type>
-        <dev:defaultValue>$false</dev:defaultValue>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>NoEmptyLines</maml:name>
+        <maml:description>
+          <maml:para>Prevents empty lines</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
       </command:parameter>
     </command:parameters>
     <command:inputTypes>
@@ -205,25 +228,16 @@ formatting.</maml:para>
         <maml:title>--
 
 ---[Example 1]-------</maml:title>
-        <dev:code>@(
-    @{ Name = "Alice"; Age = 30 }
-    @{ Name = "Bob"; Age = 25 }
-) | Add-ArrayTemplate -Template "{Name} is {Age} years old"
-Name: Alice
-Age: 30
-Name: Bob
-Age: 25
+        <dev:code>$c = @(
+     @{ Name = "Alice"; Age = 30 }
+     @{ Name = "Bob"; Age = 25 }
+ );
+@"
+    $(Format-Array $c '$Name is $Age years old' ',' -NewLine -Indentation 1)
+"@
+    Alice is 30 years old,
+    Bob is 25 years old
 Formats an array of hashtables with property placeholders.</dev:code>
-        <dev:remarks>
-          <maml:para />
-        </dev:remarks>
-      </command:example>
-      <command:example>
-        <maml:title>--
-
----[Example 2]-------</maml:title>
-        <dev:code>$items | FormatArray -Template "  - {Name}" -Delimiter ", " -Indentation 1
-Uses the FormatArray alias with indentation and a custom delimiter.</dev:code>
         <dev:remarks>
           <maml:para />
         </dev:remarks>
@@ -11331,10 +11345,10 @@ is not responsible for third-party software, and that the user is
 consenting to the installation at their own risk.
 Preferences are stored using the GenXdev preferences system
 (Get-GenXdevPreference / Set-GenXdevPreference), allowing users to set
-"always allow" for specific applications or enable global consent for
-all GenXdev third-party installations, making it convenient while
-remaining legally sound. Preferences are stored locally only and are not
-synced with OneDrive.
+"always allow" for a specific application or for every GenXdev
+third-party installation. Each of those can be scoped to this machine
+only, or to all machines through the preferences database inside the
+OneDrive folder, making it convenient while remaining legally sound.
 If consent is denied (or preference is set to deny), the function returns $false and does not
 proceed with installation. If allowed, it returns $true.</maml:para>
     </maml:description>
@@ -11869,10 +11883,6 @@ dictionary for later reference.</maml:para>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Stop-WebbrowserVideos</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Unprotect-WebbrowserTab</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
     </command:relatedLinks>
@@ -19410,6 +19420,10 @@ directory to the session PATH so that 7z.exe can be invoked directly.</maml:para
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>EnsureNuGetCli</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>EnsurePaintNet</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -20482,6 +20496,10 @@ recognition that is well-documented and actively maintained.</maml:para>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>EnsureNuGetCli</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>EnsurePaintNet</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -21533,6 +21551,10 @@ management for both system and user-level Docker installations.</maml:para>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>EnsureNuGetCli</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>EnsurePaintNet</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -21717,6 +21739,10 @@ ffmpeg -i input.mp4 -ac 1 -ar 16000 output.wav</dev:code>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>EnsureGithubCLI</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>EnsureNuGetCli</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -22243,6 +22269,10 @@ This will verify and setup GitHub CLI if needed.</dev:code>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>EnsureNuGetCli</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>EnsurePaintNet</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -22294,9 +22324,9 @@ This will verify and setup GitHub CLI if needed.</dev:code>
 and loaded into the current PowerShell session. It supports automatic detection
 and loading with fallback to a JSON manifest for configuration overrides,
 handling edge cases like stub dependencies (e.g., SQLite). Installation uses
-the dotnet CLI exclusively for reliable package management and loads assemblies
-directly from the global NuGet cache without copying. Lazy loading checks if
-the type is already available before proceeding.</maml:para>
+the NuGet CLI, which resolves the dependency graph and lays each package out
+next to its dependencies in the destination, from where the assemblies are then
+loaded. Lazy loading checks if the type is already available before proceeding.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem>
@@ -22755,6 +22785,199 @@ the type is already available before proceeding.</maml:para>
   </command:command>
   <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
     <command:details>
+      <command:name>EnsureNuGetCli</command:name>
+      <command:verb>EnsureNuGetCli</command:verb>
+      <command:noun>EnsureNuGetCli</command:noun>
+      <maml:description>
+        <maml:para>Ensures the NuGet CLI is installed and available.</maml:para>
+      </maml:description>
+    </command:details>
+    <maml:description>
+      <maml:para>This function verifies if the NuGet CLI is installed by checking the PATH and
+the WinGet link directory it is installed into. If not found, it installs the
+NuGet CLI via winget after obtaining user consent, and returns the full path
+to nuget.exe so callers can invoke it directly.
+The CLI resolves a NuGet dependency graph and lays a package out next to its
+dependencies on its own, so nothing else in the module needs the .NET SDK to
+download a package.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>EnsureNuGetCli</maml:name>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>AutoConsent</maml:name>
+          <maml:description>
+            <maml:para>('Automatically consent to the NuGet CLI installation ' +
+                'and set persistent flag.')</maml:para>
+          </maml:description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>AutoConsentAllPackages</maml:name>
+          <maml:description>
+            <maml:para>('Automatically consent to third-party software ' +
+                'installation and set persistent flag for all packages.')</maml:para>
+          </maml:description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>SessionOnly</maml:name>
+          <maml:description>
+            <maml:para>('Only auto consent during session')</maml:para>
+          </maml:description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>AutoConsent</maml:name>
+        <maml:description>
+          <maml:para>('Automatically consent to the NuGet CLI installation ' +
+                'and set persistent flag.')</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>AutoConsentAllPackages</maml:name>
+        <maml:description>
+          <maml:para>('Automatically consent to third-party software ' +
+                'installation and set persistent flag for all packages.')</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>SessionOnly</maml:name>
+        <maml:description>
+          <maml:para>('Only auto consent during session')</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name>None</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>You can't pipe input to this cmdlet.</maml:para>
+        </maml:description>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>Returns System.String objects.</maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <command:examples>
+      <command:example>
+        <maml:title>--
+
+---[Example 1]-------</maml:title>
+        <dev:code>$nuget = EnsureNuGetCli
+&amp; $nuget install Newtonsoft.Json -OutputDirectory .</dev:code>
+        <dev:remarks>
+          <maml:para />
+        </dev:remarks>
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>Online Version:</maml:linkText>
+        <maml:uri>https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/EnsureNuGetCli.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Ensure7Zip</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>EnsureDeepStack</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>EnsureDockerDesktop</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>EnsureFFMPEG</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>EnsureGithubCLI</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>EnsurePaintNet</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>EnsurePester</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>EnsurePlaywright</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>EnsurePSTools</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>EnsureSQLiteStudio</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>EnsureSSMSInstalled</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>EnsureVSCode</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>EnsureWindowsMediaFeaturePack</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>EnsureWinMerge</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
+    <command:details>
       <command:name>EnsurePaintNet</command:name>
       <command:verb>EnsurePaintNet</command:verb>
       <command:noun>EnsurePaintNet</command:noun>
@@ -22767,7 +22990,7 @@ the type is already available before proceeding.</maml:para>
 - Verifies if Paint.NET is installed and accessible in PATH
 - Installs Paint.NET via WinGet if not present
 - Configures system PATH environment variable
-- Ensures paintdotnet.exe is available for command-line usage
+- Ensures paintDotNet.exe is available for command-line usage
 The function handles all prerequisites and ensures a working Paint.NET installation.</maml:para>
     </maml:description>
     <command:syntax>
@@ -22905,6 +23128,10 @@ This will verify and setup Paint.NET if needed.</dev:code>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>EnsureGithubCLI</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>EnsureNuGetCli</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -23094,6 +23321,10 @@ This ensures Pester is installed and ready for use</dev:code>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>EnsureNuGetCli</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>EnsurePaintNet</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -23272,6 +23503,10 @@ and explicitly from EnsureGenXdev during environment setup.</maml:para>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>EnsureGithubCLI</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>EnsureNuGetCli</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -23495,6 +23730,10 @@ installation.</dev:code>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>EnsureNuGetCli</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>EnsurePaintNet</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -23678,6 +23917,10 @@ Checks and ensures SQLiteStudio is installed and accessible.</dev:code>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>EnsureGithubCLI</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>EnsureNuGetCli</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -23890,6 +24133,10 @@ Checks and ensures SSMS is installed and accessible.</dev:code>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>EnsureNuGetCli</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>EnsurePaintNet</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -24095,6 +24342,10 @@ configures specific extension settings.</maml:para>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>EnsureGithubCLI</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>EnsureNuGetCli</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -24304,6 +24555,10 @@ elevate privileges when needed.</maml:para>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>EnsureNuGetCli</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>EnsurePaintNet</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -24486,6 +24741,10 @@ Ensures WinMerge is installed and properly configured.</dev:code>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>EnsureGithubCLI</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>EnsureNuGetCli</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -30084,9 +30343,9 @@ displaying images. Features include:
           <maml:description>
             <maml:para>Array of image objects with path, keywords and description</maml:para>
           </maml:description>
-          <command:parameterValue required="true" variableLength="false">System.Collections.Generic.IEnumerable`1[[ImageSearchResult, GenXdev, Version=3.35.0.0, Culture=neutral, PublicKeyToken=null]]</command:parameterValue>
+          <command:parameterValue required="true" variableLength="false">System.Collections.Generic.IEnumerable`1[[ImageSearchResult, GenXdev, Version=3.36.0.0, Culture=neutral, PublicKeyToken=null]]</command:parameterValue>
           <dev:type>
-            <maml:name>System.Collections.Generic.IEnumerable`1[[ImageSearchResult, GenXdev, Version=3.35.0.0, Culture=neutral, PublicKeyToken=null]]</maml:name>
+            <maml:name>System.Collections.Generic.IEnumerable`1[[ImageSearchResult, GenXdev, Version=3.36.0.0, Culture=neutral, PublicKeyToken=null]]</maml:name>
             <maml:uri />
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
@@ -30273,9 +30532,9 @@ displaying images. Features include:
         <maml:description>
           <maml:para>Array of image objects with path, keywords and description</maml:para>
         </maml:description>
-        <command:parameterValue required="true" variableLength="false">System.Collections.Generic.IEnumerable`1[[ImageSearchResult, GenXdev, Version=3.35.0.0, Culture=neutral, PublicKeyToken=null]]</command:parameterValue>
+        <command:parameterValue required="true" variableLength="false">System.Collections.Generic.IEnumerable`1[[ImageSearchResult, GenXdev, Version=3.36.0.0, Culture=neutral, PublicKeyToken=null]]</command:parameterValue>
         <dev:type>
-          <maml:name>System.Collections.Generic.IEnumerable`1[[ImageSearchResult, GenXdev, Version=3.35.0.0, Culture=neutral, PublicKeyToken=null]]</maml:name>
+          <maml:name>System.Collections.Generic.IEnumerable`1[[ImageSearchResult, GenXdev, Version=3.36.0.0, Culture=neutral, PublicKeyToken=null]]</maml:name>
           <maml:uri />
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
@@ -30464,10 +30723,10 @@ displaying images. Features include:
     <command:inputTypes>
       <command:inputType>
         <dev:type>
-          <maml:name>System.Collections.Generic.IEnumerable`1[[GenXdev.Helpers.ImageSearchResult, GenXdev, Version=3.35.0.0, Culture=neutral, PublicKeyToken=null]]</maml:name>
+          <maml:name>System.Collections.Generic.IEnumerable`1[[GenXdev.Helpers.ImageSearchResult, GenXdev, Version=3.36.0.0, Culture=neutral, PublicKeyToken=null]]</maml:name>
         </dev:type>
         <maml:description>
-          <maml:para>Accepts System.Collections.Generic.IEnumerable`1[[GenXdev.Helpers.ImageSearchResult, GenXdev, Version=3.35.0.0, Culture=neutral, PublicKeyToken=null]] objects via pipeline.</maml:para>
+          <maml:para>Accepts System.Collections.Generic.IEnumerable`1[[GenXdev.Helpers.ImageSearchResult, GenXdev, Version=3.36.0.0, Culture=neutral, PublicKeyToken=null]] objects via pipeline.</maml:para>
         </maml:description>
       </command:inputType>
     </command:inputTypes>
@@ -32035,6 +32294,10 @@ settings.</dev:code>
       <maml:navigationLink>
         <maml:linkText>Online Version:</maml:linkText>
         <maml:uri>https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-AILLMSettings.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-GenXdevMCPToken</maml:linkText>
+        <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Get-SpeechToText</maml:linkText>
@@ -34540,6 +34803,193 @@ across both local and published module paths.</maml:para>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Show-GenXdevCmdlet</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
+    <command:details>
+      <command:name>Get-GenXdevMCPToken</command:name>
+      <command:verb>Get</command:verb>
+      <command:noun>GenXdevMCPToken</command:noun>
+      <maml:description>
+        <maml:para>Resolves the GenXdev MCP server authentication token.</maml:para>
+      </maml:description>
+    </command:details>
+    <maml:description>
+      <maml:para>Returns the MCP token from the DPAPI protected token file, falling back to the
+GENXDEV_MCP_TOKEN user environment variable. The protected file is written by
+New-GenXdevMCPToken -SetProtectedFile and is encrypted with the Windows Data
+Protection API, so it decrypts silently for the same user on the same machine
+and never prompts for a password.
+The environment variable is only honoured as a fallback, so an existing setup
+that still stores its token there keeps working.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Get-GenXdevMCPToken</maml:name>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="0" aliases="none">
+          <maml:name>ProtectedFilePath</maml:name>
+          <maml:description>
+            <maml:para>Path of the DPAPI protected token file</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>"$env:LOCALAPPDATA\GenXdev\mcp-token.clixml"</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ProtectedFileOnly</maml:name>
+          <maml:description>
+            <maml:para>Only report a token stored in the protected file</maml:para>
+          </maml:description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="0" aliases="none">
+        <maml:name>ProtectedFilePath</maml:name>
+        <maml:description>
+          <maml:para>Path of the DPAPI protected token file</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>"$env:LOCALAPPDATA\GenXdev\mcp-token.clixml"</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>ProtectedFileOnly</maml:name>
+        <maml:description>
+          <maml:para>Only report a token stored in the protected file</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name>None</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>You can't pipe input to this cmdlet.</maml:para>
+        </maml:description>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <maml:name>System.String. The token, or nothing when no token is configured.</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>Returns System.String. The token, or nothing when no token is configured. objects.</maml:para>
+        </maml:description>
+      </command:returnValue>
+      <command:returnValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>Returns System.String objects.</maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <command:examples>
+      <command:example>
+        <maml:title>--
+
+---[Example 1]-------</maml:title>
+        <dev:code>$token = Get-GenXdevMCPToken</dev:code>
+        <dev:remarks>
+          <maml:para />
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>--
+
+---[Example 2]-------</maml:title>
+        <dev:code>Get-GenXdevMCPToken -ProtectedFilePath 'C:\Keys\mcp.clixml'</dev:code>
+        <dev:remarks>
+          <maml:para />
+        </dev:remarks>
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>Online Version:</maml:linkText>
+        <maml:uri>https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-GenXdevMCPToken.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-AILLMSettings</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SpeechToText</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-TextTranslation</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-VectorSimilarity</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Invoke-AILLMSettingsPrompt</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Invoke-WinMerge</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Merge-TranslationCache</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>New-GenXdevMCPToken</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>New-LLMAudioChat</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>New-LLMTextChat</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Receive-RealTimeSpeechToText</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Set-AILLMSettings</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Set-GenXdevCommandNotFoundAction</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Start-GenXdevMCPServer</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Test-DeepLinkImageFile</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
     </command:relatedLinks>
@@ -38949,10 +39399,6 @@ Invoke-WebbrowserEvaluation "document.title" -ByReference $ref</dev:code>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Stop-WebbrowserVideos</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Unprotect-WebbrowserTab</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
     </command:relatedLinks>
@@ -45681,6 +46127,280 @@ defines the requested view.</maml:para>
   </command:command>
   <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
     <command:details>
+      <command:name>Get-SQLServerConnection</command:name>
+      <command:verb>Get</command:verb>
+      <command:noun>SQLServerConnection</command:noun>
+      <maml:description>
+        <maml:para>Opens a SQL Server connection that the caller owns.</maml:para>
+      </maml:description>
+    </command:details>
+    <maml:description>
+      <maml:para>Opens a SQL Server connection and returns it, leaving the caller responsible for
+closing it. No transaction is started, so the connection runs in autocommit mode
+and keeps one session across every command executed on it. Hand it to
+Invoke-SQLServerQuery or Invoke-SQLServerScriptFile with -Connection to keep
+session state such as USE, temp tables and SET options alive across calls.
+Connection priority: ConnectionString &gt; DatabaseName (requires Server).</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Get-SQLServerConnection</maml:name>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="0" aliases="none">
+          <maml:name>DatabaseName</maml:name>
+          <maml:description>
+            <maml:para>The name of the SQL Server database.</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>'master'</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
+          <maml:name>Server</maml:name>
+          <maml:description>
+            <maml:para>The SQL Server instance name.</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>'.'</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
+          <maml:name>ConnectionString</maml:name>
+          <maml:description>
+            <maml:para>The connection string to the SQL database.</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>AutoConsent</maml:name>
+          <maml:description>
+            <maml:para>Force a consent prompt even if a preference is already set.</maml:para>
+          </maml:description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>AutoConsentAllPackages</maml:name>
+          <maml:description>
+            <maml:para>Automatically consent to ALL third-party software installations and set persistent flag for SQL Server package.</maml:para>
+          </maml:description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>SessionOnly</maml:name>
+          <maml:description>
+            <maml:para>Use alternative settings stored in session for preferences</maml:para>
+          </maml:description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="0" aliases="none">
+        <maml:name>DatabaseName</maml:name>
+        <maml:description>
+          <maml:para>The name of the SQL Server database.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>'master'</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
+        <maml:name>Server</maml:name>
+        <maml:description>
+          <maml:para>The SQL Server instance name.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>'.'</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
+        <maml:name>ConnectionString</maml:name>
+        <maml:description>
+          <maml:para>The connection string to the SQL database.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>AutoConsent</maml:name>
+        <maml:description>
+          <maml:para>Force a consent prompt even if a preference is already set.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>AutoConsentAllPackages</maml:name>
+        <maml:description>
+          <maml:para>Automatically consent to ALL third-party software installations and set persistent flag for SQL Server package.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>SessionOnly</maml:name>
+        <maml:description>
+          <maml:para>Use alternative settings stored in session for preferences</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name>None</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>You can't pipe input to this cmdlet.</maml:para>
+        </maml:description>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <maml:name>None</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para />
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <command:examples>
+      <command:example>
+        <maml:title>--
+
+---[Example 1]-------</maml:title>
+        <dev:code>$connection = Get-SQLServerConnection -Server "localhost" -DatabaseName "MyDB"
+try {
+    Invoke-SQLServerQuery -Connection $connection -Queries "SELECT * FROM Users"
+}
+finally {
+    $connection.Close()
+}</dev:code>
+        <dev:remarks>
+          <maml:para />
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>--
+
+---[Example 2]-------</maml:title>
+        <dev:code>Get-SQLServerConnection -ConnectionString "Server=localhost;Database=MyDB;Integrated Security=true"</dev:code>
+        <dev:remarks>
+          <maml:para />
+        </dev:remarks>
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>Online Version:</maml:linkText>
+        <maml:uri>https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerConnection.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SQLServerSchema</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SQLServerTableColumnData</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SQLServerTableData</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SQLServerTables</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SQLServerTableSchema</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SQLServerTransaction</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SQLServerViewColumnData</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SQLServerViewData</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SQLServerViews</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SQLServerViewSchema</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Invoke-SQLServerQuery</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Invoke-SQLServerScriptFile</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Invoke-SSMS</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>New-SQLServerDatabase</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
+    <command:details>
       <command:name>Get-SQLServerSchema</command:name>
       <command:verb>Get</command:verb>
       <command:noun>SQLServerSchema</command:noun>
@@ -45819,6 +46539,10 @@ connection string or database name with server parameters.</maml:para>
         <maml:uri>https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerSchema.md</maml:uri>
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Get-SQLServerConnection</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Get-SQLServerTableColumnData</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -45856,6 +46580,10 @@ connection string or database name with server parameters.</maml:para>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Invoke-SQLServerQuery</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Invoke-SQLServerScriptFile</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -46084,6 +46812,10 @@ performance.</maml:para>
         <maml:uri>https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerTableColumnData.md</maml:uri>
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Get-SQLServerConnection</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Get-SQLServerSchema</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -46121,6 +46853,10 @@ performance.</maml:para>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Invoke-SQLServerQuery</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Invoke-SQLServerScriptFile</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -46320,6 +47056,10 @@ database and controlling the amount of data retrieved through the Count paramete
         <maml:uri>https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerTableData.md</maml:uri>
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Get-SQLServerConnection</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Get-SQLServerSchema</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -46357,6 +47097,10 @@ database and controlling the amount of data retrieved through the Count paramete
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Invoke-SQLServerQuery</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Invoke-SQLServerScriptFile</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -46511,6 +47255,10 @@ Returns all table names using a custom connection string</dev:code>
         <maml:uri>https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerTables.md</maml:uri>
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Get-SQLServerConnection</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Get-SQLServerSchema</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -46548,6 +47296,10 @@ Returns all table names using a custom connection string</dev:code>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Invoke-SQLServerQuery</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Invoke-SQLServerScriptFile</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -46725,6 +47477,10 @@ column definitions including names, types, nullable status, and default values.<
         <maml:uri>https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerTableSchema.md</maml:uri>
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Get-SQLServerConnection</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Get-SQLServerSchema</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -46765,6 +47521,10 @@ column definitions including names, types, nullable status, and default values.<
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Invoke-SQLServerScriptFile</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Invoke-SSMS</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -46784,9 +47544,12 @@ column definitions including names, types, nullable status, and default values.<
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>Creates a SQL Server database connection and transaction object that can be used
-for batch operations. The caller is responsible for committing or rolling back
-the transaction. Requires an existing SQL Server database and connection.</maml:para>
+      <maml:para>Creates a SQL Server transaction object that can be used for batch operations.
+The caller is responsible for committing or rolling back the transaction. When no
+Connection is provided, a connection is opened for the transaction and returned
+inside it, so the caller then owns that connection and must close it.
+Connection priority: Connection &gt; ConnectionString &gt; DatabaseName (requires
+Server).</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem>
@@ -46848,6 +47611,18 @@ the transaction. Requires an existing SQL Server database and connection.</maml:
             <maml:uri />
           </dev:type>
           <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Connection</maml:name>
+          <maml:description>
+            <maml:para>An existing open SqlConnection to begin the transaction on.</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">Object</command:parameterValue>
+          <dev:type>
+            <maml:name>Object</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>IsolationLevel</maml:name>
@@ -46935,6 +47710,18 @@ the transaction. Requires an existing SQL Server database and connection.</maml:
           <maml:uri />
         </dev:type>
         <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Connection</maml:name>
+        <maml:description>
+          <maml:para>An existing open SqlConnection to begin the transaction on.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">Object</command:parameterValue>
+        <dev:type>
+          <maml:name>Object</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>IsolationLevel</maml:name>
@@ -47027,6 +47814,10 @@ try {
         <maml:uri>https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerTransaction.md</maml:uri>
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Get-SQLServerConnection</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Get-SQLServerSchema</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -47064,6 +47855,10 @@ try {
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Invoke-SQLServerQuery</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Invoke-SQLServerScriptFile</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -47290,6 +48085,10 @@ path. Allows limiting the number of returned records or retrieving all records.<
         <maml:uri>https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerViewColumnData.md</maml:uri>
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Get-SQLServerConnection</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Get-SQLServerSchema</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -47327,6 +48126,10 @@ path. Allows limiting the number of returned records or retrieving all records.<
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Invoke-SQLServerQuery</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Invoke-SQLServerScriptFile</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -47528,6 +48331,10 @@ verbose output for tracking query execution.</maml:para>
         <maml:uri>https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerViewData.md</maml:uri>
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Get-SQLServerConnection</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Get-SQLServerSchema</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -47565,6 +48372,10 @@ verbose output for tracking query execution.</maml:para>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Invoke-SQLServerQuery</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Invoke-SQLServerScriptFile</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -47717,6 +48528,10 @@ or a database name with server.</maml:para>
         <maml:uri>https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerViews.md</maml:uri>
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Get-SQLServerConnection</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Get-SQLServerSchema</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -47754,6 +48569,10 @@ or a database name with server.</maml:para>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Invoke-SQLServerQuery</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Invoke-SQLServerScriptFile</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -47922,6 +48741,10 @@ that defines the requested view.</maml:para>
         <maml:uri>https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerViewSchema.md</maml:uri>
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Get-SQLServerConnection</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Get-SQLServerSchema</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -47959,6 +48782,10 @@ that defines the requested view.</maml:para>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Invoke-SQLServerQuery</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Invoke-SQLServerScriptFile</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -49192,6 +50019,10 @@ translating.</maml:para>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Get-GenXdevMCPToken</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Get-SpeechToText</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -49921,10 +50752,6 @@ wl "video" "e.pause()"</dev:code>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Stop-WebbrowserVideos</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Unprotect-WebbrowserTab</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
     </command:relatedLinks>
@@ -53772,6 +54599,10 @@ Launches interactive setup for Coding with a custom preferences database.</dev:c
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Get-GenXdevMCPToken</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Get-SpeechToText</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -54496,7 +55327,14 @@ In contrast to other Environment variables, the directories in $ENV:PATH is merg
     <maml:description>
       <maml:para>This function processes tool calls by validating arguments, filtering parameters,
 and executing callbacks with proper confirmation handling. It supports both script
-block and command info callbacks.</maml:para>
+block and command info callbacks.
+Every exposed cmdlet advertises the output stream switch that
+ConvertTo-LLMOpenAIApiFunctionDefinition adds to its schema. That switch is
+consumed here and is never passed on to the callback. With it, the verbose,
+information and warning streams travel back next to the output; without it, only
+errors do, which are always returned. Json output is wrapped so every stream has
+its own named property, text output has the streams appended as labelled
+sections.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem>
@@ -68338,6 +69176,18 @@ Connection priority: Transaction &gt; ConnectionString &gt; DatabaseName (requir
           <dev:defaultValue>False</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Connection</maml:name>
+          <maml:description>
+            <maml:para>An existing open SqlConnection to execute on.</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">Object</command:parameterValue>
+          <dev:type>
+            <maml:name>Object</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>IsolationLevel</maml:name>
           <maml:description>
             <maml:para>The isolation level to use. default is ReadCommitted.</maml:para>
@@ -68461,6 +69311,18 @@ Connection priority: Transaction &gt; ConnectionString &gt; DatabaseName (requir
         <dev:defaultValue>False</dev:defaultValue>
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Connection</maml:name>
+        <maml:description>
+          <maml:para>An existing open SqlConnection to execute on.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">Object</command:parameterValue>
+        <dev:type>
+          <maml:name>Object</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>IsolationLevel</maml:name>
         <maml:description>
           <maml:para>The isolation level to use. default is ReadCommitted.</maml:para>
@@ -68569,6 +69431,10 @@ try {
         <maml:uri>https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLServerQuery.md</maml:uri>
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Get-SQLServerConnection</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Get-SQLServerSchema</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -68606,6 +69472,430 @@ try {
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Get-SQLServerViewSchema</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Invoke-SQLServerScriptFile</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Invoke-SSMS</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>New-SQLServerDatabase</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
+    <command:details>
+      <command:name>Invoke-SQLServerScriptFile</command:name>
+      <command:verb>Invoke</command:verb>
+      <command:noun>SQLServerScriptFile</command:noun>
+      <maml:description>
+        <maml:para>Executes SQL script files against a SQL Server database, batch by batch.</maml:para>
+      </maml:description>
+    </command:details>
+    <maml:description>
+      <maml:para>Reads one or more SQL script files and executes them in order, splitting every
+file into batches on the GO batch separator, the same way SQL Server Management
+Studio does. A GO line always terminates the current batch, and repeats it with
+an optional repeat count, as in 'GO 5'.
+Every batch of a file is executed by Invoke-SQLServerQuery on one shared
+connection that this cmdlet opens itself, so session state survives a GO exactly
+as it does in SQL Server Management Studio: USE, temp tables and SET options stay
+in effect for the rest of the file. Batches run in autocommit mode, unless a
+Transaction is provided by the caller.
+Failures are reported through the effective error action: an explicitly bound
+-ErrorAction wins, otherwise $ErrorActionPreference decides. When the effective
+action is not Stop, the failing batch is reported and the next batch is
+executed.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Invoke-SQLServerScriptFile</maml:name>
+        <command:parameter required="false" variableLength="true" globbing="true" pipelineInput="False" position="0" aliases="like, Path, LiteralPath, SearchMask, Include">
+          <maml:name>Name</maml:name>
+          <maml:description>
+            <maml:para>One or more SQL script files to execute</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
+          <dev:type>
+            <maml:name>String[]</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
+          <maml:name>DatabaseName</maml:name>
+          <maml:description>
+            <maml:para>The name of the SQL Server database.</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>'tempDb'</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
+          <maml:name>Server</maml:name>
+          <maml:description>
+            <maml:para>The SQL Server instance name.</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>'.'</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="3" aliases="none">
+          <maml:name>Transaction</maml:name>
+          <maml:description>
+            <maml:para>An existing SQL Server transaction to use for the batches.</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">Object</command:parameterValue>
+          <dev:type>
+            <maml:name>Object</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="4" aliases="none">
+          <maml:name>ConnectionString</maml:name>
+          <maml:description>
+            <maml:para>The connection string to the SQL database.</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="5" aliases="data, parameters, args">
+          <maml:name>SqlParameters</maml:name>
+          <maml:description>
+            <maml:para>Query parameters as hashtables.</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">Hashtable</command:parameterValue>
+          <dev:type>
+            <maml:name>Hashtable</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>@()</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>AutoConsent</maml:name>
+          <maml:description>
+            <maml:para>Automatically consent to this installation type and set persistent flag..</maml:para>
+          </maml:description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>AutoConsentAllPackages</maml:name>
+          <maml:description>
+            <maml:para>Automatically consent to ALL third-party software installations and set persistent flag for SQL Server package.</maml:para>
+          </maml:description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Connection</maml:name>
+          <maml:description>
+            <maml:para>An existing open SqlConnection to execute all batches on.</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">Object</command:parameterValue>
+          <dev:type>
+            <maml:name>Object</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="true" pipelineInput="True (ByValue, ByPropertyName)" position="named" aliases="FullName, Input">
+          <maml:name>InputObject</maml:name>
+          <maml:description>
+            <maml:para>SQL script files to execute, as names or FileInfo objects</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">Object</command:parameterValue>
+          <dev:type>
+            <maml:name>Object</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>IsolationLevel</maml:name>
+          <maml:description>
+            <maml:para>The isolation level to use. default is ReadCommitted.</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>'ReadCommitted'</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>SessionOnly</maml:name>
+          <maml:description>
+            <maml:para>Use alternative settings stored in session for preferences</maml:para>
+          </maml:description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="false" variableLength="true" globbing="true" pipelineInput="False" position="0" aliases="like, Path, LiteralPath, SearchMask, Include">
+        <maml:name>Name</maml:name>
+        <maml:description>
+          <maml:para>One or more SQL script files to execute</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
+        <dev:type>
+          <maml:name>String[]</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
+        <maml:name>DatabaseName</maml:name>
+        <maml:description>
+          <maml:para>The name of the SQL Server database.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>'tempDb'</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
+        <maml:name>Server</maml:name>
+        <maml:description>
+          <maml:para>The SQL Server instance name.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>'.'</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="3" aliases="none">
+        <maml:name>Transaction</maml:name>
+        <maml:description>
+          <maml:para>An existing SQL Server transaction to use for the batches.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">Object</command:parameterValue>
+        <dev:type>
+          <maml:name>Object</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="4" aliases="none">
+        <maml:name>ConnectionString</maml:name>
+        <maml:description>
+          <maml:para>The connection string to the SQL database.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="5" aliases="data, parameters, args">
+        <maml:name>SqlParameters</maml:name>
+        <maml:description>
+          <maml:para>Query parameters as hashtables.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">Hashtable</command:parameterValue>
+        <dev:type>
+          <maml:name>Hashtable</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>@()</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>AutoConsent</maml:name>
+        <maml:description>
+          <maml:para>Automatically consent to this installation type and set persistent flag..</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>AutoConsentAllPackages</maml:name>
+        <maml:description>
+          <maml:para>Automatically consent to ALL third-party software installations and set persistent flag for SQL Server package.</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Connection</maml:name>
+        <maml:description>
+          <maml:para>An existing open SqlConnection to execute all batches on.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">Object</command:parameterValue>
+        <dev:type>
+          <maml:name>Object</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="true" pipelineInput="True (ByValue, ByPropertyName)" position="named" aliases="FullName, Input">
+        <maml:name>InputObject</maml:name>
+        <maml:description>
+          <maml:para>SQL script files to execute, as names or FileInfo objects</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">Object</command:parameterValue>
+        <dev:type>
+          <maml:name>Object</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>IsolationLevel</maml:name>
+        <maml:description>
+          <maml:para>The isolation level to use. default is ReadCommitted.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>'ReadCommitted'</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>SessionOnly</maml:name>
+        <maml:description>
+          <maml:para>Use alternative settings stored in session for preferences</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name>System.Object</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para>Accepts System.Object objects via pipeline.</maml:para>
+        </maml:description>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <maml:name>None</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para />
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <command:examples>
+      <command:example>
+        <maml:title>--
+
+---[Example 1]-------</maml:title>
+        <dev:code>Invoke-SQLServerScriptFile -Name '.\deploy.sql' -Server 'localhost' -DatabaseName 'MyDB'</dev:code>
+        <dev:remarks>
+          <maml:para />
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>--
+
+---[Example 2]-------</maml:title>
+        <dev:code>Get-ChildItem -Path '.\migrations' -Filter '*.sql' |
+    Invoke-SQLServerScriptFile -DatabaseName 'MyDB' -ErrorAction Continue</dev:code>
+        <dev:remarks>
+          <maml:para />
+        </dev:remarks>
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>Online Version:</maml:linkText>
+        <maml:uri>https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLServerScriptFile.md</maml:uri>
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SQLServerConnection</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SQLServerSchema</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SQLServerTableColumnData</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SQLServerTableData</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SQLServerTables</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SQLServerTableSchema</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SQLServerTransaction</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SQLServerViewColumnData</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SQLServerViewData</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SQLServerViews</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-SQLServerViewSchema</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Invoke-SQLServerQuery</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -68690,6 +69980,10 @@ try {
         <maml:uri>https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SSMS.md</maml:uri>
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Get-SQLServerConnection</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Get-SQLServerSchema</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -68731,6 +70025,10 @@ try {
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Invoke-SQLServerQuery</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Invoke-SQLServerScriptFile</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -69328,10 +70626,6 @@ Invoke-WebbrowserEvaluation "
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Stop-WebbrowserVideos</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Unprotect-WebbrowserTab</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
     </command:relatedLinks>
@@ -69991,6 +71285,10 @@ wait functionality to pause execution until WinMerge closes.</maml:para>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Get-GenXdevMCPToken</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Get-SpeechToText</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -70300,6 +71598,10 @@ growth across processing batches.</maml:para>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Get-AILLMSettings</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-GenXdevMCPToken</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -71603,10 +72905,22 @@ empty source folders:
           </dev:type>
           <dev:defaultValue>32</dev:defaultValue>
         </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
+          <maml:name>ProtectedFilePath</maml:name>
+          <maml:description>
+            <maml:para>Path of the DPAPI protected token file</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>"$env:LOCALAPPDATA\GenXdev\mcp-token.clixml"</dev:defaultValue>
+        </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>Force</maml:name>
           <maml:description>
-            <maml:para>Overwrite existing environment variable without prompting</maml:para>
+            <maml:para>Overwrite an existing token without prompting</maml:para>
           </maml:description>
           <dev:type>
             <maml:name>SwitchParameter</maml:name>
@@ -71618,6 +72932,17 @@ empty source folders:
           <maml:name>SetEnvironmentVariable</maml:name>
           <maml:description>
             <maml:para>Store the token in GENXDEV_MCP_TOKEN user environment variable</maml:para>
+          </maml:description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>SetProtectedFile</maml:name>
+          <maml:description>
+            <maml:para>Store the token in the DPAPI protected token file</maml:para>
           </maml:description>
           <dev:type>
             <maml:name>SwitchParameter</maml:name>
@@ -71640,10 +72965,22 @@ empty source folders:
         </dev:type>
         <dev:defaultValue>32</dev:defaultValue>
       </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
+        <maml:name>ProtectedFilePath</maml:name>
+        <maml:description>
+          <maml:para>Path of the DPAPI protected token file</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>"$env:LOCALAPPDATA\GenXdev\mcp-token.clixml"</dev:defaultValue>
+      </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>Force</maml:name>
         <maml:description>
-          <maml:para>Overwrite existing environment variable without prompting</maml:para>
+          <maml:para>Overwrite an existing token without prompting</maml:para>
         </maml:description>
         <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
         <dev:type>
@@ -71656,6 +72993,18 @@ empty source folders:
         <maml:name>SetEnvironmentVariable</maml:name>
         <maml:description>
           <maml:para>Store the token in GENXDEV_MCP_TOKEN user environment variable</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>SetProtectedFile</maml:name>
+        <maml:description>
+          <maml:para>Store the token in the DPAPI protected token file</maml:para>
         </maml:description>
         <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
         <dev:type>
@@ -71700,6 +73049,17 @@ empty source folders:
         <maml:title>--
 
 ---[Example 2]-------</maml:title>
+        <dev:code>New-GenXdevMCPToken -SetProtectedFile
+    Generates a new token and stores it in the DPAPI protected token file,
+    which the MCP server reads without prompting.</dev:code>
+        <dev:remarks>
+          <maml:para />
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>--
+
+---[Example 3]-------</maml:title>
         <dev:code>New-GenXdevMCPToken -SetEnvironmentVariable
     Generates a new token and stores it in the GENXDEV_MCP_TOKEN user
     environment variable. Prompts if a token already exists.</dev:code>
@@ -71710,7 +73070,7 @@ empty source folders:
       <command:example>
         <maml:title>--
 
----[Example 3]-------</maml:title>
+---[Example 4]-------</maml:title>
         <dev:code>New-GenXdevMCPToken -Length 64 -SetEnvironmentVariable -Force
     Generates a longer 64-byte token, stores it in the environment
     variable, and overwrites any existing token without prompting.</dev:code>
@@ -71721,7 +73081,7 @@ empty source folders:
       <command:example>
         <maml:title>--
 
----[Example 4]-------</maml:title>
+---[Example 5]-------</maml:title>
         <dev:code>$token = New-GenXdevMCPToken
     Start-GenXdevMCPServer -Token $token
     Generates a token and passes it directly to the MCP server without
@@ -71738,6 +73098,10 @@ empty source folders:
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Get-AILLMSettings</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-GenXdevMCPToken</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -73098,6 +74462,10 @@ and advanced audio processing features.</maml:para>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Get-GenXdevMCPToken</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Get-SpeechToText</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -74365,6 +75733,10 @@ conversations with extensive tool integration and customization options.</maml:p
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Get-AILLMSettings</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-GenXdevMCPToken</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -76799,6 +78171,10 @@ Supports file-based database creation with explicit .mdf/.ldf paths.</maml:para>
         <maml:uri>https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/New-SQLServerDatabase.md</maml:uri>
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Get-SQLServerConnection</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Get-SQLServerSchema</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -76840,6 +78216,10 @@ Supports file-based database creation with explicit .mdf/.ldf paths.</maml:para>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Invoke-SQLServerQuery</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Invoke-SQLServerScriptFile</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -104058,10 +105438,6 @@ Restarts the browser with a 1280x720 viewport.</dev:code>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Stop-WebbrowserVideos</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Unprotect-WebbrowserTab</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
     </command:relatedLinks>
@@ -132310,6 +133686,17 @@ formatting rules are applied to normalize the code structure.</maml:para>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ForSql</maml:name>
+          <maml:description>
+            <maml:para>Apply additional formatting rules for Sql</maml:para>
+          </maml:description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>Reformat</maml:name>
           <maml:description>
             <maml:para>Apply additional formatting rules beyond ' +
@@ -132336,6 +133723,18 @@ formatting rules are applied to normalize the code structure.</maml:para>
           <maml:uri />
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>ForSql</maml:name>
+        <maml:description>
+          <maml:para>Apply additional formatting rules for Sql</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>Reformat</maml:name>
@@ -135932,10 +137331,6 @@ automating video playback control in browser sessions.</maml:para>
         <maml:linkText>Stop-WebbrowserVideos</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Unprotect-WebbrowserTab</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
     </command:relatedLinks>
   </command:command>
   <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
@@ -138921,10 +140316,6 @@ Selects the first tab from the Firefox browser.</dev:code>
         <maml:linkText>Stop-WebbrowserVideos</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Unprotect-WebbrowserTab</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
     </command:relatedLinks>
   </command:command>
   <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
@@ -140426,6 +141817,10 @@ use across multiple machines.</dev:code>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Get-GenXdevMCPToken</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Get-SpeechToText</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -141018,10 +142413,6 @@ experience.</maml:para>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Stop-WebbrowserVideos</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Unprotect-WebbrowserTab</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
     </command:relatedLinks>
@@ -142587,6 +143978,10 @@ without asking the user what they meant.</dev:code>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Get-GenXdevMCPToken</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Get-SpeechToText</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -143568,10 +144963,6 @@ validation of the URL and ensures proper page loading through async operations.<
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Stop-WebbrowserVideos</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Unprotect-WebbrowserTab</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
     </command:relatedLinks>
@@ -151117,6 +152508,18 @@ transcription quality.</maml:para>
           <dev:defaultValue>$null</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Stdio</maml:name>
+          <maml:description>
+            <maml:para>Serve the Model Context Protocol on stdin ' +
+            'and stdout instead of HTTP</maml:para>
+          </maml:description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>StopExisting</maml:name>
           <maml:description>
             <maml:para>Stop any existing MCP server running on the ' +
@@ -151197,6 +152600,19 @@ transcription quality.</maml:para>
         <dev:defaultValue>$null</dev:defaultValue>
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Stdio</maml:name>
+        <maml:description>
+          <maml:para>Serve the Model Context Protocol on stdin ' +
+            'and stdout instead of HTTP</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>StopExisting</maml:name>
         <maml:description>
           <maml:para>Stop any existing MCP server running on the ' +
@@ -151246,6 +152662,10 @@ transcription quality.</maml:para>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Get-AILLMSettings</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-GenXdevMCPToken</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -152066,6 +153486,17 @@ Multiple overrides:
           <dev:defaultValue>False</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>MirrorWithSourceMask</maml:name>
+          <maml:description>
+            <maml:para>Mirrors even when the source names a file mask or a file, where robocopy would also delete destination directories that do not match the mask</maml:para>
+          </maml:description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>MonitorMode</maml:name>
           <maml:description>
             <maml:para>Will stay active after copying, and copy additional changes after a a default threshold of 10 minutes</maml:para>
@@ -152632,6 +154063,18 @@ Multiple overrides:
         <maml:name>Mirror</maml:name>
         <maml:description>
           <maml:para>Synchronizes the content of specified directories, will also delete any files and directories in the destination that do not exist in the source</maml:para>
+        </maml:description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>MirrorWithSourceMask</maml:name>
+        <maml:description>
+          <maml:para>Mirrors even when the source names a file mask or a file, where robocopy would also delete destination directories that do not match the mask</maml:para>
         </maml:description>
         <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
         <dev:type>
@@ -153368,6 +154811,18 @@ playback options. It can handle both single strings and arrays of text.</maml:pa
           <dev:defaultValue>$null</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>AudioDevice</maml:name>
+          <maml:description>
+            <maml:para>Audio output device name or wildcard pattern</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>AutoConsent</maml:name>
           <maml:description>
             <maml:para>('Automatically consent to this installation type and set persistent flag..')</maml:para>
@@ -153510,6 +154965,18 @@ playback options. It can handle both single strings and arrays of text.</maml:pa
           <maml:uri />
         </dev:type>
         <dev:defaultValue>$null</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>AudioDevice</maml:name>
+        <maml:description>
+          <maml:para>Audio output device name or wildcard pattern</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>AutoConsent</maml:name>
@@ -154330,10 +155797,6 @@ and handles errors gracefully.</maml:para>
         <maml:linkText>Set-WebbrowserTabLocation</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Unprotect-WebbrowserTab</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
     </command:relatedLinks>
   </command:command>
   <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
@@ -154914,6 +156377,10 @@ exceptions for invalid paths or unsupported file formats.</maml:para>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Get-GenXdevMCPToken</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Get-SpeechToText</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -155211,165 +156678,6 @@ processes the file content through an LLM query and returns a boolean response.<
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>WriteFileOutput</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
-    </command:relatedLinks>
-  </command:command>
-  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
-    <command:details>
-      <command:name>Unprotect-WebbrowserTab</command:name>
-      <command:verb>Unprotect</command:verb>
-      <command:noun>WebbrowserTab</command:noun>
-      <maml:description>
-        <maml:para>Takes control of a selected web browser tab for interactive manipulation.</maml:para>
-      </maml:description>
-    </command:details>
-    <maml:description>
-      <maml:para>This function enables interactive control of a browser tab that was previously
-selected using Select-WebbrowserTab. It provides direct access to the Microsoft
-Playwright Page object's properties and methods, allowing for automated browser
-interaction.</maml:para>
-    </maml:description>
-    <command:syntax>
-      <command:syntaxItem>
-        <maml:name>Unprotect-WebbrowserTab</maml:name>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>Force</maml:name>
-          <maml:description>
-            <maml:para>Restart browser if no debugging server detected</maml:para>
-          </maml:description>
-          <dev:type>
-            <maml:name>SwitchParameter</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>False</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="current">
-          <maml:name>UseCurrent</maml:name>
-          <maml:description>
-            <maml:para>Use current tab instead of selecting a new one</maml:para>
-          </maml:description>
-          <dev:type>
-            <maml:name>SwitchParameter</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>False</dev:defaultValue>
-        </command:parameter>
-      </command:syntaxItem>
-    </command:syntax>
-    <command:parameters>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>Force</maml:name>
-        <maml:description>
-          <maml:para>Restart browser if no debugging server detected</maml:para>
-        </maml:description>
-        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
-        <dev:type>
-          <maml:name>SwitchParameter</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>False</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="current">
-        <maml:name>UseCurrent</maml:name>
-        <maml:description>
-          <maml:para>Use current tab instead of selecting a new one</maml:para>
-        </maml:description>
-        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
-        <dev:type>
-          <maml:name>SwitchParameter</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>False</dev:defaultValue>
-      </command:parameter>
-    </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name>None</maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para>You can't pipe input to this cmdlet.</maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name>None</maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para />
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
-    <command:examples>
-      <command:example>
-        <maml:title>--
-
----[Example 1]-------</maml:title>
-        <dev:code>Unprotect-WebbrowserTab -UseCurrent</dev:code>
-        <dev:remarks>
-          <maml:para />
-        </dev:remarks>
-      </command:example>
-      <command:example>
-        <maml:title>--
-
----[Example 2]-------</maml:title>
-        <dev:code>wbctrl -Force</dev:code>
-        <dev:remarks>
-          <maml:para />
-        </dev:remarks>
-      </command:example>
-    </command:examples>
-    <command:relatedLinks>
-      <maml:navigationLink>
-        <maml:linkText>Online Version:</maml:linkText>
-        <maml:uri>https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Unprotect-WebbrowserTab.md</maml:uri>
-      </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Connect-PlaywrightViaDebuggingPort</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Get-PlaywrightProfileDirectory</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Get-PlaywrightSessionReference</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Get-WebbrowserTabDomNodes</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Invoke-WebbrowserEvaluation</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Open-PlayWrightBrowser</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Resume-WebbrowserTabVideo</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Select-WebbrowserTab</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Set-BrowserVideoFullscreen</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Set-WebbrowserTabLocation</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Stop-WebbrowserVideos</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
     </command:relatedLinks>

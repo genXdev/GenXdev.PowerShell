@@ -93,7 +93,7 @@ namespace GenXdev.Helpers
         {
             try
             {
-                Uri url = new Uri(URL);
+                Uri url = new(URL);
                 return HostOrIPPublic(url.Host);
             }
             catch
@@ -160,8 +160,8 @@ namespace GenXdev.Helpers
             {
                 // (address.AddressFamily == AddressFamily.InterNetwork);
 
-                String[] straryIPAddress = address.ToString().Split(new String[] { "." }, StringSplitOptions.RemoveEmptyEntries);
-                int[] iaryIPAddress = new int[] { int.Parse(straryIPAddress[0]), int.Parse(straryIPAddress[1]), int.Parse(straryIPAddress[2]), int.Parse(straryIPAddress[3]) };
+                String[] straryIPAddress = address.ToString().Split(["."], StringSplitOptions.RemoveEmptyEntries);
+                int[] iaryIPAddress = [int.Parse(straryIPAddress[0]), int.Parse(straryIPAddress[1]), int.Parse(straryIPAddress[2]), int.Parse(straryIPAddress[3])];
                 if (iaryIPAddress[0] == 10 ||
                     (iaryIPAddress[0] == 127 && (iaryIPAddress[1] == 0) && (iaryIPAddress[2] == 0) && (iaryIPAddress[3] == 1)) ||
                     (iaryIPAddress[0] == 192 && iaryIPAddress[1] == 168) ||

@@ -11,6 +11,13 @@
 This function processes tool calls by validating arguments, filtering parameters,
 and executing callbacks with proper confirmation handling. It supports both script
 block and command info callbacks.
+Every exposed cmdlet advertises the output stream switch that
+ConvertTo-LLMOpenAIApiFunctionDefinition adds to its schema. That switch is
+consumed here and is never passed on to the callback. With it, the verbose,
+information and warning streams travel back next to the output; without it, only
+errors do, which are always returned. Json output is wrapped so every stream has
+its own named property, text output has the streams appended as labelled
+sections.
 
 
 ## Syntax

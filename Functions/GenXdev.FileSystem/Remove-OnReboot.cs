@@ -77,7 +77,7 @@ renamed.
         /// </summary>
         protected override void BeginProcessing()
         {
-            pendingRenames = new List<string>();
+            pendingRenames = [];
 
             // Retrieve existing pending file rename operations from registry
             try

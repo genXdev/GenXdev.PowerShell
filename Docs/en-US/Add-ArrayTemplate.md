@@ -20,7 +20,7 @@ formatting.
 
 
 ```powershell
-Add-ArrayTemplate -InputObject <Collections.IEnumerable> -Template <String> [[-Delimiter] <String>] [[-Indentation] <Int32>] [-EndDelimiter] [-NewLine] [<CommonParameters>]
+Add-ArrayTemplate -InputObject <Collections.IEnumerable> -Template <String> [[-Delimiter] <String>] [[-Indentation] <Int32>] [-EndDelimiter] [-NewLine] [-NoEmptyLines] [<CommonParameters>]
 ```
 
 ## Parameters
@@ -33,28 +33,23 @@ Add-ArrayTemplate -InputObject <Collections.IEnumerable> -Template <String> [[-D
 | `-Indentation` | Int32 | ☐ | The number of indentation levels (4 spaces<br>per level) to apply |
 | `-NewLine` | SwitchParameter | ☐ | Appends a trailing delimiter after the final<br>item |
 | `-EndDelimiter` | SwitchParameter | ☐ | Add delimiter at end when array not empty |
+| `-NoEmptyLines` | SwitchParameter | ☐ | Prevents empty lines |
 
 ## Examples
 
 
 
 ```powershell
-@(
-    @{ Name = "Alice"; Age = 30 }
-    @{ Name = "Bob"; Age = 25 }
-) | Add-ArrayTemplate -Template "{Name} is {Age} years old"
-Name: Alice
-Age: 30
-Name: Bob
-Age: 25
+$c = @(
+     @{ Name = "Alice"; Age = 30 }
+     @{ Name = "Bob"; Age = 25 }
+ );
+@"
+    $(Format-Array $c '$Name is $Age years old' ',' -NewLine -Indentation 1)
+"@
+    Alice is 30 years old,
+    Bob is 25 years old
 Formats an array of hashtables with property placeholders.
-```
-
-
-
-```powershell
-$items | FormatArray -Template "  - {Name}" -Delimiter ", " -Indentation 1
-Uses the FormatArray alias with indentation and a custom delimiter.
 ```
 
 ## Parameter Details
@@ -127,7 +122,7 @@ Uses the FormatArray alias with indentation and a custom delimiter.
 |:---|:---|
 | **Required?** | No |
 | **Position?** | Named |
-| **Default value** | `$false` |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |
@@ -142,7 +137,22 @@ Uses the FormatArray alias with indentation and a custom delimiter.
 |:---|:---|
 | **Required?** | No |
 | **Position?** | Named |
-| **Default value** | `$false` |
+| **Default value** | *(none)* |
+| **Accept pipeline input?** | False |
+| **Aliases** | *(none)* |
+| **Accept wildcard characters?** | No |
+
+<hr/>
+
+### `-NoEmptyLines`
+
+> Prevents empty lines
+
+| Property | Value |
+|:---|:---|
+| **Required?** | No |
+| **Position?** | Named |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |

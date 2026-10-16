@@ -933,18 +933,18 @@ function Show-FoundImagesInBrowser {
                                         if ($tempFilePath) {
 
                                             # check if paint.net is already running
-                                            [bool] $wasRunning = Microsoft.PowerShell.Management\Get-Process paintdotnet `
+                                            [bool] $wasRunning = Microsoft.PowerShell.Management\Get-Process paintDotNet `
                                                 -ErrorAction SilentlyContinue
 
                                             # launch paint.net with the cropped image
-                                            $null = paintdotnet.exe $tempFilePath
+                                            $null = paintDotNet.exe $tempFilePath
 
                                             # wait for paint.net to initialize
                                             Microsoft.PowerShell.Utility\Start-Sleep 2
 
                                             # get paint.net window handle
                                             $w = GenXdev\Get-Window `
-                                                -ProcessName paintdotnet `
+                                                -ProcessName paintDotNet `
                                                 -ErrorAction silentlyContinue
 
                                             # position and maximize paint.net window
@@ -963,18 +963,18 @@ function Show-FoundImagesInBrowser {
 
                                         # open the original image in paint.net if no
                                         # bounding boxes provided
-                                        [bool] $wasRunning = Microsoft.PowerShell.Management\Get-Process paintdotnet `
+                                        [bool] $wasRunning = Microsoft.PowerShell.Management\Get-Process paintDotNet `
                                             -ErrorAction SilentlyContinue
 
                                         # launch paint.net with the original image
-                                        $null = paintdotnet.exe $imagePath
+                                        $null = paintDotNet.exe $imagePath
 
                                         # wait for paint.net to initialize
                                         Microsoft.PowerShell.Utility\Start-Sleep 2
 
                                         # get paint.net window handle
                                         $w = GenXdev\Get-Window `
-                                            -ProcessName paintdotnet `
+                                            -ProcessName paintDotNet `
                                             -ErrorAction silentlyContinue
 
                                         # position and maximize paint.net window

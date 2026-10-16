@@ -538,7 +538,7 @@ function Get-ScriptExecutionErrorFixPrompt {
                         'UserAgent=string'
                     )
                     OutputText    = $true
-                    Confirm       = $false
+                    Confirm       = $true
                     JsonDepth     = 6
                 },
                 @{
@@ -548,7 +548,7 @@ function Get-ScriptExecutionErrorFixPrompt {
                         'Body', 'ContentType=string',
                         'Method=string', 'UserAgent=string')
                     OutputText    = $false
-                    Confirm       = $false
+                    Confirm       = $true
                     JsonDepth     = 10
                 },
                 @{

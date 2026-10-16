@@ -50,23 +50,21 @@ When specified, adds the delimiter at the end after the final item when the
 array is not empty.
 
 .EXAMPLE
-@(
-    @{ Name = "Alice"; Age = 30 }
-    @{ Name = "Bob"; Age = 25 }
-) | Add-ArrayTemplate -Template "{Name} is {Age} years old"
+$c = @(
+     @{ Name = "Alice"; Age = 30 }
+     @{ Name = "Bob"; Age = 25 }
+ );
 
-Name: Alice
-Age: 30
+@"
 
-Name: Bob
-Age: 25
+    $(Format-Array $c '$Name is $Age years old' ',' -NewLine -Indentation 1)
+
+"@
+
+    Alice is 30 years old,
+    Bob is 25 years old
 
 Formats an array of hashtables with property placeholders.
-
-.EXAMPLE
-$items | FormatArray -Template "  - {Name}" -Delimiter ", " -Indentation 1
-
-Uses the FormatArray alias with indentation and a custom delimiter.
 #>
 function Add-ArrayTemplate {
 
@@ -118,13 +116,19 @@ function Add-ArrayTemplate {
             Mandatory = $false,
             HelpMessage = "Appends a trailing delimiter after the final item"
         )]
-        [switch] $NewLine = $false,
+        [switch] $NewLine,
         ###########################################################################
         [Parameter(
             Mandatory = $false,
             HelpMessage = "Add delimiter at end when array not empty"
         )]
-        [switch] $EndDelimiter = $false
+        [switch] $EndDelimiter,
+        ###########################################################################
+        [Parameter(
+            Mandatory = $false,
+            HelpMessage = "Prevents empty lines"
+        )]
+        [switch] $NoEmptyLines
         ###########################################################################
     )
 
@@ -142,20 +146,24 @@ function Add-ArrayTemplate {
 
     process {
 
+        if ($null -eq $InputObject) {
+
+            Microsoft.PowerShell.Utility\Write-Warning "Inputobject == null --> `r`n$($MyInvocation.BoundParameters |Microsoft.PowerShell.Utility\ConvertTo-Json)`r`n";
+            return;
+        }
+
         # iterate through each object in the input collection
+        $_i = 0;
         foreach ($item in $InputObject) {
             if ($null -eq $item) { continue }
 
             # add delimiter before all items except the first one
             if (-not $first) {
-                $null = $sb.Append($Delimiter)
+                $null = $sb.Append((Microsoft.PowerShell.Utility\Invoke-Expression('"' + $Delimiter.Replace('"', '`"') + '"')))
                 if ($NewLine) {
                     $null = $sb.Append("`r`n$indent")
                 }
             }
-
-            # mark that we've processed the first item
-            $first = $false
 
             # If the item is a scalar (not an object with properties), use an empty hashtable
             if ($item -is [PSObject]) {
@@ -169,6 +177,7 @@ function Add-ArrayTemplate {
             else {
                 $hash = $item | GenXdev\ConvertTo-Hashtable
             }
+
 
             # Expand template inside an isolated scope
             $expanded = & {
@@ -188,12 +197,19 @@ function Add-ArrayTemplate {
                         Microsoft.PowerShell.Utility\Set-Variable -Name $entry.Key -Value $entry.Value -ErrorAction SilentlyContinue
                     }
                 }
+                Microsoft.PowerShell.Utility\Set-Variable -Name '_i' -Value $_i -ErrorAction SilentlyContinue
 
-                $ExecutionContext.InvokeCommand.ExpandString($template)
+                Microsoft.PowerShell.Utility\Invoke-Expression('"' + $template.Replace('"', '`"') + '"');
+
             } $template $hash $item
 
-            # Add delimiter between items (but not after last)
             $null = $sb.Append($expanded)
+
+            # only mark this item as processed once its text is in the buffer. the
+            # delimiter guard above reads this, so keeping the assignment at the end
+            # of the loop body makes it correct wherever that guard is positioned.
+            $first = $false
+            $_i++;
         }
     }
 
@@ -206,6 +222,16 @@ function Add-ArrayTemplate {
             if ($NewLine) {
                 $null = $sb.Append("`r`n$indent")
             }
+        }
+        if ($NoEmptyLines) {
+            $sb2 = [System.Text.StringBuilder]::new();
+            foreach ($line in $sb.ToString().Split("`n`r".ToCharArray())) {
+
+                if (-not ($line.Trim(" `r`n`t".ToCharArray()) -eq [String]::Empty)) {
+                    $null = $sb2.AppendLine($line)
+                }
+            }
+            $sb = $sb2;
         }
 
         # return the fully formatted string

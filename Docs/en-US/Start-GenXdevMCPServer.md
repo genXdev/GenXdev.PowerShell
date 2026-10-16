@@ -11,7 +11,7 @@
 
 
 ```powershell
-Start-GenXdevMCPServer [[-Port] <Int32>] [[-ExposedCmdLets] <GenXdev.Helpers.ExposedCmdletDefinition[]>] [[-NoConfirmationToolFunctionNames] <String[]>] [[-MaxOutputLength] <Int32>] [[-Token] <String>] [-StopExisting] [<CommonParameters>]
+Start-GenXdevMCPServer [[-Port] <Int32>] [[-ExposedCmdLets] <GenXdev.Helpers.ExposedCmdletDefinition[]>] [[-NoConfirmationToolFunctionNames] <String[]>] [[-MaxOutputLength] <Int32>] [[-Token] <String>] [-Stdio] [-StopExisting] [<CommonParameters>]
 ```
 
 ## Parameters
@@ -24,6 +24,7 @@ Start-GenXdevMCPServer [[-Port] <Int32>] [[-ExposedCmdLets] <GenXdev.Helpers.Exp
 | `-StopExisting` | SwitchParameter | ☐ | Stop any existing MCP server running on the <br>specified port before starting a new one |
 | `-MaxOutputLength` | Int32 | ☐ | Maximum length of tool output in characters <br>before trimming (default: 75000) |
 | `-Token` | String | ☐ | Authentication token required for clients  to<br>connect to the MCP server |
+| `-Stdio` | SwitchParameter | ☐ | Serve the Model Context Protocol on stdin <br>and stdout instead of HTTP |
 
 ## Parameter Details
 
@@ -117,9 +118,25 @@ Start-GenXdevMCPServer [[-Port] <Int32>] [[-ExposedCmdLets] <GenXdev.Helpers.Exp
 
 <hr/>
 
+### `-Stdio`
+
+> Serve the Model Context Protocol on stdin  and stdout instead of HTTP
+
+| Property | Value |
+|:---|:---|
+| **Required?** | No |
+| **Position?** | Named |
+| **Default value** | *(none)* |
+| **Accept pipeline input?** | False |
+| **Aliases** | *(none)* |
+| **Accept wildcard characters?** | No |
+
+<hr/>
+
 ## Related Links
 
 - [Get-AILLMSettings](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-AILLMSettings.md)
+- [Get-GenXdevMCPToken](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-GenXdevMCPToken.md)
 - [Get-SpeechToText](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SpeechToText.md)
 - [Get-TextTranslation](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-TextTranslation.md)
 - [Get-VectorSimilarity](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-VectorSimilarity.md)

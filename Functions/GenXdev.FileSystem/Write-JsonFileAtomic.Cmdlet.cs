@@ -193,7 +193,7 @@ Writes process objects as Compress JSON atomically.
         [Parameter(
             Mandatory = false,
             HelpMessage = "Controls how certain characters are escaped in the resulting JSON output. By default, only control characters (like newline) are escaped.")]
-        Newtonsoft.Json.StringEscapeHandling EscapeHandling { get; set; }
+        private Newtonsoft.Json.StringEscapeHandling EscapeHandling { get; set; }
 
         /// <summary>
         /// Process record — resolve the file path and delegate to the

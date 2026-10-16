@@ -30,7 +30,7 @@ namespace GenXdev.Helpers
         /// <summary>
         /// Gets or sets the list of refactor log items.
         /// </summary>
-        public List<RefactorLogItem> Log { get; set; } = new List<RefactorLogItem>();
+        public List<RefactorLogItem> Log { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the refactor state.
@@ -57,7 +57,7 @@ namespace GenXdev.Helpers
         /// <summary>
         /// Gets or sets the list of keys to send.
         /// </summary>
-        public List<string> KeysToSend { get; set; } = new List<string>();
+        public List<string> KeysToSend { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the code value.
@@ -156,7 +156,7 @@ namespace GenXdev.Helpers
         /// <summary>
         /// Gets or sets the list of exposed cmdlets.
         /// </summary>
-        public List<ExposedCmdletDefinition> ExposedCmdlets { get; set; } = new List<ExposedCmdletDefinition>();
+        public List<ExposedCmdletDefinition> ExposedCmdlets { get; set; } = [];
     }
 
     /// <summary>
@@ -220,16 +220,16 @@ namespace GenXdev.Helpers
         /// <summary>
         /// Gets or sets the list of selected items.
         /// </summary>
-        public List<string> Selected { get; set; } = new List<string>();
+        public List<string> Selected { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the list of refactored items.
         /// </summary>
-        public List<string> Refactored { get; set; } = new List<string>();
+        public List<string> Refactored { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the list of unselected items.
         /// </summary>
-        public List<string> Unselected { get; set; } = new List<string>();
+        public List<string> Unselected { get; set; } = [];
     }
 }

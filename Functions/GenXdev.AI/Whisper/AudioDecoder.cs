@@ -17,7 +17,7 @@ namespace GenXdev.AI.Whisper
 
         private static bool _mediaFoundationStarted;
 
-        private static readonly object _mediaFoundationLock = new object();
+        private static readonly Lock _mediaFoundationLock = new();
 
         /// <summary>
         /// Opens an audio stream as a pull-based source of mono 16 kHz samples.
@@ -29,10 +29,7 @@ namespace GenXdev.AI.Whisper
         /// </summary>
         public static Pcm16KMonoReader OpenPcm16KMono(Stream audioStream)
         {
-            if (audioStream == null)
-            {
-                throw new ArgumentNullException(nameof(audioStream));
-            }
+            ArgumentNullException.ThrowIfNull(audioStream);
 
             // The readers need to seek, and Media Foundation needs a stream it can
             // re-read after a failed probe.
@@ -96,7 +93,7 @@ namespace GenXdev.AI.Whisper
                 }
             }
 
-            return result.ToArray();
+            return [.. result];
         }
 
         /// <summary>
@@ -106,7 +103,7 @@ namespace GenXdev.AI.Whisper
         /// </summary>
         public static float[] Pcm16ToFloat(byte[] buffer, int byteCount)
         {
-            if (buffer == null || byteCount <= 1) return Array.Empty<float>();
+            if (buffer == null || byteCount <= 1) return [];
 
             var sampleCount = byteCount / 2;
 
@@ -134,7 +131,7 @@ namespace GenXdev.AI.Whisper
         public static float[] ConvertToPcm16KMono(
             byte[] buffer, int byteCount, WaveFormat sourceFormat)
         {
-            if (buffer == null || byteCount <= 1) return Array.Empty<float>();
+            if (buffer == null || byteCount <= 1) return [];
 
             // Fast path - already exactly what whisper wants
             if (sourceFormat == null ||
@@ -178,7 +175,7 @@ namespace GenXdev.AI.Whisper
                 }
             }
 
-            return result.ToArray();
+            return [.. result];
         }
 
         private static Stream EnsureSeekable(Stream input)
@@ -363,7 +360,7 @@ namespace GenXdev.AI.Whisper
 
             private readonly int _channels;
 
-            private float[] _sourceBuffer = Array.Empty<float>();
+            private float[] _sourceBuffer = [];
 
             public MonoDownmixSampleProvider(ISampleProvider source)
             {

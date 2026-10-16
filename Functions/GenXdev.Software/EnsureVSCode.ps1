@@ -101,6 +101,72 @@ function EnsureVSCode {
 
     process {
 
+        # ensure the MCP server authentication token is stored in the DPAPI
+        # protected file, which does not leak it into child process environments
+        try {
+
+            Microsoft.PowerShell.Utility\Write-Verbose "Checking MCP server authentication token..."
+
+            $protectedToken = GenXdev\Get-GenXdevMCPToken -ProtectedFileOnly
+
+            $tokenWasGenerated = $false
+
+            if ([string]::IsNullOrEmpty($protectedToken)) {
+
+                Microsoft.PowerShell.Utility\Write-Host `
+                    "Generating secure MCP server authentication token..." `
+                    -ForegroundColor Yellow
+
+                # generate and store the token without prompting
+                $protectedToken = GenXdev\New-GenXdevMCPToken `
+                    -SetProtectedFile `
+                    -Force
+
+                $tokenWasGenerated = $true
+
+                Microsoft.PowerShell.Utility\Write-Host `
+                    "MCP server authentication token generated and protected." `
+                    -ForegroundColor Green
+            }
+            else {
+
+                Microsoft.PowerShell.Utility\Write-Verbose "MCP server authentication token already configured."
+            }
+
+            # a token still held in the environment variable leaks into every child
+            # process, so drop it now that the protected file carries the token
+            $environmentToken = [System.Environment]::GetEnvironmentVariable(
+                'GENXDEV_MCP_TOKEN', 'User')
+
+            if (-not [string]::IsNullOrEmpty($environmentToken)) {
+
+                [System.Environment]::SetEnvironmentVariable(
+                    'GENXDEV_MCP_TOKEN', $null, 'User')
+
+                Microsoft.PowerShell.Management\Remove-Item -Path 'Env:\GENXDEV_MCP_TOKEN' `
+                    -ErrorAction SilentlyContinue
+
+                Microsoft.PowerShell.Utility\Write-Verbose 'Removed the GENXDEV_MCP_TOKEN environment variable.'
+            }
+
+            # the token has to be pasted once into the VS Code prompt, so hand it over
+            if ($tokenWasGenerated) {
+
+                Microsoft.PowerShell.Management\Set-Clipboard -Value $protectedToken
+
+                Microsoft.PowerShell.Utility\Write-Host `
+                    ("The token is on your clipboard: paste it once when VS Code " +
+                    "asks for the GenXdev MCP server token, then restart VS Code.") `
+                    -ForegroundColor Yellow
+            }
+        }
+        catch {
+
+            Microsoft.PowerShell.Utility\Write-Warning `
+            ("Failed to generate MCP server token: " +
+                "$($_.Exception.Message)")
+        }
+
         if ($vSCodeMissing -or $Force) {
 
             # verify administrative privileges are available
@@ -124,7 +190,13 @@ function EnsureVSCode {
                 $codeCmd = Microsoft.PowerShell.Core\Get-Command code `
                     -ErrorAction SilentlyContinue
                 if (-not $codeCmd) {
-                    throw 'Visual Studio Code installation verification failed — code command not found after installation.'
+
+                    $codeCmd = Microsoft.PowerShell.Core\Get-Command 'code - insiders' `
+                        -ErrorAction SilentlyContinue
+                    if (-not $codeCmd) {
+
+                        throw 'Visual Studio Code installation verification failed — code command not found after installation.'
+                    }
                 }
                 return;
             }
@@ -161,47 +233,13 @@ function EnsureVSCode {
             $codeCmd = Microsoft.PowerShell.Core\Get-Command code `
                 -ErrorAction SilentlyContinue
             if (-not $codeCmd) {
-                throw 'Visual Studio Code installation verification failed — code command not found after installation.'
-            }
 
-            # generate and store MCP server authentication token if not already configured
-            try {
+                $codeCmd = Microsoft.PowerShell.Core\Get-Command 'code - insiders' `
+                    -ErrorAction SilentlyContinue
+                if (-not $codeCmd) {
 
-                Microsoft.PowerShell.Utility\Write-Verbose `
-                    "Checking MCP server authentication token..."
-
-                $existingToken = [System.Environment]::GetEnvironmentVariable(
-                    'GENXDEV_MCP_TOKEN', 'User')
-
-                if ([string]::IsNullOrEmpty($existingToken)) {
-
-                    Microsoft.PowerShell.Utility\Write-Host `
-                        "Generating secure MCP server authentication token..." `
-                        -ForegroundColor Yellow
-
-                    # generate and store token without prompting
-                    $null = GenXdev\New-GenXdevMCPToken `
-                        -SetEnvironmentVariable `
-                        -Force
-
-                    Microsoft.PowerShell.Utility\Write-Host `
-                    ("MCP server authentication token generated and " +
-                        "stored in GENXDEV_MCP_TOKEN environment variable.") `
-                        -ForegroundColor Green
-
+                    throw 'Visual Studio Code installation verification failed — code command not found after installation.'
                 }
-                else {
-
-                    Microsoft.PowerShell.Utility\Write-Verbose `
-                        "MCP server authentication token already configured."
-                }
-
-            }
-            catch {
-
-                Microsoft.PowerShell.Utility\Write-Warning `
-                ("Failed to generate MCP server token: " +
-                    "$($_.Exception.Message)")
             }
 
             # copy asset files to workspace

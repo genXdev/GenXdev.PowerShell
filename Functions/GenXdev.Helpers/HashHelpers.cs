@@ -7,15 +7,14 @@ namespace GenXdev.Helpers
     {
         public static byte[] HexStringToByteArray(string hex)
         {
-            return Enumerable.Range(0, hex.Length)
+            return [.. Enumerable.Range(0, hex.Length)
                              .Where(x => x % 2 == 0)
-                             .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
-                             .ToArray();
+                             .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))];
         }
 
         public static string FormatBytesAsHexString(byte[] value)
         {
-            StringBuilder hex = new StringBuilder(value.Length * 2);
+            StringBuilder hex = new(value.Length * 2);
             foreach (byte x in value)
             {
                 hex.AppendFormat("{0:x2}", x);
@@ -40,7 +39,7 @@ namespace GenXdev.Helpers
 
         public static byte[] GetSha256Bytes(params byte[][] input)
         {
-            using (MemoryStream stream = new MemoryStream())
+            using (MemoryStream stream = new())
             {
                 foreach (var buffer in input)
                 {
@@ -79,7 +78,7 @@ namespace GenXdev.Helpers
             Byte[] PhraseAsByte = System.Text.Encoding.UTF8.GetBytes(Phrase); //getBytes(string.Concat(Phrase, "test");
             Byte[] EncryptedBytes = HashTool.ComputeHash(PhraseAsByte);
             HashTool.Clear();
-            StringBuilder hex = new StringBuilder(EncryptedBytes.Length * 2);
+            StringBuilder hex = new(EncryptedBytes.Length * 2);
             foreach (byte b in EncryptedBytes)
                 hex.AppendFormat("{0:x2}", b);
             return "0" + Convert.ToString(hex);

@@ -12,7 +12,7 @@ namespace GenXdev.Helpers
         /// The dictionary uses case-insensitive string comparison for keys.
         /// </summary>
         public static readonly Dictionary<string, HashSet<string>> Groups =
-            new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase)
+            new(StringComparer.OrdinalIgnoreCase)
             {
 
                 // Everyday categories

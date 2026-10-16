@@ -12,8 +12,8 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <NeutralLanguage>en</NeutralLanguage>
-    <AssemblyVersion>3.35.0</AssemblyVersion>
-    <FileVersion>3.35.0</FileVersion>
+    <AssemblyVersion>3.36.0</AssemblyVersion>
+    <FileVersion>3.36.0</FileVersion>
     <Description>An all-in-one PowerShell toolkit combining AI, browser automation, media control, databases, and Windows utilities into one module.</Description>
     <Copyright>Copyright (c) 2024 GenXdev</Copyright>
     <PackageProjectUrl>https://github.com/genXdev/GenXdev.PowerShell/</PackageProjectUrl>
@@ -45,11 +45,12 @@
     <DebugType>none</DebugType>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
-    <PackageReference Include="Microsoft.PowerShell.Commands.Utility" Version="7.6.5" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.13" />
+    <PackageReference Include="Microsoft.PowerShell.Commands.Utility" Version="7.6.7" />
     <PackageReference Include="NAudio" Version="3.0.1" />
     <PackageReference Include="Spectre.Console" Version="0.57.2" />
-    <PackageReference Include="System.Management.Automation" Version="7.6.5" />
+    <PackageReference Include="System.Management.Automation" Version="7.6.7" />
     <PackageReference Include="EdgeTTS.DotNet" Version="0.4.0" />
     <PackageReference Include="WpfScreenHelper" Version="2.1.1" />
   </ItemGroup>

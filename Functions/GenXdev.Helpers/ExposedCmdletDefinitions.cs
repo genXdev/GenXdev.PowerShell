@@ -60,12 +60,12 @@ namespace GenXdev.Helpers
         /// <summary>
         /// Gets or sets a hashtable containing all unfiltered arguments passed to the command.
         /// </summary>
-        public System.Collections.Hashtable UnfilteredArguments { get; set; } = new Hashtable();
+        public System.Collections.Hashtable UnfilteredArguments { get; set; } = [];
 
         /// <summary>
         /// Gets or sets a hashtable containing the filtered arguments that were actually used by the command.
         /// </summary>
-        public System.Collections.Hashtable FilteredArguments { get; set; } = new Hashtable();
+        public System.Collections.Hashtable FilteredArguments { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the definition of the exposed cmdlet that was invoked.
@@ -76,6 +76,26 @@ namespace GenXdev.Helpers
         /// Gets or sets any error message associated with the invocation, if it failed.
         /// </summary>
         public string Error { get; set; } = null;
+
+        /// <summary>
+        /// Gets or sets the informational messages the command wrote.
+        /// </summary>
+        public string[] Information { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets the warnings the command wrote.
+        /// </summary>
+        public string[] Warnings { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets the errors the command wrote.
+        /// </summary>
+        public string[] Errors { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets the verbose messages the command wrote.
+        /// </summary>
+        public string[] Verbose { get; set; } = [];
     }
 
     /// <summary>
@@ -115,17 +135,17 @@ namespace GenXdev.Helpers
         /// <summary>
         /// Gets or sets a list of parameter names that are allowed to be passed to the cmdlet.
         /// </summary>
-        public List<string> AllowedParams { get; set; } = new List<string>();
+        public List<string> AllowedParams { get; set; } = [];
 
         /// <summary>
         /// Gets or sets a list of parameter names that should not be shown during confirmation prompts.
         /// </summary>
-        public List<string> DontShowDuringConfirmationParamNames { get; set; } = new List<string>();
+        public List<string> DontShowDuringConfirmationParamNames { get; set; } = [];
 
         /// <summary>
         /// Gets or sets a list of parameters that are forced to specific values.
         /// </summary>
-        public List<ExposedForcedCmdLetParameter> ForcedParams { get; set; } = new List<ExposedForcedCmdLetParameter>();
+        public List<ExposedForcedCmdLetParameter> ForcedParams { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the maximum depth for JSON serialization of the cmdlet's output.
@@ -141,5 +161,21 @@ namespace GenXdev.Helpers
         /// Gets or sets a value indicating whether user confirmation is required before executing the cmdlet.
         /// </summary>
         public bool Confirm { get; set; } = true;
+
+        /// <summary>
+        /// The name of the parameter every exposed cmdlet advertises, which makes a
+        /// tool call return the diagnostic output streams as well.
+        /// </summary>
+        public const string OutputStreamsParameterName = "IncludeAllOutputStreams";
+
+        /// <summary>
+        /// The description advertised for the output streams parameter.
+        /// </summary>
+        public const string OutputStreamsParameterDescription =
+            "Set this to true to also get the command's verbose, information and warning " +
+            "output, returned next to its normal output. Use it when a call failed and you " +
+            "need the reported detail to fix it, or when a command returned nothing and you " +
+            "need to see what it did report. These streams can be long, so leave it out for " +
+            "normal calls. Errors are always returned.";
     }
 }

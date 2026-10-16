@@ -8,15 +8,20 @@
 
 ## Description
 
-Creates a SQL Server database connection and transaction object that can be used
-for batch operations. The caller is responsible for committing or rolling back
-the transaction. Requires an existing SQL Server database and connection.
+Creates a SQL Server transaction object that can be used for batch operations.
+The caller is responsible for committing or rolling back the transaction. When no
+Connection is provided, a connection is opened for the transaction and returned
+inside it, so the caller then owns that connection and must close it.
+Connection priority: Connection > ConnectionString > DatabaseName (requires
+Server).
 
 
 ## Syntax
 
 
 ```powershell
+Get-SQLServerTransaction -Connection <Object> [<CommonParameters>]
+
 Get-SQLServerTransaction -ConnectionString <String> [<CommonParameters>]
 
 Get-SQLServerTransaction -DatabaseName <String> [[-Server] <String>] [<CommonParameters>]
@@ -28,6 +33,7 @@ Get-SQLServerTransaction [-AutoConsent] [-AutoConsentAllPackages] [-IsolationLev
 
 | Name | Type | Required | Description |
 |:---|:---|:---:|:---|
+| `-Connection` | Object | ✅ | An existing open SqlConnection to begin the<br>transaction on. |
 | `-ConnectionString` | String | ✅ | The connection string to the SQL Server<br>database. |
 | `-DatabaseName` | String | ✅ | The name of the SQL Server database. |
 | `-Server` | String | ☐ | The SQL Server instance name. |
@@ -67,6 +73,22 @@ $transaction = Get-SQLServerTransaction -Server "localhost" -DatabaseName "MyDat
 ```
 
 ## Parameter Details
+
+### `-Connection <Object>`
+
+> An existing open SqlConnection to begin the transaction on.
+
+| Property | Value |
+|:---|:---|
+| **Required?** | Yes |
+| **Position?** | Named |
+| **Default value** | *(none)* |
+| **Accept pipeline input?** | False |
+| **Aliases** | *(none)* |
+| **Accept wildcard characters?** | No |
+| **Parameter set** | Connection |
+
+<hr/>
 
 ### `-ConnectionString <String>`
 
@@ -178,6 +200,7 @@ $transaction = Get-SQLServerTransaction -Server "localhost" -DatabaseName "MyDat
 
 ## Related Links
 
+- [Get-SQLServerConnection](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerConnection.md)
 - [Get-SQLServerSchema](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerSchema.md)
 - [Get-SQLServerTableColumnData](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerTableColumnData.md)
 - [Get-SQLServerTableData](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerTableData.md)
@@ -188,5 +211,6 @@ $transaction = Get-SQLServerTransaction -Server "localhost" -DatabaseName "MyDat
 - [Get-SQLServerViews](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerViews.md)
 - [Get-SQLServerViewSchema](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerViewSchema.md)
 - [Invoke-SQLServerQuery](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLServerQuery.md)
+- [Invoke-SQLServerScriptFile](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLServerScriptFile.md)
 - [Invoke-SSMS](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SSMS.md)
 - [New-SQLServerDatabase](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/New-SQLServerDatabase.md)

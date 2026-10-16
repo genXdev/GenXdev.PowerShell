@@ -52,6 +52,11 @@ Default is "+0%".
 The pitch shift in Hz (e.g. "+0Hz", "-10Hz", "+20Hz"). Positive values
 raise the pitch, negative values lower it. Default is "+0Hz".
 
+.PARAMETER AudioDevice
+The audio output device to speak on, matched with wildcards against the
+render device names (e.g. "*USB*" or "*Voicemeeter In 1*"). When it is not
+specified, or when nothing matches, the standard output device is used.
+
 .PARAMETER PassThru
 When specified, outputs the text being spoken to the pipeline, allowing for
 text processing while speaking.
@@ -456,6 +461,12 @@ function Start-TextToSpeech {
         ########################################################################
         [Parameter(
             Mandatory = $false,
+            HelpMessage = 'Audio output device name or wildcard pattern'
+        )]
+        [string] $AudioDevice,
+        ########################################################################
+        [Parameter(
+            Mandatory = $false,
             HelpMessage = 'Output the text being spoken to the pipeline'
         )]
         [Alias('pt')]
@@ -539,6 +550,28 @@ function Start-TextToSpeech {
         if ($Pitch) {
             [GenXdev.Helpers.Misc]::SpeechCustomized.SetPitch($Pitch)
         }
+
+        # select the audio output device, so the per-app output device
+        # policy of Windows is bypassed for speech
+        if (-not [string]::IsNullOrWhiteSpace($AudioDevice)) {
+
+            $device = [GenXdev.Helpers.EdgeTtsSynthesizer]::
+            GetInstalledAudioDevices() |
+            Microsoft.PowerShell.Core\Where-Object { $PSItem.Name -like $AudioDevice } |
+            Microsoft.PowerShell.Utility\Select-Object -First 1
+
+            if ($device) {
+                [GenXdev.Helpers.Misc]::SpeechCustomized.SetAudioDevice(
+                    $device.Index)
+                Microsoft.PowerShell.Utility\Write-Verbose "Selected audio device: $($device.Name)"
+            }
+            else {
+                [GenXdev.Helpers.Misc]::SpeechCustomized.SetAudioDevice(-1)
+                Microsoft.PowerShell.Utility\Write-Warning (
+                    "No audio device matches '${AudioDevice}', using the " +
+                    'standard output device.')
+            }
+        }
         @($Lines) | Microsoft.PowerShell.Core\Where-Object {
             # Filter out $null and whitespace-only lines
             $null -ne $PSItem -and '' -ne "$PSItem".Trim()
@@ -560,7 +593,7 @@ function Start-TextToSpeech {
                 if (-not [string]::IsNullOrWhiteSpace($VoiceName) -or
                     -not [string]::IsNullOrWhiteSpace($Locale)) {
 
-                    $voices = [GenXdev.Helpers.Misc]::SpeechCustomized.
+                    $voices = [GenXdev.Helpers.EdgeTtsSynthesizer]::
                     GetInstalledVoices()
 
                     if (-not [string]::IsNullOrWhiteSpace($Locale)) {

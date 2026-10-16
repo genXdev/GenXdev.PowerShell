@@ -19,7 +19,7 @@ Creates a cryptographically secure random token and optionally stores
 
 
 ```powershell
-New-GenXdevMCPToken [[-Length] <Int32>] [-Force] [-SetEnvironmentVariable] [<CommonParameters>]
+New-GenXdevMCPToken [[-Length] <Int32>] [[-ProtectedFilePath] <String>] [-Force] [-SetEnvironmentVariable] [-SetProtectedFile] [<CommonParameters>]
 ```
 
 ## Parameters
@@ -27,8 +27,10 @@ New-GenXdevMCPToken [[-Length] <Int32>] [-Force] [-SetEnvironmentVariable] [<Com
 | Name | Type | Required | Description |
 |:---|:---|:---:|:---|
 | `-Length` | Int32 | ☐ | The length of the token in bytes (default:<br>32, minimum: 16) |
+| `-SetProtectedFile` | SwitchParameter | ☐ | Store the token in the DPAPI protected token<br>file |
+| `-ProtectedFilePath` | String | ☐ | Path of the DPAPI protected token file |
 | `-SetEnvironmentVariable` | SwitchParameter | ☐ | Store the token in GENXDEV_MCP_TOKEN user<br>environment variable |
-| `-Force` | SwitchParameter | ☐ | Overwrite existing environment variable<br>without prompting |
+| `-Force` | SwitchParameter | ☐ | Overwrite an existing token without prompting |
 
 ## Examples
 
@@ -37,6 +39,14 @@ New-GenXdevMCPToken [[-Length] <Int32>] [-Force] [-SetEnvironmentVariable] [<Com
 ```powershell
 New-GenXdevMCPToken
     Generates and displays a new random token without storing it.
+```
+
+
+
+```powershell
+New-GenXdevMCPToken -SetProtectedFile
+    Generates a new token and stores it in the DPAPI protected token file,
+    which the MCP server reads without prompting.
 ```
 
 
@@ -81,6 +91,36 @@ $token = New-GenXdevMCPToken
 
 <hr/>
 
+### `-SetProtectedFile`
+
+> Store the token in the DPAPI protected token file
+
+| Property | Value |
+|:---|:---|
+| **Required?** | No |
+| **Position?** | Named |
+| **Default value** | *(none)* |
+| **Accept pipeline input?** | False |
+| **Aliases** | *(none)* |
+| **Accept wildcard characters?** | No |
+
+<hr/>
+
+### `-ProtectedFilePath <String>`
+
+> Path of the DPAPI protected token file
+
+| Property | Value |
+|:---|:---|
+| **Required?** | No |
+| **Position?** | 1 |
+| **Default value** | `"$env:LOCALAPPDATA\GenXdev\mcp-token.clixml"` |
+| **Accept pipeline input?** | False |
+| **Aliases** | *(none)* |
+| **Accept wildcard characters?** | No |
+
+<hr/>
+
 ### `-SetEnvironmentVariable`
 
 > Store the token in GENXDEV_MCP_TOKEN user environment variable
@@ -98,7 +138,7 @@ $token = New-GenXdevMCPToken
 
 ### `-Force`
 
-> Overwrite existing environment variable without prompting
+> Overwrite an existing token without prompting
 
 | Property | Value |
 |:---|:---|
@@ -118,6 +158,7 @@ $token = New-GenXdevMCPToken
 ## Related Links
 
 - [Get-AILLMSettings](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-AILLMSettings.md)
+- [Get-GenXdevMCPToken](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-GenXdevMCPToken.md)
 - [Get-SpeechToText](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SpeechToText.md)
 - [Get-TextTranslation](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-TextTranslation.md)
 - [Get-VectorSimilarity](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-VectorSimilarity.md)

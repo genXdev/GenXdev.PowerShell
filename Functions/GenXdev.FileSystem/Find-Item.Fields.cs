@@ -50,28 +50,28 @@ namespace GenXdev.FileSystem
         /// <summary>
         /// Regex to detect recursive search patterns like **.
         /// </summary>
-        protected Regex RecursePatternMatcher = new Regex("^\\*\\*\\**$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        protected Regex RecursePatternMatcher = new("^\\*\\*\\**$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         /// <summary>
         /// Regex to detect recursive patterns ending with a slash.
         /// </summary>
-        protected Regex RecursePatternWithSlashAtEndMatcher = new Regex("^\\*\\*\\**\\\\$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        protected Regex RecursePatternWithSlashAtEndMatcher = new("^\\*\\*\\**\\\\$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         /// <summary>
         /// Regex to detect recursive patterns starting with **.
         /// </summary>
-        protected Regex RecurseStartPatternWithSlashMatcher = new Regex("^\\*\\*\\**\\\\", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        protected Regex RecurseStartPatternWithSlashMatcher = new("^\\*\\*\\**\\\\", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         /// <summary>
         /// Regex to detect recursive patterns ending with **.
         /// </summary>
-        protected Regex RecurseEndPatternWithSlashAtStartMatcher = new Regex("\\\\\\*\\*\\**$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        protected Regex RecurseEndPatternWithSlashAtStartMatcher = new("\\\\\\*\\*\\**$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         /// <summary>
         /// Set of file extensions to skip during content search to avoid processing
         /// non-text files.
         /// </summary>
-        protected static HashSet<string> ExtensionsToSkip = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+        protected static HashSet<string> ExtensionsToSkip = new(StringComparer.OrdinalIgnoreCase) {
         // Image formats (expanded with more common and specialized types)
         ".gif", ".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".webp",
         ".ico", ".heic", ".heif",
@@ -206,17 +206,17 @@ namespace GenXdev.FileSystem
         /// <summary>
         /// List of worker tasks for parallel processing.
         /// </summary>
-        protected readonly List<Task> Workers = new List<Task>();
+        protected readonly List<Task> Workers = [];
 
         /// <summary>
         /// Lock object for synchronizing access to the workers list.
         /// </summary>
-        protected readonly object WorkersLock = new object();
+        protected readonly object WorkersLock = new();
 
         /// <summary>
         /// String builder for constructing status messages.
         /// </summary>
-        protected readonly StringBuilder statusBuilder = new StringBuilder(256);
+        protected readonly StringBuilder statusBuilder = new(256);
 
         /// <summary>
         /// Cancellation source to handle timeouts and user interruptions gracefully.
@@ -321,7 +321,7 @@ namespace GenXdev.FileSystem
         /// <summary>
         /// Lock for measurement updates to ensure thread safety.
         /// </summary>
-        protected readonly object throughputLock = new object();
+        protected readonly object throughputLock = new();
 
         /// <summary>
         /// Store original thread pool settings to restore after cmdlet execution.

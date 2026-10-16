@@ -4,26 +4,118 @@ using System.Management.Automation.Runspaces;
 public abstract partial class PSGenXdevCmdlet : PSCmdlet
 {
     /// <summary>
-    /// Detects whether the current PowerShell session is running inside a
-    /// Pester test by inspecting the debugger call stack for frames whose
-    /// script path contains the Pester installation directory.
+    /// Global PowerShell variable that flags an active GenXdev test run.
+    /// This is the authoritative, session scoped marker.
+    /// </summary>
+    public const string TestModeVariableName = "GenXdevIsUnderTest";
+
+    /// <summary>
+    /// Process scoped environment variable that flags an active GenXdev test
+    /// run. It only exists to carry the marker into runspaces and child
+    /// processes that cannot see the global variable, and it is always
+    /// cleared when the run finishes.
+    /// </summary>
+    public const string TestModeEnvironmentVariable = "GENXDEV_UNDER_TEST";
+
+    /// <summary>
+    /// Detects whether the current PowerShell session is running tests.
+    /// The GenXdev test runner sets an explicit marker, which is the
+    /// authoritative signal. Only when no marker is present does this fall
+    /// back to inspecting the debugger call stack, so a caller invoking
+    /// Invoke-Pester directly still gets data isolation.
     /// </summary>
     public static bool IsRunningUnderPester()
     {
-        var runspace = Runspace.DefaultRunspace;
-        if (runspace == null)
+        if (IsTestModeMarkerSet())
+            return true;
+
+        // Fallback for hosts that run Pester without the GenXdev runner.
+        try
+        {
+            var runspace = Runspace.DefaultRunspace;
+            if (runspace == null)
+                return false;
+
+            var dbg = runspace.Debugger;
+            if (dbg == null)
+                return false;
+
+            var frames = dbg.GetCallStack();
+
+            return frames.Any(f =>
+                f.GetScriptLocation() != null &&
+                f.GetScriptLocation().IndexOf("Pester.psm1", System.StringComparison.OrdinalIgnoreCase) >= 0
+            );
+        }
+        catch
+        {
+            // Call-stack inspection is unavailable in this host. Report
+            // "not under test" instead of throwing, so ordinary execution
+            // is never broken by detection itself.
             return false;
+        }
+    }
 
-        var dbg = runspace.Debugger;
-        if (dbg == null)
-            return false;
+    /// <summary>
+    /// Reads the explicit test marker. The session scoped global variable wins
+    /// whenever it is present, so an explicit value always beats a process
+    /// scoped environment variable that outlived a run which was killed before
+    /// it could clean up. The environment variable is the fallback for
+    /// runspaces that cannot see the global variable.
+    /// </summary>
+    public static bool IsTestModeMarkerSet()
+    {
+        try
+        {
+            // SessionStateProxy cannot be used here: detection runs inside a
+            // running pipeline, which forbids concurrent session state calls.
+            // Invoking a script block is allowed in that situation.
+            var getMarkerScript = ScriptBlock.Create(
+                "param($VarName) Microsoft.PowerShell.Utility\\Get-Variable " +
+                "-Name $VarName -Scope Global -ValueOnly " +
+                "-ErrorAction SilentlyContinue");
 
-        var frames = dbg.GetCallStack();
+            var marker = getMarkerScript.Invoke(TestModeVariableName);
 
-        return frames.Any(f =>
-            f.GetScriptLocation() != null &&
-            f.GetScriptLocation().IndexOf("Pester.psm1", System.StringComparison.OrdinalIgnoreCase) >= 0
-        );
+            if (marker != null && marker.Count > 0 && marker[0] != null)
+            {
+                var markerValue = marker[0].BaseObject;
+
+                if (markerValue is bool)
+                    return (bool)markerValue;
+
+                bool fromVariable;
+                if (bool.TryParse(markerValue.ToString(), out fromVariable))
+                    return fromVariable;
+
+                return true;
+            }
+        }
+        catch
+        {
+            // Session state not reachable; fall through to the process marker.
+        }
+
+        try
+        {
+            string fromEnvironment = Environment.GetEnvironmentVariable(
+                TestModeEnvironmentVariable);
+
+            if (!string.IsNullOrWhiteSpace(fromEnvironment))
+            {
+                bool parsed;
+                if (bool.TryParse(fromEnvironment.Trim(), out parsed))
+                    return parsed;
+
+                return true;
+            }
+        }
+        catch
+        {
+            // Environment not readable in this host.
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -490,14 +582,41 @@ public abstract partial class PSGenXdevCmdlet : PSCmdlet
         {
             // Remove .db extension if present using native string operation
             string cleanPath = PreferencesDatabasePath.EndsWith(".db", StringComparison.OrdinalIgnoreCase)
-                ? PreferencesDatabasePath.Substring(0, PreferencesDatabasePath.Length - 3)
+                ? PreferencesDatabasePath[..^3]
                 : PreferencesDatabasePath;
 
             resolvedDatabasePath = ExpandPath(cleanPath, true);
+
+            // Live-store protection: an explicitly supplied path must never
+            // let a test read or write the real user preferences. Paths the
+            // test itself supplied under TEMP are honoured unchanged, so
+            // tests that deliberately point at their own empty database
+            // keep working exactly as before.
+            resolvedDatabasePath = RedirectLivePathForPester(
+                resolvedDatabasePath, "Preferences");
+
             WriteVerbose("Using provided database path: " + resolvedDatabasePath);
             return resolvedDatabasePath;
         }
 
+
+        // When running inside a Pester test and no explicit path was given,
+        // auto-isolate preferences in TEMP so tests never touch real user data.
+        // This MUST be checked before the session global variable: a leaked
+        // $global:PreferencesDatabasePath from a previous test run must never
+        // reroute a test (or a post-test session) away from isolation.
+        if (IsRunningUnderPester())
+        {
+            string testPath = System.IO.Path.Combine(
+                System.IO.Path.GetTempPath(),
+                "GenXdev.PowerShell.Tests",
+                "Preferences");
+            resolvedDatabasePath = ExpandPath(testPath, true);
+            WriteVerbose(
+                "Pester detected — using isolated test database path: " +
+                resolvedDatabasePath);
+            return resolvedDatabasePath;
+        }
 
         if (!SkipSession)
         {
@@ -512,21 +631,6 @@ public abstract partial class PSGenXdevCmdlet : PSCmdlet
                 WriteVerbose("Using session database path: " + resolvedDatabasePath);
                 return resolvedDatabasePath;
             }
-        }
-
-        // When running inside a Pester test and no explicit path was given,
-        // auto-isolate preferences in TEMP so tests never touch real user data
-        if (IsRunningUnderPester())
-        {
-            string testPath = System.IO.Path.Combine(
-                System.IO.Path.GetTempPath(),
-                "GenXdev.PowerShell.Tests",
-                "Preferences");
-            resolvedDatabasePath = ExpandPath(testPath, true);
-            WriteVerbose(
-                "Pester detected — using isolated test database path: " +
-                resolvedDatabasePath);
-            return resolvedDatabasePath;
         }
 
         if (!SessionOnly)
@@ -682,7 +786,7 @@ public abstract partial class PSGenXdevCmdlet : PSCmdlet
                 if (!string.IsNullOrEmpty(varName) && varName.StartsWith("GenXdevPreference_"))
                 {
                     // Extract the preference name after the prefix
-                    string key = varName.Substring("GenXdevPreference_".Length);
+                    string key = varName["GenXdevPreference_".Length..];
                     sessionKeys.Add(key);
                 }
             }

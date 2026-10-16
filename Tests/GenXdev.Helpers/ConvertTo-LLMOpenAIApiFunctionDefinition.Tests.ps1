@@ -154,4 +154,61 @@ Pester\Describe 'ConvertTo-LLMOpenAIApiFunctionDefinition' {
             $props.Count | Pester\Should -BeGreaterThan 0
         }
     }
+
+    Pester\Context 'Output stream switch' {
+
+        Pester\BeforeAll {
+            $Script:streamSwitchName =
+                [GenXdev.Helpers.ExposedCmdletDefinition]::OutputStreamsParameterName
+        }
+
+        Pester\It 'Should advertise the output stream switch on an exposed cmdlet' {
+            $converted = GenXdev\ConvertTo-LLMOpenAIApiFunctionDefinition `
+                -ExposedCmdLets @(
+                @{
+                    Name          = 'Get-ChildItem'
+                    AllowedParams = @('Path=string')
+                    Confirm       = $false
+                }
+            )
+
+            $props = $converted.function.parameters.properties
+
+            # the caller decides per tool call whether the diagnostic streams come back
+            $props.Keys | Pester\Should -Contain $Script:streamSwitchName
+            $props[$Script:streamSwitchName].type | Pester\Should -Be 'boolean'
+            $props[$Script:streamSwitchName].description | Pester\Should -Be (
+                [GenXdev.Helpers.ExposedCmdletDefinition]::OutputStreamsParameterDescription)
+        }
+
+        Pester\It 'Should advertise the switch for a cmdlet without allowed parameters' {
+            $converted = GenXdev\ConvertTo-LLMOpenAIApiFunctionDefinition `
+                -ExposedCmdLets @(
+                @{
+                    Name          = 'Stop-TextToSpeech'
+                    AllowedParams = @()
+                    Confirm       = $false
+                }
+            )
+
+            $props = $converted.function.parameters.properties
+
+            $props.Keys | Pester\Should -Contain $Script:streamSwitchName
+            $props.Count | Pester\Should -Be 1
+        }
+
+        Pester\It 'Should never require the output stream switch' {
+            $converted = GenXdev\ConvertTo-LLMOpenAIApiFunctionDefinition `
+                -ExposedCmdLets @(
+                @{
+                    Name          = 'Get-ChildItem'
+                    AllowedParams = @('Path=string')
+                    Confirm       = $false
+                }
+            )
+
+            $converted.function.parameters.required |
+                Pester\Should -Not -Contain $Script:streamSwitchName
+        }
+    }
 }

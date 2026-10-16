@@ -89,7 +89,7 @@ public abstract partial class PSGenXdevCmdlet : PSCmdlet
         }
 
         // Return sorted unique store names
-        return storeNames.Keys.OrderBy(name => name).ToArray();
+        return [.. storeNames.Keys.OrderBy(name => name)];
     }
 
     /// <summary>
@@ -113,6 +113,12 @@ public abstract partial class PSGenXdevCmdlet : PSCmdlet
         {
             BasePath = GetGenXdevAppDataPath("KeyValueStore");
         }
+
+        // Live-store protection: every store read and write funnels through
+        // this method to obtain its file path, so redirecting here keeps
+        // tests out of the real %LOCALAPPDATA%\GenXdev.PowerShell store.
+        // A test that supplies its own TEMP directory is unaffected.
+        BasePath = RedirectLivePathForPester(BasePath, "KeyValueStore");
 
         WriteVerbose($"Constructing store file path for store '{StoreName}' with sync key " +
             $"'{SynchronizationKey}'");
@@ -188,7 +194,7 @@ public abstract partial class PSGenXdevCmdlet : PSCmdlet
             }
         }
 
-        return keys.ToArray();
+        return [.. keys];
     }
 
     /// <summary>

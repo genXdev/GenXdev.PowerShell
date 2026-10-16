@@ -270,6 +270,11 @@ function Set-GenXdevCommandNotFoundAction {
 
                         if ($global:UseAIUnknownCommandPrompt) {
 
+                            # queued keystrokes must not answer this question on your behalf
+                            if (-not [Console]::IsInputRedirected) {
+                                while ([Console]::KeyAvailable) { $null = [Console]::ReadKey() }
+                            }
+
                             $userChoice = $host.ui.PromptForChoice(
                                 'Command not found',
                                 'Do you want AI to figure out what you ' +

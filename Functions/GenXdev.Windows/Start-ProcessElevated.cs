@@ -70,7 +70,7 @@ Installs a package via winget with admin rights and waits for completion.
             Mandatory = false,
             Position = 1,
             HelpMessage = "Arguments to pass to the executable")]
-        public string[] ArgumentList { get; set; } = Array.Empty<string>();
+        public string[] ArgumentList { get; set; } = [];
 
         /// <summary>
         /// Working directory for the new process. Identical to Start-Process

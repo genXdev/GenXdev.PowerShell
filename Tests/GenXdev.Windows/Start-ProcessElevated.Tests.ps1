@@ -2,7 +2,7 @@
 # Part of PowerShell module : GenXdev.Windows
 # Original cmdlet filename  : Start-ProcessElevated.Tests.ps1
 # Original author           : René Vaessen / GenXdev
-# Version                   : 3.35.0
+# Version                   : 3.36.0
 ###############################################################################
 
 Pester\BeforeAll {

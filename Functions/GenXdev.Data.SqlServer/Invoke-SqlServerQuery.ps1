@@ -41,6 +41,12 @@ An existing SQL Server transaction to use. When provided, the function will not
 commit or rollback the transaction - that's the caller's responsibility.
 Takes priority over ConnectionString and DatabaseName/Server.
 
+.PARAMETER Connection
+An existing open SqlConnection to execute on. The caller owns the connection, so
+it is never closed here, and without a Transaction every query runs in
+autocommit mode. Use this to keep one session across multiple calls.
+Takes priority over ConnectionString and DatabaseName/Server.
+
 .PARAMETER Queries
 One or more SQL queries to execute. Can be passed via pipeline.
 
@@ -122,6 +128,13 @@ function Invoke-SQLServerQuery {
         )]
         [object]$Transaction,
 
+        ###############################################################################
+        [Parameter(
+            Mandatory = $false,
+            HelpMessage = 'An existing open SqlConnection to execute on.'
+        )]
+        [object]$Connection,
+
         ###########################################################################
         [Parameter(
             Position = 4,
@@ -188,32 +201,38 @@ function Invoke-SQLServerQuery {
         GenXdev\EnsureNuGetAssembly @ensureParams
         Microsoft.PowerShell.Utility\Add-Type -AssemblyName System.Data.SqlClient
 
-        # determine connection source priority: Transaction > ConnectionString > DatabaseName+Server
+        # determine connection source priority: Transaction > Connection > ConnectionString > DatabaseName+Server
         if ($null -ne $Transaction) {
             $connection = $Transaction.Connection
             $transaction = $Transaction
-            $isExternalTransaction = $true
+            $isExternalConnection = $true
             Microsoft.PowerShell.Utility\Write-Verbose 'Using external transaction'
+        }
+        elseif ($null -ne $Connection) {
+            $connection = $Connection
+            $transaction = $null
+            $isExternalConnection = $true
+            Microsoft.PowerShell.Utility\Write-Verbose 'Using external connection in autocommit mode'
         }
         elseif (-not [String]::IsNullOrWhiteSpace($ConnectionString)) {
             $connString = $ConnectionString
-            $isExternalTransaction = $false
+            $isExternalConnection = $false
             Microsoft.PowerShell.Utility\Write-Verbose "Will create internal transaction with connection string: $connString"
         }
         elseif (-not [String]::IsNullOrWhiteSpace($DatabaseName)) {
             $connString = "Server=$Server;Database=$DatabaseName;Integrated Security=true;TrustServerCertificate=true"
-            $isExternalTransaction = $false
+            $isExternalConnection = $false
             Microsoft.PowerShell.Utility\Write-Verbose "Will create internal transaction with server: $Server, database: $DatabaseName"
         }
         else {
-            throw 'You must provide either a Transaction, ConnectionString, or DatabaseName (with optional Server) parameter.'
+            throw 'You must provide either a Transaction, Connection, ConnectionString, or DatabaseName (with optional Server) parameter.'
         }
     }
 
     process {
         try {
             # establish database connection and transaction if not using external
-            if (-not $isExternalTransaction) {
+            if (-not $isExternalConnection) {
                 $connectionClass = "System.Data.SqlClient.SqlConnection"
                 $connection = Microsoft.PowerShell.Utility\New-Object $connectionClass($connString)
                 $connection.Open()
@@ -223,6 +242,15 @@ function Invoke-SQLServerQuery {
                 $transaction = $connection.BeginTransaction($IsolationLevel)
                 Microsoft.PowerShell.Utility\Write-Verbose "Started internal transaction with $IsolationLevel isolation"
             }
+
+            # forward informational messages, such as PRINT output, from the connection
+            $infoMessageHandler = [System.Data.SqlClient.SqlInfoMessageEventHandler] {
+                param($eventSender, $eventArguments)
+
+                Microsoft.PowerShell.Utility\Write-Information $eventArguments.Message
+            }
+
+            $connection.add_InfoMessage($infoMessageHandler)
 
             # ensure parameters array exists
             $SqlParameters = if ($SqlParameters) { $SqlParameters } else { @() }
@@ -288,14 +316,14 @@ function Invoke-SQLServerQuery {
                 }
 
                 # only commit if we created the transaction internally
-                if (-not $isExternalTransaction) {
+                if (-not $isExternalConnection) {
                     $transaction.Commit()
                     Microsoft.PowerShell.Utility\Write-Verbose 'Internal transaction committed successfully'
                 }
             }
             catch {
                 # only rollback if we created the transaction internally
-                if (-not $isExternalTransaction) {
+                if (-not $isExternalConnection) {
                     $transaction.Rollback()
                     Microsoft.PowerShell.Utility\Write-Verbose 'Internal transaction rolled back due to error'
                 }
@@ -304,8 +332,14 @@ function Invoke-SQLServerQuery {
             finally {
                 if ($null -ne $reader) { $reader.Close(); $reader = $null; }
 
+                # stop forwarding informational messages from the connection
+                if ($null -ne $infoMessageHandler) {
+                    $connection.remove_InfoMessage($infoMessageHandler)
+                    $infoMessageHandler = $null
+                }
+
                 # only close connection if we created it internally
-                if (-not $isExternalTransaction) {
+                if (-not $isExternalConnection) {
                     $connection.Close()
                     Microsoft.PowerShell.Utility\Write-Verbose 'Internal connection closed'
                 }

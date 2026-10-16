@@ -34,7 +34,7 @@ namespace GenXdev.AI.Whisper
         /// <summary>
         /// Opens a stream over the model file for the given type.
         /// </summary>
-        public async Task<Stream> GetGgmlModelAsync(
+        public static async Task<Stream> GetGgmlModelAsync(
             GgmlType modelType,
             CancellationToken cancellationToken = default)
         {
@@ -64,7 +64,7 @@ namespace GenXdev.AI.Whisper
         /// once it completes, so an interrupted download can never leave a
         /// half-written model that would fail to load on the next run.
         /// </summary>
-        public async Task DownloadModelAsync(
+        public static async Task DownloadModelAsync(
             GgmlType modelType,
             string destinationPath,
             Action<int> progress = null,
@@ -134,7 +134,17 @@ namespace GenXdev.AI.Whisper
                     File.Delete(destinationPath);
                 }
 
-                File.Move(tempPath, destinationPath);
+                int retries = 5;
+                while (true) try {
+
+                    File.Move(tempPath, destinationPath, true);
+                    break;
+                }
+                catch {
+
+                    if (--retries <= 0) throw new Exception($"Could not move file {tempPath} -> {destinationPath} after 5 retries");
+                    await Task.Delay(400, cancellationToken);
+                }
             }
             catch
             {

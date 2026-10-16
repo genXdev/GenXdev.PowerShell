@@ -61,7 +61,7 @@ public abstract partial class PSGenXdevCmdlet : PSCmdlet
 public abstract partial class PSGenXdevCmdlet : PSCmdlet
 {
     internal static readonly ConcurrentDictionary<string, CommandInfo> CommandInfoCache =
-        new ConcurrentDictionary<string, CommandInfo>(StringComparer.OrdinalIgnoreCase);
+        new(StringComparer.OrdinalIgnoreCase);
 
     private static readonly ScriptBlock ReadJsonWithRetryScript = ScriptBlock.Create(@"
 param(
@@ -97,7 +97,7 @@ GenXdev\ReadJsonWithRetry `
     /// Thread-safe via ConcurrentDictionary; cancel-and-replace on each call.
     /// </summary>
     private static readonly ConcurrentDictionary<string, DebounceState> _debounceWrites =
-        new ConcurrentDictionary<string, DebounceState>(StringComparer.OrdinalIgnoreCase);
+        new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Copies parameter values from the current cmdlet to another cmdlet with identical parameter names.
@@ -125,9 +125,8 @@ GenXdev\ReadJsonWithRetry `
             var paramName = parameterKvp.Key;
             var paramInfo = parameterKvp.Value;
 
-            if (boundParamsDict.ContainsKey(paramName))
+            if (boundParamsDict.TryGetValue(paramName, out object paramValue))
             {
-                var paramValue = boundParamsDict[paramName];
 
                 // Handle switch parameters
                 if (paramInfo.ParameterType == typeof(SwitchParameter))
@@ -175,7 +174,7 @@ GenXdev\ReadJsonWithRetry `
     /// <returns>A JSON string representation of the object.</returns>
     protected string ConvertToJson(object obj, int depth = 20)
     {
-        return InvokeScript<string>("param ($obj) ConvertTo-Json -Depth " + depth.ToString() + " -Compress $obj", new object[] { obj });
+        return InvokeScript<string>("param ($obj) ConvertTo-Json -Depth " + depth.ToString() + " -Compress $obj", [obj]);
     }
 
     /// <summary>
@@ -183,11 +182,11 @@ GenXdev\ReadJsonWithRetry `
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
     /// <returns>An array containing the deserialized object.</returns>
-    protected object[] ConvertFromJson(string json)
+    protected static object[] ConvertFromJson(string json)
     {
         var options = new JsonSerializerOptions { MaxDepth = 20 };
         var obj = JsonSerializer.Deserialize<object>(json, options);
-        return new object[] { obj };
+        return [obj];
     }
 
     /// <summary>
@@ -196,11 +195,11 @@ GenXdev\ReadJsonWithRetry `
     /// <typeparam name="T">The type to deserialize to.</typeparam>
     /// <param name="json">The JSON string to deserialize.</param>
     /// <returns>An array of the specified type containing the deserialized objects.</returns>
-    protected T[] ConvertFromJson<T>(string json)
+    protected static T[] ConvertFromJson<T>(string json)
     {
         var options = new JsonSerializerOptions { MaxDepth = 20 };
         var obj = JsonSerializer.Deserialize<T>(json, options);
-        return new T[] { obj };
+        return [obj];
     }
 
     /// <summary>
@@ -232,20 +231,21 @@ $params = @{
 }
 
 if ($null -ne $depth) { $params.Depth = $depth }
+else { $params.Depth = 30 }
 if ($true -eq $compress) { $params.Compress = $true }
 if ($true -eq $enumsAsStrings) { $params.EnumsAsStrings = $true }
 if ($true -eq $asArray) { $params.AsArray = $true }
 if ($null -ne $escapeHandling) { $params.EscapeHandling = $escapeHandling }
 
 $obj | ConvertTo-Json @params",
-    new object[] {
+    [
         data,
-        depth.HasValue ? depth.Value : null,
+        depth ?? 30,
         compress.HasValue ? compress.Value : null,
         enumsAsStrings.HasValue ? enumsAsStrings.Value : null,
         asArray.HasValue ? asArray.Value : null,
         escapeHandling.HasValue ? escapeHandling.Value : null
-    });
+    ]);
 
         WriteTextFileAtomic(filePath, json, maxRetries, retryDelayMs, debounceMs);
     }
@@ -417,15 +417,27 @@ $obj | ConvertTo-Json @params",
         {
             File.WriteAllBytes(tmpFile, content);
 
-            // Atomic rename on the same volume — file stays consistent
-            File.Move(tmpFile, filePath, overwrite: true);
-            return true;
+            while (maxRetries > 0)
+            {
+                try
+                {
+                    File.Move(tmpFile, filePath, overwrite: true);
+                    return true;
+                }
+                catch
+                {
+                    if (--maxRetries <= 0) return false;
+                    Thread.Sleep(retryDelayMs);
+                }
+            }
+
+            return false;
         }
         catch
         {
             // Clean up temp file — caller handles retry/reschedule
             try { if (File.Exists(tmpFile)) File.Delete(tmpFile); } catch { }
-            return false;
+            throw;
         }
     }
 
@@ -486,7 +498,7 @@ $obj | ConvertTo-Json @params",
     /// <param name="retryDelayMs">Delay between retries in milliseconds (default 200).</param>
     /// <param name="asHashtable">Whether to return the result as a hashtable.</param>
     /// <returns>The deserialized object or hashtable from the JSON file.</returns>
-    protected object ReadJsonWithRetry(string filePath, int maxRetries = 10,
+    protected static object ReadJsonWithRetry(string filePath, int maxRetries = 10,
         int retryDelayMs = 200, bool asHashtable = false)
     {
         Collection<PSObject> results = ReadJsonWithRetryScript.Invoke(
@@ -526,13 +538,13 @@ $obj | ConvertTo-Json @params",
 
         // check if first result's base object is of type T
         // handles cases where script returns wrapped PSObjects
-        if (results.Count > 0 && results[0].BaseObject is T)
+        if (results.Count > 0 && results[0].BaseObject is T t)
         {
-            return (T)results[0].BaseObject;
+            return t;
         }
 
         // return default value if no matching type found
-        return default(T);
+        return default;
     }
 
     /// <summary>
@@ -598,12 +610,12 @@ $obj | ConvertTo-Json @params",
         params string[] paramsToExclude
     )
     {
-        StringBuilder script = new StringBuilder();
+        StringBuilder script = new();
         script.AppendLine("param($invocationArgs)");
         script.AppendLine("function go {");
         script.AppendLine("  param(");
         bool first = true;
-        parameters = parameters ?? new Hashtable();
+        parameters = parameters ?? [];
 
         if (includeIdenticalParamValues)
         {
@@ -696,7 +708,7 @@ $obj | ConvertTo-Json @params",
         {
             return result;
         }
-        return default(T);
+        return default;
     }
 
     /// <summary>
@@ -763,7 +775,7 @@ $obj | ConvertTo-Json @params",
     /// <param name="FileMustExist">Whether the file must exist.</param>
     /// <param name="DirectoryMustExist">Whether the directory must exist.</param>
     /// <returns>The expanded path string.</returns>
-    protected string ExpandPath(string Path,
+    protected static string ExpandPath(string Path,
     bool CreateDirectory = false,
     bool CreateFile = false,
     bool DeleteExistingFile = false,
@@ -822,7 +834,7 @@ $obj | ConvertTo-Json @params",
     /// <param name="forceConsent">Automatically consent to this installation type and set persistent flag..</param>
     /// <param name="consentToThirdPartySoftwareInstallation">Whether consent is for third-party software.</param>
     /// <returns>True if consent is granted, false otherwise.</returns>
-    protected bool ConfirmInstallationConsent(string applicationName, string source,
+    protected static bool ConfirmInstallationConsent(string applicationName, string source,
         string description = null, string publisher = null, bool forceConsent = false,
         bool consentToThirdPartySoftwareInstallation = false)
     {
@@ -913,7 +925,7 @@ $obj | ConvertTo-Json @params",
     /// </summary>
     /// <param name="boundParamsObject">The bound parameters object to convert.</param>
     /// <returns>A dictionary containing the parameter names and values.</returns>
-    private Dictionary<string, object> ConvertToParameterDictionary(object boundParamsObject)
+    private static Dictionary<string, object> ConvertToParameterDictionary(object boundParamsObject)
     {
         var result = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
@@ -943,12 +955,93 @@ $obj | ConvertTo-Json @params",
     /// </summary>
     /// <param name="value">The value to check.</param>
     /// <returns>True if the value represents true, false otherwise.</returns>
-    protected bool IsTrue(object value)
+    protected static bool IsTrue(object value)
     {
         if (value == null) return false;
         if (value is bool boolValue) return boolValue;
         if (value is SwitchParameter switchParam) return switchParam.ToBool();
         return false;
+    }
+
+    /// <summary>
+    /// Gets the root directory of the live (non-test) GenXdev user data
+    /// store, which is %LOCALAPPDATA%\GenXdev.PowerShell.
+    /// </summary>
+    /// <returns>The full path to the live user data root.</returns>
+    internal static string GetGenXdevUserDataRoot()
+    {
+        return Path.Combine(
+            Environment.GetEnvironmentVariable("LOCALAPPDATA"),
+            "GenXdev.PowerShell"
+        );
+    }
+
+    /// <summary>
+    /// Determines whether a path resolves inside the live GenXdev user
+    /// data store. Used to guarantee that tests never read or write real
+    /// user data.
+    /// </summary>
+    /// <param name="path">The path to test.</param>
+    /// <returns>True when the path is inside the live user data root.</returns>
+    internal static bool IsLiveGenXdevUserDataPath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return false;
+        }
+
+        try
+        {
+            // Append a trailing separator so that a sibling folder which
+            // merely shares a name prefix cannot match as a child.
+            string root = Path.GetFullPath(GetGenXdevUserDataRoot())
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                + Path.DirectorySeparatorChar;
+
+            string full = Path.GetFullPath(path)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                + Path.DirectorySeparatorChar;
+
+            return full.StartsWith(root, StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            // Unresolvable path — treat as safe so normal behaviour is kept.
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Redirects a live user-data path into the isolated Pester sandbox.
+    /// When running under Pester, any path inside
+    /// %LOCALAPPDATA%\GenXdev.PowerShell is replaced by
+    /// %TEMP%\GenXdev.PowerShell.Tests\sandboxLeaf, so a test can never
+    /// read or write the real user store. Paths outside the live root,
+    /// such as a test that deliberately supplies its own TEMP directory,
+    /// are returned unchanged.
+    /// </summary>
+    /// <param name="path">The resolved path to guard.</param>
+    /// <param name="sandboxLeaf">
+    /// Sub-directory of the test sandbox, for example Preferences or
+    /// KeyValueStore.
+    /// </param>
+    /// <returns>The isolated path when redirection applies.</returns>
+    internal static string RedirectLivePathForPester(string path, string sandboxLeaf)
+    {
+        if (!IsRunningUnderPester() || !IsLiveGenXdevUserDataPath(path))
+        {
+            return path;
+        }
+
+        // Creating the sandbox here keeps callers unchanged. Note that the
+        // early return above means non-Pester calls perform no I/O at all.
+        return ExpandPath(
+            Path.Combine(
+                Path.GetTempPath(),
+                "GenXdev.PowerShell.Tests",
+                sandboxLeaf
+            ),
+            true);
     }
 
     /// <summary>
@@ -969,7 +1062,7 @@ $obj | ConvertTo-Json @params",
             );
         }
 
-        return ExpandPath(
+        string path = ExpandPath(
             Path.Combine(
                 Environment.GetEnvironmentVariable("LOCALAPPDATA"),
                 "GenXdev.PowerShell",
@@ -977,6 +1070,18 @@ $obj | ConvertTo-Json @params",
             ) + "\\",
             CreateDirectory: true
         );
+
+        // The KeyValueStore folder is written and scanned directly by many
+        // cmdlets, several of which never call GetKeyValueStorePath. Keying
+        // the test-isolation redirect off the folder name keeps every one
+        // of those call sites pointing at the same isolated location.
+        if (string.Equals(additional, "KeyValueStore",
+            StringComparison.OrdinalIgnoreCase))
+        {
+            path = RedirectLivePathForPester(path, "KeyValueStore");
+        }
+
+        return path;
     }
 
     /// <summary>
@@ -1045,7 +1150,7 @@ $obj | ConvertTo-Json @params",
     /// </summary>
     /// <param name="name">Variable name</param>
     /// <param name="value">Variable value</param>
-    protected void SetGlobalVariable(string name, object value)
+    protected static void SetGlobalVariable(string name, object value)
     {
 
         var setVariableScript = ScriptBlock.Create(

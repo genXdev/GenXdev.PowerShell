@@ -259,7 +259,7 @@ namespace GenXdev.AI.Whisper
 
         private bool _disposed;
 
-        private readonly object _lock = new object();
+        private readonly object _lock = new();
 
         private WhisperFactory(IntPtr context, bool isMultilingual)
         {

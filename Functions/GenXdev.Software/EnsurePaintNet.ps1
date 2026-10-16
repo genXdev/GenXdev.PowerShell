@@ -8,7 +8,7 @@ Performs comprehensive checks and setup for Paint.NET:
 - Verifies if Paint.NET is installed and accessible in PATH
 - Installs Paint.NET via WinGet if not present
 - Configures system PATH environment variable
-- Ensures paintdotnet.exe is available for command-line usage
+- Ensures paintDotNet.exe is available for command-line usage
 The function handles all prerequisites and ensures a working Paint.NET installation.
 
 .LICENSE
@@ -88,7 +88,7 @@ function EnsurePaintNet {
             Microsoft.PowerShell.Utility\Write-Verbose 'Paint.NET not found in PATH, checking installation...'
 
             # Check again after updating PATH
-            if (@(Microsoft.PowerShell.Core\Get-Command 'paintdotnet.exe' -ErrorAction SilentlyContinue).Length -eq 0) {
+            if (@(Microsoft.PowerShell.Core\Get-Command 'paintDotNet.exe' -ErrorAction SilentlyContinue).Length -eq 0) {
 
 
                 # verify administrative privileges are available
@@ -158,8 +158,8 @@ function EnsurePaintNet {
             }
         }
 
-        if (-not (Microsoft.PowerShell.Core\Get-Command 'paintdotnet.exe' -ErrorAction SilentlyContinue)) {
-            throw 'Paint.NET installation failed: paintdotnet.exe not found after installation'
+        if (-not (Microsoft.PowerShell.Core\Get-Command 'paintDotNet.exe' -ErrorAction SilentlyContinue)) {
+            throw 'Paint.NET installation failed: paintDotNet.exe not found after installation'
         }
     }
 }

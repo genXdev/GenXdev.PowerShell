@@ -358,6 +358,11 @@ the best standard PowerShell command for the task.
         $reset = "`e[0m"
 
         # show explanation and command to the user
+
+        if (-not [Console]::IsInputRedirected) {
+            while ([Console]::KeyAvailable) { $null = [Console]::ReadKey() }
+        }
+
         $userChoice = $host.ui.PromptForChoice(
             'Are you sure you want to perform this action?',
             @"

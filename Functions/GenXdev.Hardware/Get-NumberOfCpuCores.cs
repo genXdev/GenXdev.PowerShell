@@ -61,7 +61,7 @@ Retrieves the total number of logical CPU cores available on the system.
             int totalPhysicalCores = 0;
 
             // Sum up the number of cores from each physical processor
-            foreach (ManagementObject processor in processors)
+            foreach (ManagementObject processor in processors.Cast<ManagementObject>())
             {
                 int cores = (int)(uint)processor["NumberOfCores"];
                 totalPhysicalCores += cores;

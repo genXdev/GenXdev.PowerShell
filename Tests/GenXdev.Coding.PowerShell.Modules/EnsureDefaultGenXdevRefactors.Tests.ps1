@@ -2,7 +2,7 @@
 # Part of PowerShell module : GenXdev.Coding.PowerShell.Modules
 # Original cmdlet filename  : EnsureDefaultGenXdevRefactors.Tests.ps1
 # Original author           : René Vaessen / GenXdev
-# Version                   : 3.35.0
+# Version                   : 3.36.0
 ###############################################################################
 
 Pester\BeforeAll {

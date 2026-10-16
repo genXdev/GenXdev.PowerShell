@@ -947,4 +947,383 @@ This is just example text
         $readmeContent | Pester\Should -BeLike '*Keep*'
         $readmeContent | Pester\Should -Not -BeLike '*Direct archive*'
     }
+
+    ###########################################################################
+    # GROUP 12: Section boundary integrity (regression)
+    #
+    # A section must always stay terminated by a line ending after sorting,
+    # otherwise the next heading is glued onto the last item and the section
+    # becomes unparseable for Get-Todoos / Get-Issues / Get-Ideas.
+    ###########################################################################
+
+    Pester\It 'SortByDate keeps the next heading on its own line' {
+        $content = "# Test README`r`n`r`n## Todoos`r`n" +
+        "- ☐ [P1] 20250101 --> Dated item`r`n" +
+        "- ☐ [P1] not a dated item`r`n`r`n## Ideas`r`n- ☐ [P1] Some idea`r`n"
+        [System.IO.File]::WriteAllText(($script:testReadme), $content)
+
+        GenXdev\Add-LineToREADME `
+            -Section '## Todoos' -Line '' -SortByDate
+
+        $lines = script:GetTestReadmeLines
+        # The blank separator line must survive the sort
+        $lines | Pester\Should -Contain ''
+        # Headings must still be their own lines
+        $lines | Pester\Should -Contain '## Ideas'
+        $lines | Pester\Should -Contain '## Todoos'
+    }
+
+    Pester\It 'SortByDate does not glue a heading onto the last item' {
+        $content = "# Test README`r`n`r`n## Todoos`r`n" +
+        "- ☐ [P1] 20250101 --> Dated item`r`n" +
+        "- ☐ [P1] undated item`r`n`r`n## Ideas`r`n- ☐ [P1] Some idea`r`n"
+        [System.IO.File]::WriteAllText(($script:testReadme), $content)
+
+        GenXdev\Add-LineToREADME `
+            -Section '## Todoos' -Line '' -SortByDate
+
+        $content = script:GetTestReadmeContent
+        # No item may end with the following heading appended
+        $content | Pester\Should -Not -Match 'item## Ideas'
+        $content | Pester\Should -Not -Match 'item## Todoos'
+        # Items keep their text intact
+        $content | Pester\Should -BeLike '*undated item*'
+        $content | Pester\Should -BeLike '*Dated item*'
+    }
+
+    Pester\It 'SortByDate through the todo wrapper preserves sections' {
+        $content = "# Test README`r`n`r`n## Todoos`r`n" +
+        "- ☐ [P1] 20250101 --> Dated item`r`n" +
+        "- ☐ [P1] undated item`r`n`r`n## Ideas`r`n- ☐ [P1] Some idea`r`n"
+        [System.IO.File]::WriteAllText(($script:testReadme), $content)
+
+        GenXdev\Add-TodoLineToREADME -Line '' -SortByDate
+
+        $lines = script:GetTestReadmeLines
+        $lines | Pester\Should -Contain '## Todoos'
+        $lines | Pester\Should -Contain '## Ideas'
+        # Get-Todoos can still resolve the section
+        $todo = GenXdev\Get-Todoos
+        ($todo -join "`n") | Pester\Should -BeLike '*Dated item*'
+        ($todo -join "`n") | Pester\Should -Not -BeLike '*Some idea*'
+    }
+
+    Pester\It '-Show does not rewrite the README' {
+        script:NewTestReadMe
+        $before = script:GetTestReadmeContent
+
+        GenXdev\Add-LineToREADME `
+            -Section '## Todoos' -Line '' -Show -SortByDate | Microsoft.PowerShell.Core\Out-Null
+
+        $after = script:GetTestReadmeContent
+        $after | Pester\Should -BeExactly $before
+    }
+
+    Pester\It 'Get-Ideas does not rewrite the README' {
+        $content = "# Test README`r`n`r`n## Ideas`r`n" +
+        "- ☐ [P1] 20250101 --> Dated idea`r`n" +
+        "- ☐ [P1] undated idea`r`n"
+        [System.IO.File]::WriteAllText(($script:testReadme), $content)
+        $before = script:GetTestReadmeContent
+
+        GenXdev\Get-Ideas -SortByDate | Microsoft.PowerShell.Core\Out-Null
+
+        $after = script:GetTestReadmeContent
+        $after | Pester\Should -BeExactly $before
+    }
+
+    Pester\It 'Priority sort also keeps the next heading on its own line' {
+        $content = "# Test README`r`n`r`n## Issues`r`n" +
+        "- ☐ [P1] Low`r`n- ☐ [P9] High`r`n`r`n## Todoos`r`n- ☐ [P1] Task`r`n"
+        [System.IO.File]::WriteAllText(($script:testReadme), $content)
+
+        GenXdev\Add-LineToREADME `
+            -Section '## Issues' -Line 'Another'
+
+        $lines = script:GetTestReadmeLines
+        $lines | Pester\Should -Contain '## Todoos'
+        $lines | Pester\Should -Contain ''
+    }
+
+    ###########################################################################
+    # GROUP 13: Robustness — multi-line items stay atomic
+    #
+    # An item may span several lines (e.g. `todo (Get-Clipboard)` pasting
+    # paragraphs). An item starts at "- ☐/☒" and ends at the next item, the
+    # next real heading, or EOF. Sorting must treat it as one indivisible
+    # block, or a paste gets shredded.
+    ###########################################################################
+
+    Pester\It 'Keeps a multi-line item contiguous when sorting by priority' {
+        $content = "# Test`r`n`r`n## Todoos`r`n" +
+        "- ☐ [P5] multi line item`r`n`r`ncontinuation text`r`n" +
+        "- ☐ [P1] other item`r`n`r`n## Ideas`r`n- ☐ [P1] an idea`r`n"
+        [System.IO.File]::WriteAllText(($script:testReadme), $content)
+
+        GenXdev\Add-TodoLineToREADME -Line 'newest item' | Microsoft.PowerShell.Core\Out-Null
+
+        $lines = script:GetTestReadmeLines
+        $header = [array]::IndexOf($lines, '- ☐ [P5] multi line item')
+        $header | Pester\Should -BeGreaterOrEqual 0
+        # the item's own lines must sit directly underneath their header
+        $lines[$header + 1] | Pester\Should -Be ''
+        $lines[$header + 2] | Pester\Should -Be 'continuation text'
+    }
+
+    Pester\It 'Keeps a multi-line item contiguous when sorting by date' {
+        $content = "# Test`r`n`r`n## Todoos`r`n" +
+        "- ☐ [P5] 20250101 --> multi line item`r`n`r`ncontinuation text`r`n" +
+        "- ☐ [P1] 20260101 --> other item`r`n`r`n## Ideas`r`n- ☐ [P1] an idea`r`n"
+        [System.IO.File]::WriteAllText(($script:testReadme), $content)
+
+        GenXdev\Add-TodoLineToREADME -Line 'dated item' -SortByDate | Microsoft.PowerShell.Core\Out-Null
+
+        $lines = script:GetTestReadmeLines
+        $header = [array]::IndexOf($lines, '- ☐ [P5] 20250101 --> multi line item')
+        $header | Pester\Should -BeGreaterOrEqual 0
+        $lines[$header + 1] | Pester\Should -Be ''
+        $lines[$header + 2] | Pester\Should -Be 'continuation text'
+    }
+
+    Pester\It 'Does not let a heading inside item text end the section' {
+        $content = "# Test`r`n`r`n## Todoos`r`n" +
+        "- ☐ [P1] notes:`r`n## Not A Section`r`nmore text`r`n" +
+        "`r`n## Ideas`r`n- ☐ [P1] an idea`r`n" +
+        "`r`n## Release notes`r`n- ☒ [P1] v1`r`n"
+        [System.IO.File]::WriteAllText(($script:testReadme), $content)
+
+        GenXdev\Add-TodoLineToREADME -Line 'later todo' | Microsoft.PowerShell.Core\Out-Null
+
+        $lines = script:GetTestReadmeLines
+        # the pasted heading must stay inside the item, not become a boundary
+        $header = [array]::IndexOf($lines, '- ☐ [P1] notes:')
+        $header | Pester\Should -BeGreaterOrEqual 0
+        $lines[$header + 1] | Pester\Should -Be '## Not A Section'
+        $lines[$header + 2] | Pester\Should -Be 'more text'
+        # and the real sections must survive
+        $lines | Pester\Should -Contain '## Ideas'
+        $lines | Pester\Should -Contain '## Release notes'
+    }
+
+    Pester\It 'Never splits an item into another section' {
+        $content = "# Test`r`n`r`n## Issues`r`n" +
+        "- ☐ [P1] issue with`r`n`r`nspread out text`r`n" +
+        "`r`n## Todoos`r`n- ☐ [P1] a todo`r`n"
+        [System.IO.File]::WriteAllText(($script:testReadme), $content)
+
+        GenXdev\Add-TodoLineToREADME -Line 'later todo' | Microsoft.PowerShell.Core\Out-Null
+
+        $lines = script:GetTestReadmeLines
+        $issues = [array]::IndexOf($lines, '## Issues')
+        $todoos = [array]::IndexOf($lines, '## Todoos')
+        $spread = [array]::IndexOf($lines, 'spread out text')
+        $spread | Pester\Should -BeGreaterThan $issues
+        $spread | Pester\Should -BeLessThan $todoos
+    }
+
+    ###########################################################################
+    # GROUP 14: Robustness — fenced code blocks
+    ###########################################################################
+
+    Pester\It 'Ignores a section heading inside a fenced code block' {
+        $content = "# Test`r`n`r`n``````powershell`r`n" +
+        "# example heading ## Issues`r`n``````" +
+        "`r`n`r`n## Issues`r`n- ☐ [P1] real issue`r`n" +
+        "`r`n## Todoos`r`n- ☐ [P1] a todo`r`n"
+        [System.IO.File]::WriteAllText(($script:testReadme), $content)
+
+        GenXdev\Add-IssueLineToREADME -Line 'inserted issue' | Microsoft.PowerShell.Core\Out-Null
+
+        $lines = script:GetTestReadmeLines
+        $fenceEnd = [array]::IndexOf($lines, '```')
+        $inserted = [array]::IndexOf($lines, '- ☐ [P1] 20250101 --> inserted issue')
+        if ($inserted -lt 0) {
+            $inserted = @($lines | Microsoft.PowerShell.Core\Where-Object { $_ -match 'inserted issue' } |
+                    Microsoft.PowerShell.Core\ForEach-Object { [array]::IndexOf($lines, $_) })[0]
+        }
+        $realIssues = [array]::IndexOf($lines, '## Issues')
+        # must land under the real heading, never inside the fence
+        $inserted | Pester\Should -BeGreaterThan $realIssues
+        $inserted | Pester\Should -BeGreaterThan $fenceEnd
+        # fence content untouched
+        $lines[2] | Pester\Should -Be '```powershell'
+        $lines[3] | Pester\Should -Be '# example heading ## Issues'
+        $lines[4] | Pester\Should -Be '```'
+    }
+
+    Pester\It 'Does not treat a heading inside a tilde fence as a boundary' {
+        $content = "# Test`r`n`r`n~~~text`r`n## Issues lookalike`r`n~~~`r`n" +
+        "`r`n## Todoos`r`n- ☐ [P1] a todo`r`n"
+        [System.IO.File]::WriteAllText(($script:testReadme), $content)
+
+        GenXdev\Add-TodoLineToREADME -Line 'tilde todo' | Microsoft.PowerShell.Core\Out-Null
+
+        $lines = script:GetTestReadmeLines
+        $lines | Pester\Should -Contain '## Issues lookalike'
+        $todoos = [array]::IndexOf($lines, '## Todoos')
+        $lines[$todoos + 1] | Pester\Should -BeLike '*tilde todo*'
+    }
+
+    ###########################################################################
+    # GROUP 15: Robustness — -Done matching
+    ###########################################################################
+
+    Pester\It '-Done survives wildcard metacharacters in the line text' {
+        $content = "# Test`r`n`r`n## Issues`r`n" +
+        "- ☐ [P1] 20250101 --> what about byte[] ?`r`n" +
+        "- ☐ [P1] 20250101 --> keep me safe`r`n"
+        [System.IO.File]::WriteAllText(($script:testReadme), $content)
+
+        { GenXdev\Add-IssueLineToREADME -Line 'what about byte[] ?' -Done } |
+            Pester\Should -Not -Throw
+
+        $content = script:GetTestReadmeContent
+        # [[] and []] escape literal brackets inside a -BeLike pattern
+        $content | Pester\Should -BeLike '*- ☒ [[]P1[]] 20250101 --> what about byte[[]] ?*'
+        $content | Pester\Should -BeLike '*- ☐ [[]P1[]] 20250101 --> keep me safe*'
+    }
+
+    Pester\It '-Done matches text containing regex metacharacters' {
+        $content = "# Test`r`n`r`n## Issues`r`n" +
+        "- ☐ [P1] 20250101 --> price is (€) 5+ each? yes.`r`n"
+        [System.IO.File]::WriteAllText(($script:testReadme), $content)
+
+        { GenXdev\Add-IssueLineToREADME -Line 'price is (€) 5+ each? yes.' -Done } |
+            Pester\Should -Not -Throw
+
+        $content = script:GetTestReadmeContent
+        $content | Pester\Should -BeLike '*- ☒ [[]P1[]] 20250101 --> price is (€) 5+ each? yes.*'
+    }
+
+    ###########################################################################
+    # GROUP 16: Robustness — file format preservation
+    ###########################################################################
+
+    Pester\It 'Preserves LF-only line endings' {
+        $content = "# Test`n`n## Todoos`n- ☐ [P1] a todo`n"
+        [System.IO.File]::WriteAllText(($script:testReadme), $content)
+
+        GenXdev\Add-TodoLineToREADME -Line 'lf todo' | Microsoft.PowerShell.Core\Out-Null
+
+        $raw = [System.IO.File]::ReadAllText(($script:testReadme))
+        $raw | Pester\Should -Not -Match "`r"
+    }
+
+    Pester\It 'Preserves CRLF line endings without introducing lone LF' {
+        $content = "# Test`r`n`r`n## Todoos`r`n- ☐ [P1] a todo`r`n"
+        [System.IO.File]::WriteAllText(($script:testReadme), $content)
+
+        GenXdev\Add-TodoLineToREADME -Line 'crlf todo' | Microsoft.PowerShell.Core\Out-Null
+
+        $raw = [System.IO.File]::ReadAllText(($script:testReadme))
+        $loneLf = [regex]::Matches($raw, "(?<!`r)`n").Count
+        $loneLf | Pester\Should -Be 0
+    }
+
+    Pester\It 'Handles a CR-only (classic Mac) line ending file' {
+        $content = "# Test`r`r## Todoos`r- ☐ [P1] a todo`r"
+        [System.IO.File]::WriteAllText(($script:testReadme), $content)
+
+        { GenXdev\Add-TodoLineToREADME -Line 'cr todo' } | Pester\Should -Not -Throw
+
+        $raw = [System.IO.File]::ReadAllText(($script:testReadme))
+        # must not silently rewrite a CR-only file with LF
+        $raw | Pester\Should -Not -Match "(?<!`r)`n"
+        $raw | Pester\Should -BeLike '*cr todo*'
+    }
+
+    Pester\It 'Preserves a UTF-8 byte order mark' {
+        $content = "# Test`r`n`r`n## Todoos`r`n- ☐ [P1] a todo`r`n"
+        [System.IO.File]::WriteAllText(($script:testReadme), $content,
+            [System.Text.UTF8Encoding]::new($true))
+        ([System.IO.File]::ReadAllBytes(($script:testReadme))[0]) |
+            Pester\Should -Be 0xEF
+
+        GenXdev\Add-TodoLineToREADME -Line 'bom todo' | Microsoft.PowerShell.Core\Out-Null
+
+        ([System.IO.File]::ReadAllBytes(($script:testReadme))[0]) |
+            Pester\Should -Be 0xEF
+    }
+
+    Pester\It 'Preserves Unicode and emoji content verbatim' {
+        $content = "# Test`r`n`r`n## Todoos`r`n- ☐ [P1] héllo 🎉 ünïcode 中文`r`n"
+        [System.IO.File]::WriteAllText(($script:testReadme), $content,
+            [System.Text.UTF8Encoding]::new($false))
+
+        GenXdev\Add-TodoLineToREADME -Line 'ünïcode 🚀 todo' | Microsoft.PowerShell.Core\Out-Null
+
+        $content = script:GetTestReadmeContent
+        $content | Pester\Should -BeLike '*héllo 🎉 ünïcode 中文*'
+        $content | Pester\Should -BeLike '*ünïcode 🚀 todo*'
+    }
+
+    ###########################################################################
+    # GROUP 17: Robustness — section resolution and archive
+    ###########################################################################
+
+    Pester\It 'Prefers the exact heading over a longer heading with the same prefix' {
+        $content = "# Test`r`n`r`n## Ideas Archive`r`n- ☐ [P1] archived`r`n" +
+        "`r`n## Ideas`r`n- ☐ [P1] live idea`r`n"
+        [System.IO.File]::WriteAllText(($script:testReadme), $content)
+
+        GenXdev\Add-IdeaLineToREADME -Line 'brand new idea' | Microsoft.PowerShell.Core\Out-Null
+
+        $lines = script:GetTestReadmeLines
+        $live = [array]::IndexOf($lines, '## Ideas')
+        $inserted = @($lines | Microsoft.PowerShell.Core\Where-Object { $_ -match 'brand new idea' })[0]
+        ([array]::IndexOf($lines, $inserted)) | Pester\Should -BeGreaterThan $live
+        # the archive section keeps its single item
+        $lines | Pester\Should -Contain '- ☐ [P1] archived'
+    }
+
+    Pester\It 'Archives completed multi-line items as whole blocks' {
+        $content = "# Test`r`n`r`n## Ideas`r`n" +
+        "- ☐ [P1] keep me`r`n" +
+        "- ☒ [P1] done idea`r`n`r`nits extra line`r`n"
+        [System.IO.File]::WriteAllText(($script:testReadme), $content)
+
+        GenXdev\Add-LineToREADME -Section '## Ideas' -Line '' -ArchiveCompleted | Microsoft.PowerShell.Core\Out-Null
+
+        $content = script:GetTestReadmeContent
+        $content | Pester\Should -BeLike '*keep me*'
+        $content | Pester\Should -BeLike '*its extra line*'
+        # live Idesa section must no longer hold the completed block
+        $live = ($content -split '## Ideas - Archive')[0]
+        $live | Pester\Should -Not -BeLike '*done idea*'
+    }
+
+    Pester\It 'Repeated identical operations are idempotent' {
+        script:NewTestReadMe
+
+        GenXdev\Add-TodoLineToREADME -Line 'stable item' -WarningAction SilentlyContinue |
+            Microsoft.PowerShell.Core\Out-Null
+        $first = script:GetTestReadmeContent
+
+        GenXdev\Add-TodoLineToREADME -Line 'stable item' -WarningAction SilentlyContinue |
+            Microsoft.PowerShell.Core\Out-Null
+        $second = script:GetTestReadmeContent
+
+        $second | Pester\Should -BeExactly $first
+    }
+
+    Pester\It 'Ends the section at a custom heading glued onto the last item' {
+        $content = "# Test`r`n`r`n## Todoos`r`n- ☐ [P1] a todo`r`n" +
+        "## Custom Section`r`n`r`nbelongs to the custom section`r`n"
+        [System.IO.File]::WriteAllText(($script:testReadme), $content)
+
+        GenXdev\Add-TodoLineToREADME -Line 'new todo' | Microsoft.PowerShell.Core\Out-Null
+
+        $lines = script:GetTestReadmeLines
+        $lines | Pester\Should -Contain '## Custom Section'
+        $custom = [array]::IndexOf($lines, '## Custom Section')
+        $inserted = [array]::IndexOf($lines, '- ☐ [P1] 20250101 --> new todo')
+        if ($inserted -lt 0) {
+            $inserted = @($lines | Microsoft.PowerShell.Core\Where-Object { $_ -match 'new todo' } |
+                    Microsoft.PowerShell.Core\ForEach-Object { [array]::IndexOf($lines, $_) })[0]
+        }
+        # the new todo stays in Todoos, above the custom section
+        $inserted | Pester\Should -BeLessThan $custom
+        # and the custom section keeps its own content
+        $lines | Pester\Should -Contain 'belongs to the custom section'
+    }
 }

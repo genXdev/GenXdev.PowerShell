@@ -22,10 +22,10 @@ is not responsible for third-party software, and that the user is
 consenting to the installation at their own risk.
 Preferences are stored using the GenXdev preferences system
 (Get-GenXdevPreference / Set-GenXdevPreference), allowing users to set
-"always allow" for specific applications or enable global consent for
-all GenXdev third-party installations, making it convenient while
-remaining legally sound. Preferences are stored locally only and are not
-synced with OneDrive.
+"always allow" for a specific application or for every GenXdev
+third-party installation. Each of those can be scoped to this machine
+only, or to all machines through the preferences database inside the
+OneDrive folder, making it convenient while remaining legally sound.
 If consent is denied (or preference is set to deny), the function returns $false and does not
 proceed with installation. If allowed, it returns $true.
 

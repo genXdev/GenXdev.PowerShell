@@ -1,0 +1,51 @@
+{
+  "PlayWright": {
+    "PackageId": "Microsoft.Playwright",
+    "Version": "1.61.0",
+    "Assemblies": [
+      "Microsoft.Playwright.dll"
+    ]
+  },
+  "SqlClient": {
+    "PackageId": "Microsoft.Data.SqlClient",
+    "Version": "7.1.1",
+    "Assemblies": [
+      "Microsoft.Data.SqlClient.dll"
+    ]
+  },
+  "SqliteClient": {
+    "PackageId": "System.Data.Sqlite",
+    "Version": "2.0.1",
+    "Assemblies": [
+      "System.Data.Sqlite.dll"
+    ]
+  },
+  "BouncyCastle": {
+    "PackageId": "BouncyCastle.Cryptography",
+    "Version": "2.5.1",
+    "Assemblies": [
+      "BouncyCastle.Cryptography.dll"
+    ]
+  },
+  "ImageSharp": {
+    "PackageId": "SixLabors.ImageSharp",
+    "Version": "3.1.11",
+    "Assemblies": [
+      "SixLabors.ImageSharp.dll"
+    ]
+  },
+  "ImageSharpWebP": {
+    "PackageId": "Shorthand.ImageSharp.WebP",
+    "Version": "3.0.0-beta-1",
+    "Assemblies": [
+      "Shorthand.ImageSharp.WebP.dll"
+    ]
+  },
+  "ImageSharpDrawing": {
+    "PackageId": "SixLabors.ImageSharp.Drawing",
+    "Version": "2.1.6",
+    "Assemblies": [
+      "SixLabors.ImageSharp.Drawing.dll"
+    ]
+  }
+}

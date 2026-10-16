@@ -20,7 +20,7 @@ namespace GenXdev.Helpers
             ms.Flush();
             ms.Position = 0;
 
-            using (StreamReader sr = new StreamReader(ms, new UTF8Encoding()))
+            using (StreamReader sr = new(ms, new UTF8Encoding()))
             {
                 return sr.ReadToEnd();
             }
@@ -96,7 +96,7 @@ namespace GenXdev.Helpers
         public static string RemoveJSONComments(String JSON)
         {
             // init
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             // split up into lines
             var lines = JSON.Replace("\n", "").Split('\r');

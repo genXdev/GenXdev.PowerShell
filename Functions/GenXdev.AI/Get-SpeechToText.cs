@@ -349,7 +349,7 @@ Returns SegmentData objects with precise timing information.
         private bool _isDisposed = false;
 
         // Lock object for thread-safe disposal
-        private readonly object _disposeLock = new object();
+        private readonly Lock _disposeLock = new();
 
         #endregion
 
@@ -689,7 +689,7 @@ Returns SegmentData objects with precise timing information.
         /// </summary>
         /// <param name="input">Input object (string, FileInfo, or PSObject)</param>
         /// <returns>File path string or null if extraction fails</returns>
-        private string GetFilePathFromInput(object input)
+        private static string GetFilePathFromInput(object input)
         {
 
             if (input == null) return null;
@@ -950,7 +950,7 @@ Returns SegmentData objects with precise timing information.
                 foreach (var innerEx in ex.InnerExceptions)
                 {
 
-                    if (!(innerEx is OperationCanceledException))
+                    if (innerEx is not OperationCanceledException)
                     {
 
                         WriteVerbose(
@@ -968,7 +968,7 @@ Returns SegmentData objects with precise timing information.
             // Collect all queued results
             int timeout = 0;
 
-            List<SegmentData> allSegments = new List<SegmentData>();
+            List<SegmentData> allSegments = [];
 
             while (timeout < 50)
             {
@@ -1229,7 +1229,7 @@ Returns SegmentData objects with precise timing information.
             var progressQueue = new ConcurrentQueue<int>();
 
             var downloadTask = Task.Run(() =>
-                WhisperGgmlDownloader.Default.DownloadModelAsync(
+                WhisperGgmlDownloader.DownloadModelAsync(
                     modelType,
                     modelFileName,
                     percent => progressQueue.Enqueue(percent),

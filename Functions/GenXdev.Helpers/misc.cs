@@ -13,21 +13,21 @@ namespace GenXdev.Helpers
         /// <summary>
         /// Default TTS synthesizer (uses Edge's default voice).
         /// </summary>
-        public static EdgeTtsSynthesizer Speech = new EdgeTtsSynthesizer();
+        public static EdgeTtsSynthesizer Speech = new();
 
         /// <summary>
         /// Customizable TTS synthesizer – voice, rate, volume
         /// and pitch can be set before speaking.
         /// </summary>
         public static EdgeTtsSynthesizer SpeechCustomized =
-            new EdgeTtsSynthesizer();
+            new();
 
         /// <summary>
         /// Emergency TTS synthesizer – used by <c>Start-TextToSpeech -Force</c>
         /// to speak urgent text without disturbing the main queue.
         /// </summary>
         public static EdgeTtsSynthesizer EmergencySpeech =
-            new EdgeTtsSynthesizer();
+            new();
 
         // -- global pause / resume (across all three instances) -------------
 
@@ -86,6 +86,17 @@ namespace GenXdev.Helpers
         public string Name => ShortName; // backward compat
     }
 
+    /// <summary>
+    /// Metadata for a render device that <c>WaveOut</c> can play to.
+    /// The <c>Index</c> is the value for
+    /// <c>EdgeTtsSynthesizer.SetAudioDevice</c>.
+    /// </summary>
+    public class AudioDeviceInfo
+    {
+        public int Index { get; internal set; }
+        public string Name { get; internal set; }
+    }
+
     // -----------------------------------------------------------------------
     // EdgeTTS synthesizer wrapper
     // -----------------------------------------------------------------------
@@ -100,9 +111,10 @@ namespace GenXdev.Helpers
     {
         /// <summary>Lightweight record for queued speech items.</summary>
         private readonly record struct SpeechItem(
-            string Text, string Voice, string Rate, string Volume, string Pitch);
+            string Text, string Voice, string Rate, string Volume, string Pitch,
+            int Device);
 
-        private readonly object _gate = new();
+        private readonly Lock _gate = new();
 
         // -- queue-based speech (replaces _queueSemaphore + _globalCancel) --
         private readonly ConcurrentQueue<SpeechItem> _speechQueue = new();
@@ -115,6 +127,7 @@ namespace GenXdev.Helpers
         private string _rate = "+0%";
         private string _volume = "+0%";
         private string _pitch = "+0Hz";
+        private int _device = -1;
         private CancellationTokenSource _activeCts;
         private WaveOut _currentOutput; // guarded by _gate
         private bool _disposed;
@@ -165,34 +178,46 @@ namespace GenXdev.Helpers
         }
 
         /// <summary>
-        /// Copies voice/prosody settings to another synthesizer.
+        /// Sets the render device to play on.  <c>-1</c> is the
+        /// standard output device.
+        /// </summary>
+        public void SetAudioDevice(int device)
+        {
+            lock (_gate) { _device = device; }
+        }
+
+        /// <summary>
+        /// Copies voice/prosody/device settings to another synthesizer.
         /// </summary>
         public void CopySettingsTo(EdgeTtsSynthesizer other)
         {
             string v, r, vol, p;
+            int dev;
             lock (_gate)
             {
                 v = _voice; r = _rate; vol = _volume; p = _pitch;
+                dev = _device;
             }
             other.SetVoice(v);
             other.SetRate(r);
             other.SetVolume(vol);
             other.SetPitch(p);
+            other.SetAudioDevice(dev);
         }
 
         // -- voice discovery ------------------------------------------------
 
         /// <summary>Returns all Edge TTS voices (blocks).</summary>
-        public List<VoiceInfo> GetInstalledVoices()
+        public static List<VoiceInfo> GetInstalledVoices()
         {
             var t = EdgeTTS.DotNet.Voices.ListVoicesAsync();
             t.Wait();
-            return t.Result.Select(v => new VoiceInfo
+            return [.. t.Result.Select(v => new VoiceInfo
             {
                 ShortName = v.ShortName,
                 Locale = v.Locale,
                 Gender = v.Gender
-            }).ToList();
+            })];
         }
 
         /// <summary>
@@ -202,6 +227,24 @@ namespace GenXdev.Helpers
         public void SelectVoice(VoiceInfo voice)
         {
             if (voice != null) SetVoice(voice.ShortName);
+        }
+
+        /// <summary>
+        /// Returns all render devices that can be played to, in
+        /// <c>WaveOut</c> device-number order.
+        /// </summary>
+        public static List<AudioDeviceInfo> GetInstalledAudioDevices()
+        {
+            var devices = new List<AudioDeviceInfo>();
+            for (var index = 0; index < WaveOut.DeviceCount; index++)
+            {
+                devices.Add(new AudioDeviceInfo
+                {
+                    Index = index,
+                    Name = WaveOut.GetCapabilities(index).ProductName
+                });
+            }
+            return devices;
         }
 
         // -- text splitting -----------------------------------------------
@@ -248,6 +291,7 @@ namespace GenXdev.Helpers
         public void SpeakAsync(string text)
         {
             string voice, rate, volume, pitch;
+            int device;
             CancellationToken token;
             lock (_gate)
             {
@@ -259,6 +303,7 @@ namespace GenXdev.Helpers
                 rate = _rate;
                 volume = _volume;
                 pitch = _pitch;
+                device = _device;
 
                 _activeCts?.Cancel();
                 _activeCts?.Dispose();
@@ -271,7 +316,7 @@ namespace GenXdev.Helpers
                 try
                 {
                     await SpeakCoreAsync(text, voice, rate, volume,
-                        pitch, wait: false, token);
+                        pitch, device, wait: false, token);
                 }
                 catch (OperationCanceledException) { }
                 catch (Exception)
@@ -306,6 +351,7 @@ namespace GenXdev.Helpers
         public void SpeakAsyncQueued(string text)
         {
             string voice, rate, volume, pitch;
+            int device;
             lock (_gate)
             {
                 if (_disposed)
@@ -315,13 +361,15 @@ namespace GenXdev.Helpers
                 rate = _rate;
                 volume = _volume;
                 pitch = _pitch;
+                device = _device;
             }
 
             int count = 0;
             foreach (var chunk in SplitText(text))
             {
                 _speechQueue.Enqueue(
-                    new SpeechItem(chunk, voice, rate, volume, pitch));
+                    new SpeechItem(chunk, voice, rate, volume, pitch,
+                        device));
                 count++;
             }
 
@@ -415,7 +463,7 @@ namespace GenXdev.Helpers
                             {
                                 await SpeakCoreAsync(
                                     item.Text, item.Voice, item.Rate,
-                                    item.Volume, item.Pitch,
+                                    item.Volume, item.Pitch, item.Device,
                                     wait: true, cts.Token);
                             }
                         }
@@ -481,7 +529,7 @@ namespace GenXdev.Helpers
                 tempFile = null;
 
                 var reader = new Mp3FileReader(stream);
-                var output = new WaveOut();
+                var output = new WaveOut { DeviceNumber = item.Device };
                 output.Init(reader);
                 output.Play();
                 output.Pause(); // buffered, ready to resume
@@ -524,7 +572,7 @@ namespace GenXdev.Helpers
                 if (token.IsCancellationRequested)
                     output.Stop();
 
-                stopped.Wait(TimeSpan.FromSeconds(60));
+                stopped.Wait(TimeSpan.FromSeconds(60), token);
             }
             finally
             {
@@ -674,6 +722,7 @@ namespace GenXdev.Helpers
         private void SpeakInternal(string text, bool wait)
         {
             string voice, rate, volume, pitch;
+            int device;
             CancellationToken token;
             lock (_gate)
             {
@@ -685,6 +734,7 @@ namespace GenXdev.Helpers
                 rate = _rate;
                 volume = _volume;
                 pitch = _pitch;
+                device = _device;
 
                 _activeCts?.Cancel();
                 _activeCts?.Dispose();
@@ -695,7 +745,7 @@ namespace GenXdev.Helpers
             try
             {
                 SpeakCoreAsync(text, voice, rate, volume,
-                    pitch, wait, token).GetAwaiter().GetResult();
+                    pitch, device, wait, token).GetAwaiter().GetResult();
             }
             catch (OperationCanceledException) { }
             finally
@@ -714,7 +764,7 @@ namespace GenXdev.Helpers
 
         private async Task SpeakCoreAsync(
             string text, string voice, string rate,
-            string volume, string pitch,
+            string volume, string pitch, int device,
             bool wait, CancellationToken token)
         {
             string tempFile = null;
@@ -735,13 +785,10 @@ namespace GenXdev.Helpers
                     return;
                 }
 
-                PlayAudioFile(tempFile, token, wait);
+                PlayAudioFile(tempFile, token, wait, device);
                 tempFile = null; // ownership transferred to PlayAudioFile
             }
             catch (OperationCanceledException) { }
-            catch (Exception)
-            {
-            }
             finally
             {
                 if (tempFile != null)
@@ -752,10 +799,11 @@ namespace GenXdev.Helpers
         }
 
         private void PlayAudioFile(
-            string filePath, CancellationToken token, bool wait)
+            string filePath, CancellationToken token, bool wait,
+            int device)
         {
             var reader = new AudioFileReader(filePath);
-            var output = new WaveOut();
+            var output = new WaveOut { DeviceNumber = device };
             output.Init(reader);
 
             if (wait)
@@ -789,7 +837,7 @@ namespace GenXdev.Helpers
                         output.Stop();
 
                     // Wait for PlaybackStopped with generous timeout
-                    stopped.Wait(TimeSpan.FromSeconds(60));
+                    stopped.Wait(TimeSpan.FromSeconds(60), token);
                 }
             }
             finally

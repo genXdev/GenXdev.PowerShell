@@ -6,9 +6,12 @@
 Creates and returns a SQL Server transaction object for batch operations.
 
 .DESCRIPTION
-Creates a SQL Server database connection and transaction object that can be used
-for batch operations. The caller is responsible for committing or rolling back
-the transaction. Requires an existing SQL Server database and connection.
+Creates a SQL Server transaction object that can be used for batch operations.
+The caller is responsible for committing or rolling back the transaction. When no
+Connection is provided, a connection is opened for the transaction and returned
+inside it, so the caller then owns that connection and must close it.
+Connection priority: Connection > ConnectionString > DatabaseName (requires
+Server).
 
 .LICENSE
 Copyright (C) 2026 René Vaessen / GenXdev
@@ -34,6 +37,11 @@ The name of the SQL Server database. Used with Server parameter to create connec
 
 .PARAMETER Server
 The SQL Server instance name. Defaults to 'localhost'.
+
+.PARAMETER Connection
+An existing open SqlConnection to begin the transaction on, as returned by
+Get-SQLServerConnection. The caller owns the connection, so it is neither opened
+nor closed here.
 
 .PARAMETER IsolationLevel
 Transaction isolation level. Defaults to ReadCommitted.
@@ -74,6 +82,14 @@ function Get-SQLServerTransaction {
     [Alias('getsqltx', 'newsqltx')]
     param (
         ###########################################################################
+        [Parameter(
+            Mandatory,
+            ParameterSetName = 'Connection',
+            HelpMessage = 'An existing open SqlConnection to begin the transaction on.'
+        )]
+        [object]$Connection,
+
+        ###############################################################################
         [Parameter(
             Position = 0,
             Mandatory,
@@ -132,40 +148,29 @@ function Get-SQLServerTransaction {
     )
 
     begin {
-        # load SQL Server client assembly with embedded consent using Copy-IdenticalParamValues
-        $ensureParams = GenXdev\Copy-IdenticalParamValues `
-            -BoundParameters $PSBoundParameters `
-            -FunctionName 'GenXdev\EnsureNuGetAssembly' `
-            -DefaultValues (
-            Microsoft.PowerShell.Utility\Get-Variable -Scope Local `
-                -ErrorAction SilentlyContinue
-        )
+        # the caller supplies the connection, or one is opened for the transaction
+        $ownsConnection = $PSCmdlet.ParameterSetName -ne 'Connection'
 
-        # Set specific parameters for SQL Server package
-        $ensureParams['PackageKey'] = 'System.Data.SqlClient'
-        $ensureParams['Description'] = 'SQL Server client library required for database operations'
-        $ensureParams['Publisher'] = 'Microsoft'
+        if ($ownsConnection) {
 
-        GenXdev\EnsureNuGetAssembly @ensureParams
-
-        # initialize connection string from parameters
-        if ($PSCmdlet.ParameterSetName -eq 'DatabaseName') {
-            $connString = "Server=$Server;Database=$DatabaseName;Integrated Security=true;TrustServerCertificate=true"
+            # connection parameters for the connection opened here
+            $connectionParameters = GenXdev\Copy-IdenticalParamValues `
+                -BoundParameters $PSBoundParameters `
+                -FunctionName 'GenXdev\Get-SQLServerConnection' `
+                -DefaultValues (Microsoft.PowerShell.Utility\Get-Variable `
+                    -Scope Local -ErrorAction SilentlyContinue)
         }
-        else {
-            $connString = $ConnectionString
-        }
-
-        Microsoft.PowerShell.Utility\Write-Verbose "Creating SQL Server transaction with connection string: $connString"
     }
 
     process {
         try {
             # establish database connection
-            $connectionClass = "System.Data.SqlClient.SqlConnection"
-            $connection = Microsoft.PowerShell.Utility\New-Object $connectionClass($connString)
-            $connection.Open()
-            Microsoft.PowerShell.Utility\Write-Verbose 'SQL Server connection opened successfully'
+            if ($ownsConnection) {
+                $connection = GenXdev\Get-SQLServerConnection @connectionParameters
+            }
+            else {
+                $connection = $Connection
+            }
 
             # begin transaction with specified isolation
             $transaction = $connection.BeginTransaction($IsolationLevel)
@@ -175,7 +180,9 @@ function Get-SQLServerTransaction {
             return $transaction
         }
         catch {
-            if ($null -ne $connection -and $connection.State -eq 'Open') {
+            # only close a connection that was opened here
+            if ($ownsConnection -and $null -ne $connection -and
+                $connection.State -eq 'Open') {
                 $connection.Close()
             }
             throw $_

@@ -264,15 +264,15 @@ With silence detection.
         private WhisperFactory _whisperFactory; // Keep reference for proper disposal
         private bool _isRecordingStarted = true;
         private bool _isDisposed = false;
-        private readonly object _disposeLock = new object();
+        private readonly Lock _disposeLock = new();
         private Task _processingTask;
         // Fields for dual audio stream support
         private IWaveIn _primaryWaveIn;
-        private IWaveIn _secondaryWaveIn;
+        private WaveIn _secondaryWaveIn;
         private readonly ConcurrentQueue<byte[]> _primaryQueue = new();
         private readonly ConcurrentQueue<byte[]> _secondaryQueue = new();
         private Task _mixingTask;
-        private readonly object _audioMixingLock = new object();
+        private readonly Lock _audioMixingLock = new();
         private int _audioCallbackCount = 0;
         private int _bufferQueueCount = 0;
 
@@ -455,7 +455,7 @@ With silence detection.
                 _secondaryWaveIn = null;
             }
         }
-        private IWaveIn CreateRecordingDeviceInput()
+        private WaveIn CreateRecordingDeviceInput()
         {
             if (!string.IsNullOrWhiteSpace(AudioDevice))
             {
@@ -511,7 +511,7 @@ With silence detection.
             seconds = 0;
             sumSq = 0;
             count = 0;
-            threshold = SilenceThreshold.HasValue ? SilenceThreshold.Value : 30;
+            threshold = SilenceThreshold ?? 30;
             wavBufferStream = new MemoryStream();
             // Set up event handlers for both audio inputs
             _primaryWaveIn.DataAvailable += (sender, args) =>
@@ -794,7 +794,7 @@ With silence detection.
                 seconds = 0;
                 sumSq = 0;
                 count = 0;
-                threshold = SilenceThreshold.HasValue ? SilenceThreshold.Value : 30;
+                threshold = SilenceThreshold ?? 30;
                 wavBufferStream = new MemoryStream();
                 waveIn.DataAvailable += (sender, args) =>
                 {
@@ -1022,7 +1022,7 @@ With silence detection.
                 // Handle task exceptions
                 foreach (var innerEx in ex.InnerExceptions)
                 {
-                    if (!(innerEx is OperationCanceledException))
+                    if (innerEx is not OperationCanceledException)
                     {
                         WriteVerbose($"Processing task error: {innerEx.Message}");
                     }
@@ -1055,7 +1055,8 @@ With silence detection.
                     WriteError(errorRecord);
                     hasResults = true;
                 }
-                while (_verboseQueue.TryDequeue(out var verboseMessage))
+
+                while (_verboseQueue.TryDequeue(out _))
                 {
                     hasResults = true;
                 }
@@ -1125,7 +1126,7 @@ With silence detection.
         /// <param name="deviceName">The device name to check.</param>
         /// <param name="pattern">The pattern to match against, supporting wildcards.</param>
         /// <returns>True if the device name matches the pattern, false otherwise.</returns>
-        private bool IsDeviceMatch(string deviceName, string pattern)
+        private static bool IsDeviceMatch(string deviceName, string pattern)
         {
             if (string.IsNullOrWhiteSpace(deviceName) || string.IsNullOrWhiteSpace(pattern))
                 return false;
@@ -1240,7 +1241,7 @@ With silence detection.
                 $"{bytesPerSecond} bytes/sec");
             try
             {
-                while ((!_cts.IsCancellationRequested || _bufferQueue.Count > 0) && !_isDisposed)
+                while ((!_cts.IsCancellationRequested || !_bufferQueue.IsEmpty) && !_isDisposed)
                 {
                     try
                     {
@@ -1341,7 +1342,7 @@ With silence detection.
                     {
                         break;
                     }
-                    catch (Exception ex) when (!(ex is OperationCanceledException) && !_isDisposed)
+                    catch (Exception ex) when (ex is not OperationCanceledException && !_isDisposed)
                     {
                         // Queue error for main thread to process instead of calling WriteError directly
                         _errorQueue.Enqueue(new ErrorRecord(ex, "ProcessingError", ErrorCategory.OperationStopped, null));
@@ -1585,7 +1586,7 @@ With silence detection.
 
             var lastPercent = -1;
 
-            WhisperGgmlDownloader.Default.DownloadModelAsync(
+            WhisperGgmlDownloader.DownloadModelAsync(
                 modelType,
                 modelFileName,
                 percent =>

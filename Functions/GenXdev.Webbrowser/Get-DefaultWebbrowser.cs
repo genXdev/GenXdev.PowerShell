@@ -140,7 +140,7 @@ Launch the default browser with a specific URL.
                                         string path = (commandKey.GetValue(null) as string)?.Trim('"');
 
                                         // Return browser details in a hashtable
-                                        Hashtable result = new Hashtable
+                                        Hashtable result = new()
                                         {
                                             ["Name"] = name,
                                             ["Description"] = description,

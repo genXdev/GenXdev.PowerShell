@@ -61,7 +61,7 @@ Generates hashtable report for all refactors using alias.
             ValueFromPipelineByPropertyName = true)]
         [ValidateNotNullOrEmpty]
         [SupportsWildcards]
-        public string[] Name { get; set; } = new string[] { "*" };
+        public string[] Name { get; set; } = ["*"];
 
         /// <summary>
         /// Specifies the path to the preferences database file.
@@ -163,14 +163,10 @@ GenXdev\Get-Refactor -Name $Name -PreferencesDatabasePath $PreferencesDatabasePa
                 if (AsText.ToBool())
                 {
                     // Format text output with truncated columns
-                    var name = ((string)psObject.Properties["Name"].Value).Substring(0,
-                        Math.Min(10, ((string)psObject.Properties["Name"].Value).Length));
-                    var promptKey = ((string)((PSObject)psObject.Properties["RefactorSettings"].Value).Properties["PromptKey"].Value).Substring(0,
-                        Math.Min(10, ((string)((PSObject)psObject.Properties["RefactorSettings"].Value).Properties["PromptKey"].Value).Length));
-                    var status = ((string)((PSObject)psObject.Properties["State"].Value).Properties["Status"].Value).Substring(0,
-                        Math.Min(10, ((string)((PSObject)psObject.Properties["State"].Value).Properties["Status"].Value).Length));
-                    var percent = ((double)((PSObject)psObject.Properties["State"].Value).Properties["PercentageComplete"].Value).ToString().Substring(0,
-                        Math.Min(4, ((double)((PSObject)psObject.Properties["State"].Value).Properties["PercentageComplete"].Value).ToString().Length));
+                    var name = ((string)psObject.Properties["Name"].Value)[..Math.Min(10, ((string)psObject.Properties["Name"].Value).Length)];
+                    var promptKey = ((string)((PSObject)psObject.Properties["RefactorSettings"].Value).Properties["PromptKey"].Value)[..Math.Min(10, ((string)((PSObject)psObject.Properties["RefactorSettings"].Value).Properties["PromptKey"].Value).Length)];
+                    var status = ((string)((PSObject)psObject.Properties["State"].Value).Properties["Status"].Value)[..Math.Min(10, ((string)((PSObject)psObject.Properties["State"].Value).Properties["Status"].Value).Length)];
+                    var percent = ((double)((PSObject)psObject.Properties["State"].Value).Properties["PercentageComplete"].Value).ToString()[..Math.Min(4, ((double)((PSObject)psObject.Properties["State"].Value).Properties["PercentageComplete"].Value).ToString().Length)];
 
                     // Output formatted text row
                     var output = string.Format("{0} {1} {2} {3} {4} {5}%",

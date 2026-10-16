@@ -10433,10 +10433,6 @@ C</maml:title>
         <maml:linkText>Stop-WebbrowserVideos</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Unprotect-WebbrowserTab</maml:linkText>
-        <maml:uri />
-      </maml:navigationLink>
     </command:relatedLinks>
   </command:command>
   <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
@@ -13290,6 +13286,10 @@ R</maml:title>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
+        <maml:linkText>Get-GenXdevMCPToken</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
         <maml:linkText>Get-TextTranslation</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
@@ -14350,6 +14350,10 @@ Get-VectorSimilarity -Vector1 $v1 -Vector2 $v2</dev:code>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Get-AILLMSettings</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-GenXdevMCPToken</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>
@@ -17037,6 +17041,10 @@ W</maml:title>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Get-AILLMSettings</maml:linkText>
+        <maml:uri />
+      </maml:navigationLink>
+      <maml:navigationLink>
+        <maml:linkText>Get-GenXdevMCPToken</maml:linkText>
         <maml:uri />
       </maml:navigationLink>
       <maml:navigationLink>

@@ -19,7 +19,7 @@ formatting rules are applied to normalize the code structure.
 
 
 ```powershell
-Remove-DoubleEmptyLines -code <String> [-Reformat] [<CommonParameters>]
+Remove-DoubleEmptyLines -code <String> [-ForSql] [-Reformat] [<CommonParameters>]
 ```
 
 ## Parameters
@@ -28,6 +28,7 @@ Remove-DoubleEmptyLines -code <String> [-Reformat] [<CommonParameters>]
 |:---|:---|:---:|:---|
 | `-code` | String | ✅ | The source code or text string to process for<br>double empty line removal |
 | `-Reformat` | SwitchParameter | ☐ | Apply additional formatting rules beyond <br>double empty line removal |
+| `-ForSql` | SwitchParameter | ☐ | Apply additional formatting rules for Sql |
 
 ## Examples
 
@@ -65,6 +66,21 @@ Removes double empty lines and applies additional formatting.
 ### `-Reformat`
 
 > Apply additional formatting rules beyond  double empty line removal
+
+| Property | Value |
+|:---|:---|
+| **Required?** | No |
+| **Position?** | Named |
+| **Default value** | *(none)* |
+| **Accept pipeline input?** | False |
+| **Aliases** | *(none)* |
+| **Accept wildcard characters?** | No |
+
+<hr/>
+
+### `-ForSql`
+
+> Apply additional formatting rules for Sql
 
 | Property | Value |
 |:---|:---|

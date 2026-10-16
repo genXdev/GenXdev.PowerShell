@@ -511,14 +511,14 @@ function New-LLMTextChat {
                             'UserAgent=string'
                         )
                         OutputText    = $true
-                        Confirm       = $false
+                        Confirm       = $true
                         JsonDepth     = 6
                     },
                     @{
                         Name          = 'Microsoft.PowerShell.Utility\Invoke-RestMethod'
                         AllowedParams = @('Uri=string', 'Method=string', 'Body', 'ContentType=string', 'Method=string', 'UserAgent=string')
                         OutputText    = $false
-                        Confirm       = $false
+                        Confirm       = $true
                         JsonDepth     = 99
                     },
                     @{

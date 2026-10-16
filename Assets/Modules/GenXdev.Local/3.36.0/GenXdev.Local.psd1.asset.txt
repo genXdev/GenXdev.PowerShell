@@ -12,7 +12,7 @@
 RootModule            = 'GenXdev.Local.psm1'
 
 # Version number of this module.
-ModuleVersion         = '3.33.0'
+ModuleVersion         = '3.36.0'
 
 # Supported PSEditions
 CompatiblePSEditions  = 'Core'
@@ -51,7 +51,7 @@ ClrVersion = '10.0.9'
 ProcessorArchitecture = 'Amd64'
 
 # Modules that must be imported into the global environment prior to importing this module
-RequiredModules       = @(@{ModuleName = 'GenXdev'; ModuleVersion = '3.33.0'; })
+RequiredModules       = @(@{ModuleName = 'GenXdev'; ModuleVersion = '3.36.0'; })
 
 # Assemblies that must be loaded prior to importing this module
 # RequiredAssemblies    = 'lib\GenXdev.Local.dll'

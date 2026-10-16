@@ -390,7 +390,7 @@ Combine file size, date, and content filters for precise searches.
         [Alias("mc", "matchcontent", "regex", "Pattern")]
         [ValidateNotNull()]
         [SupportsWildcards()]
-        public string[] Content { get; set; } = new string[1] { ".*" };
+        public string[] Content { get; set; } = [".*"];
 
         /// <summary>
         /// <para type="description">Base path for resolving relative paths in output</para>
@@ -515,19 +515,19 @@ Combine file size, date, and content filters for precise searches.
         /// </summary>
         [Parameter(Mandatory = false, HelpMessage = "Optional: search specific drives")]
         [Alias("drives")]
-        public string[] SearchDrives { get; set; } = Array.Empty<string>();
+        public string[] SearchDrives { get; set; } = [];
 
         /// <summary>
         /// <para type="description">Optional: search specific drives</para>
         /// </summary>
         [Parameter(Mandatory = false, HelpMessage = "Optional: search specific drives")]
-        public char[] DriveLetter { get; set; } = Array.Empty<char>();
+        public char[] DriveLetter { get; set; } = [];
 
         /// <summary>
         /// <para type="description">Optional: search specific base folders combined with provided Names</para>
         /// </summary>
         [Parameter(Mandatory = false, HelpMessage = "Optional: search specific directories")]
-        public string[] Root { get; set; } = Array.Empty<string>();
+        public string[] Root { get; set; } = [];
 
         /// <summary>
         /// <para type="description">Enforces searching only within Root directories by stripping directory components from Name inputs, preventing absolute or relative path escapes</para>
@@ -629,7 +629,7 @@ Combine file size, date, and content filters for precise searches.
         /// </summary>
         [Parameter(Mandatory = false, HelpMessage = "Exclude files or directories matching these wildcard patterns (e.g., *.tmp, *\\bin\\*).")]
         [Alias("skiplike")]
-        public string[] Exclude { get; set; } = new string[1] { "*\\.git\\*" };
+        public string[] Exclude { get; set; } = ["*\\.git\\*"];
 
         /// <summary>
         /// <para type="description">Indicates that the cmdlet searches for more than one match in each line of text. Without this parameter, Select-String finds only the first match in each line of text.</para>
@@ -822,15 +822,12 @@ Combine file size, date, and content filters for precise searches.
                         }
                     }
 
-                    bool hasLongPathPrefix;
-                    bool isUncPath;
-                    string UncMachineNameToEnumerate;
 
                     EnsureFullProvidedLocationAndNamePart(
                         ref name,
-                        out hasLongPathPrefix,
-                        out isUncPath,
-                        out UncMachineNameToEnumerate
+                        out _,
+                        out _,
+                        out string UncMachineNameToEnumerate
                     );
 
                     var fi = new FileInfo(name);
@@ -863,7 +860,7 @@ Combine file size, date, and content filters for precise searches.
             try
             {
                 // check for no params
-                if (DirQueue.Count == 0)
+                if (DirQueue.IsEmpty)
                 {
                     if (hadInput)
                     {
@@ -894,7 +891,7 @@ Combine file size, date, and content filters for precise searches.
             {
                 // clear all queues
                 EmptyQueues();
-                MatchContentProcessor p; while (MatchContentProcessors.TryDequeue(out p)) ;
+                while (MatchContentProcessors.TryDequeue(out MatchContentProcessor p)) ;
                 GC.Collect();
 
                 // create completion progress record

@@ -63,7 +63,7 @@ Uses the 'nice' alias to start a process with high priority.
             Mandatory = false,
             Position = 1,
             HelpMessage = "Arguments to pass to the executable")]
-        public string[] ArgumentList { get; set; } = new string[0];
+        public string[] ArgumentList { get; set; } = [];
 
         /// <summary>
         /// Process priority level

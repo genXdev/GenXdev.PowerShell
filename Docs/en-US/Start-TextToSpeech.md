@@ -21,7 +21,7 @@ playback options. It can handle both single strings and arrays of text.
 ```powershell
 Start-TextToSpeech -Lines <String[]> [<CommonParameters>]
 
-Start-TextToSpeech [[-VoiceName] <String>] [-AutoConsent] [-AutoConsentAllPackages] [-Force] [-Locale <String>] [-PassThru] [-Pitch <String>] [-Rate <String>] [-SessionOnly] [-Volume <String>] [-Wait] [<CommonParameters>]
+Start-TextToSpeech [[-VoiceName] <String>] [-AudioDevice <String>] [-AutoConsent] [-AutoConsentAllPackages] [-Force] [-Locale <String>] [-PassThru] [-Pitch <String>] [-Rate <String>] [-SessionOnly] [-Volume <String>] [-Wait] [<CommonParameters>]
 ```
 
 ## Parameters
@@ -34,6 +34,7 @@ Start-TextToSpeech [[-VoiceName] <String>] [-AutoConsent] [-AutoConsentAllPackag
 | `-Rate` | String | ☐ | Speech rate, e.g. "+0%", "-20%", "+50% |
 | `-Volume` | String | ☐ | Volume level, e.g. "+0%", "-25%", "+100% |
 | `-Pitch` | String | ☐ | Pitch shift, e.g. "+0Hz", "-10Hz", "+20Hz |
+| `-AudioDevice` | String | ☐ | Audio output device name or wildcard pattern |
 | `-PassThru` | SwitchParameter | ☐ | Output the text being spoken to the pipeline |
 | `-Wait` | SwitchParameter | ☐ | Wait for speech to complete before continuing |
 | `-Force` | SwitchParameter | ☐ | Interrupt current speech, speak now<br>(blocking),  then resume interrupted speech |
@@ -156,6 +157,21 @@ say "Alert!" -Force
 | **Required?** | No |
 | **Position?** | Named |
 | **Default value** | `$null` |
+| **Accept pipeline input?** | False |
+| **Aliases** | *(none)* |
+| **Accept wildcard characters?** | No |
+
+<hr/>
+
+### `-AudioDevice <String>`
+
+> Audio output device name or wildcard pattern
+
+| Property | Value |
+|:---|:---|
+| **Required?** | No |
+| **Position?** | Named |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |

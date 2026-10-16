@@ -69,7 +69,14 @@ function Remove-DoubleEmptyLines {
             HelpMessage = 'Apply additional formatting rules beyond ' +
                 'double empty line removal'
         )]
-        [switch] $Reformat
+        [switch] $Reformat,
+        ###########################################################################
+        [Parameter(
+            Mandatory = $false,
+            ValueFromPipeline = $false,
+            HelpMessage = 'Apply additional formatting rules for Sql'
+        )]
+        [switch] $ForSql
     )
 
     begin {
@@ -188,8 +195,64 @@ function Remove-DoubleEmptyLines {
     }
 
     end {
+        function Optimize-TSqlBoilerplate {
+            param (
+                [Parameter(Mandatory = $true)]
+                [string]$Sql
+            )
 
-        Microsoft.PowerShell.Utility\Write-Output ($sb.ToString())
+            # Remove redundant repeated SET commands separated only by GOs or newlines
+            $Sql = $Sql -replace '(?im)(^\s*SET\s+ANSI_NULLS\s+ON\s*;?\s*\r?\n(?:\s*GO\s*\r?\n)?)(?=\s*SET\s+ANSI_NULLS\s+ON\b)', ''
+            $Sql = $Sql -replace '(?im)(^\s*SET\s+QUOTED_IDENTIFIER\s+ON\s*;?\s*\r?\n(?:\s*GO\s*\r?\n)?)(?=\s*SET\s+QUOTED_IDENTIFIER\s+ON\b)', ''
+
+            # Collapse consecutive GO statements into a single GO
+            $Sql = $Sql -replace '(?im)^\s*GO\s*\r?\n(?=\s*GO\b)', ''
+
+            # Remove orphaned leading GO at the very beginning of the script string
+            $Sql = $Sql -replace '^\s*GO\s*\r?\n', ''
+
+            # Clean up blank lines immediately following a comma (preserves line indentation)
+            $Sql = $Sql -replace '(?m)(,[ \t]*)\r?\n(?:\s*\r?\n)+', "`$1`r`n"
+
+            # Remove standalone comment lines completely
+            $Sql = $Sql -replace '(?m)^[ \t]*--.*(?:\r?\n|$)', ''
+
+            # Remove inline comments (leaves the preceding code and its indentation intact)
+            $Sql = $Sql -replace '(?m)[ \t]*--.*$', ''
+
+            # Clean up empty lines immediately AFTER WHERE, SELECT, or AND (preserves keyword indentation)
+            $Sql = $Sql -replace '(?mi)^([ \t]*\b(?:WHERE|SELECT|AND)\b[ \t]*)\r?\n(?:\s*\r?\n)+', "`$1`r`n"
+
+            # Clean up empty lines immediately BEFORE END (uses lookahead to keep END's indentation untouched)
+            $Sql = $Sql -replace '(?mi)\r?\n(?:\s*\r?\n)+(?=[ \t]*\bEND\b)', "`r`n"
+
+            # Collapse multiple consecutive empty lines down to a single empty line
+            $Sql = $Sql -replace '(?m)^[ \t]*\r?\n(?:\s*\r?\n)+', "`r`n"
+
+            return $Sql.Trim()
+                }
+
+           function Remove-EmptyOneEqualsOneClauses {
+            param (
+                [Parameter(Mandatory = $true)]
+                [string]$Sql
+            )
+
+            # Tightened pattern: Removed \r?\n from lookahead so it looks past newlines to verify the next SQL keyword
+            $pattern = '(?i)\b(WHERE|ON)\s*\(\s*1=1\s*\)\s*(?=$|\b(?:GO|WHERE|ORDER\s+BY|GROUP\s+BY|HAVING|UNION|JOIN|LEFT|RIGHT|INNER|CROSS|END|FULL|OUTER)\b|\)|;)'
+
+            return [regex]::Replace($Sql, $pattern, '')
+        }
+
+        $results = $sb.ToString();
+
+        if ($ForSql) {
+
+            $results = Optimize-TSqlBoilerplate $results
+            $results = Remove-EmptyOneEqualsOneClauses $results
+        }
+
+        Microsoft.PowerShell.Utility\Write-Output $results
     }
 }
 ################################################################################

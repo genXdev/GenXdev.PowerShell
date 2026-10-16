@@ -49,7 +49,7 @@ public abstract partial class PSGenXdevCmdlet : PSCmdlet
     /// <param name="raw">Return raw content without formatting.</param>
     /// <param name="simpleMatch">Use simple string matching instead of regex.</param>
     /// <returns>An array of objects representing the found files, directories, or content matches.</returns>
-    protected object[] FindItem(
+    protected static object[] FindItem(
         string[] name = null,
         object input = null,
         string[] content = null,
@@ -450,7 +450,7 @@ public abstract partial class PSGenXdevCmdlet : PSCmdlet
     /// <param name="quiet">Suppress non-essential output messages.</param>
     /// <param name="raw">Return raw content without formatting.</param>
     /// <param name="simpleMatch">Use simple string matching instead of regex.</param>
-    protected void FindItem(
+    protected static void FindItem(
         Func<object, bool> callback,
         string[] name = null,
         object input = null,
@@ -734,7 +734,7 @@ public abstract partial class PSGenXdevCmdlet : PSCmdlet
 
         scriptBuilder.Append("    if (-not $continue) { break } ");
 
-        scriptBuilder.Append("}");
+        scriptBuilder.Append('}');
 
         var findItemScript = ScriptBlock.Create(scriptBuilder.ToString());
 
@@ -832,7 +832,7 @@ public abstract partial class PSGenXdevCmdlet : PSCmdlet
             return true; // Continue processing if cast fails
         };
 
-        this.FindItem(
+        FindItem(
             cb,
             name,
             input,
@@ -960,7 +960,7 @@ public abstract partial class PSGenXdevCmdlet : PSCmdlet
             return true; // Continue processing if cast fails
         };
 
-        this.FindItem(
+        FindItem(
             cb,
             name,
             input,
@@ -1096,7 +1096,7 @@ public abstract partial class PSGenXdevCmdlet : PSCmdlet
             return true; // Continue processing if cast fails
         };
 
-        this.FindItem(
+        FindItem(
             cb,
             name,
             input,
@@ -1227,7 +1227,7 @@ public abstract partial class PSGenXdevCmdlet : PSCmdlet
             return true; // Continue processing if cast fails
         };
 
-        this.FindItem(
+        FindItem(
             cb,
             name,
             input,

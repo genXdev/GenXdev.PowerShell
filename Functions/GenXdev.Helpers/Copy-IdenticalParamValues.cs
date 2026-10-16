@@ -56,8 +56,7 @@ Demonstrates copying bound parameters for use with splatting.
 ")]
 [Cmdlet(VerbsCommon.Copy, "IdenticalParamValues")]
 [OutputType(typeof(Hashtable))]
-[System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly")]
-public class CopyIdenticalParamValuesCommand : PSGenXdevCmdlet
+    public class CopyIdenticalParamValuesCommand : PSGenXdevCmdlet
 {
     #region Parameters
 
@@ -109,8 +108,8 @@ public class CopyIdenticalParamValuesCommand : PSGenXdevCmdlet
     /// </summary>
     static CopyIdenticalParamValuesCommand()
     {
-        CommonParameterFilter = new string[]
-        {
+        CommonParameterFilter =
+        [
                 "input",
                 "MyInvocation",
                 "null",
@@ -136,7 +135,7 @@ public class CopyIdenticalParamValuesCommand : PSGenXdevCmdlet
                 "ErrorVariable",
                 "Passthru",
                 "PassThru"
-        };
+        ];
 
         // CommandInfoCache is now shared with GenXdevCmd
     }
@@ -160,7 +159,7 @@ public class CopyIdenticalParamValuesCommand : PSGenXdevCmdlet
     {
 
         // Initialize results hashtable
-        _results = new Hashtable();
+        _results = [];
 
         // Create hashtable of default parameter values
         _defaults = CreateDefaultsHashtable2();
@@ -214,18 +213,17 @@ public class CopyIdenticalParamValuesCommand : PSGenXdevCmdlet
             if (Array.IndexOf(CommonParameterFilter, paramName) >= 0) continue;
 
             // Check if parameter exists in bound parameters
-            if (boundParamsDict.ContainsKey(paramName))
+            if (boundParamsDict.TryGetValue(paramName, out object paramValue))
             {
 
                 WriteVerbose($"Copying value for parameter '{paramName}'");
-                var paramValue = boundParamsDict[paramName];
 
-                // For switch parameters, only include if explicitly set to $true
-                if (paramInfo.ParameterType == typeof(SwitchParameter))
+                    // For switch parameters, only include if explicitly set to $true
+                    if (paramInfo.ParameterType == typeof(SwitchParameter))
                 {
 
                     // Diagnostic: detect type mismatches that will silently fail
-                    if (paramValue != null && !(paramValue is bool) && !(paramValue is SwitchParameter))
+                    if (paramValue != null && paramValue is not bool && paramValue is not SwitchParameter)
                     {
                         var actualType = paramValue.GetType().FullName;
                         var strValue = paramValue is string s ? s : ConvertToJsonString(paramValue);
@@ -259,7 +257,7 @@ public class CopyIdenticalParamValuesCommand : PSGenXdevCmdlet
                     var defaultValue = _defaults[paramName];
 
                     // Diagnostic: detect type mismatches in default values
-                    if (defaultValue != null && !(defaultValue is bool) && !(defaultValue is SwitchParameter))
+                    if (defaultValue != null && defaultValue is not bool && defaultValue is not SwitchParameter)
                     {
                         var actualType = defaultValue.GetType().FullName;
                         var strValue = defaultValue is string s ? s : ConvertToJsonString(defaultValue);
@@ -429,7 +427,7 @@ public class CopyIdenticalParamValuesCommand : PSGenXdevCmdlet
                 }
             }
         }
-        else if (DefaultValues is IEnumerable variables && !(DefaultValues is string))
+        else if (DefaultValues is IEnumerable variables && DefaultValues is not string)
         {
 
             foreach (var variable in variables)
@@ -471,7 +469,7 @@ public class CopyIdenticalParamValuesCommand : PSGenXdevCmdlet
     /// <summary>
     /// Converts bound parameters object to dictionary for easy access
     /// </summary>
-    private Dictionary<string, object> ConvertToParameterDictionary(object boundParamsObject)
+    private static Dictionary<string, object> ConvertToParameterDictionary(object boundParamsObject)
     {
 
         var result = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);

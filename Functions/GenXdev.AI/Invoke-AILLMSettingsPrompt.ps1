@@ -334,13 +334,13 @@ function Invoke-AILLMSettingsPrompt {
             GenXdev\Write-SpectreMarkupLine -Message `
                 "  [grey]${hdrType}[/]  [grey]${hdrModel}[/]  [grey]Key[/]"
 
-            # Pre-read the key-value preference stores ONCE to avoid
-            # ~186 JSON file reads (6 types x 6 props x ~3 stores/prop).
-            # Both stores live under %LOCALAPPDATA%\GenXdev.PowerShell\
-            # KeyValueStore\ and use the "Local_<StoreName>.json" pattern.
-            $storeBase = Microsoft.PowerShell.Management\Join-Path `
-                ([Environment]::GetEnvironmentVariable('LOCALAPPDATA')) `
-                'GenXdev.PowerShell\KeyValueStore'
+            $dbPathParams = GenXdev\Copy-IdenticalParamValues `
+                -BoundParameters $callerParams `
+                -FunctionName 'Get-GenXdevPreferencesDatabasePath'
+
+            # this is a display helper, so never let it mutate session state
+            $null = $dbPathParams.Remove('ClearSession')
+            $storeBase = GenXdev\Get-GenXdevPreferencesDatabasePath @dbPathParams
 
             $prefStore = $null
             $prefStorePath = Microsoft.PowerShell.Management\Join-Path `

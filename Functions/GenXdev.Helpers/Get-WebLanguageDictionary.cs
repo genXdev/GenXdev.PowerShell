@@ -50,158 +50,159 @@ Retrieves the dictionary mapping language names to their codes.
         protected override void ProcessRecord()
         {
             // Create the dictionary to hold language mappings
-            var result = new Dictionary<string, string>();
-
-            // Add all language mappings to the dictionary
-            result.Add("Afrikaans", "af");
-            result.Add("Akan", "ak");
-            result.Add("Albanian", "sq");
-            result.Add("Amharic", "am");
-            result.Add("Arabic", "ar");
-            result.Add("Armenian", "hy");
-            result.Add("Azerbaijani", "az");
-            result.Add("Basque", "eu");
-            result.Add("Belarusian", "be");
-            result.Add("Bemba", "bem");
-            result.Add("Bengali", "bn");
-            result.Add("Bihari", "bh");
-            result.Add("Bork, bork, bork!", "xx-bork");
-            result.Add("Bosnian", "bs");
-            result.Add("Breton", "br");
-            result.Add("Bulgarian", "bg");
-            result.Add("Cambodian", "km");
-            result.Add("Catalan", "ca");
-            result.Add("Cherokee", "chr");
-            result.Add("Chichewa", "ny");
-            result.Add("Chinese (Simplified)", "zh-Hans-CN");
-            result.Add("Chinese (Traditional)", "zh-TW");
-            result.Add("Corsican", "co");
-            result.Add("Croatian", "hr");
-            result.Add("Czech", "cs");
-            result.Add("Danish", "da");
-            result.Add("Dutch", "nl");
-            result.Add("Elmer Fudd", "xx-elmer");
-            result.Add("English", "en");
-            result.Add("Esperanto", "eo");
-            result.Add("Estonian", "et");
-            result.Add("Ewe", "ee");
-            result.Add("Faroese", "fo");
-            result.Add("Filipino", "tl");
-            result.Add("Finnish", "fi");
-            result.Add("French", "fr");
-            result.Add("Frisian", "fy");
-            result.Add("Ga", "gaa");
-            result.Add("Galician", "gl");
-            result.Add("Georgian", "ka");
-            result.Add("German", "de");
-            result.Add("Greek", "el");
-            result.Add("Guarani", "gn");
-            result.Add("Gujarati", "gu");
-            result.Add("Hacker", "xx-hacker");
-            result.Add("Haitian Creole", "ht");
-            result.Add("Hausa", "ha");
-            result.Add("Hawaiian", "haw");
-            result.Add("Hebrew", "iw");
-            result.Add("Hindi", "hi");
-            result.Add("Hungarian", "hu");
-            result.Add("Icelandic", "is");
-            result.Add("Igbo", "ig");
-            result.Add("Indonesian", "id");
-            result.Add("Interlingua", "ia");
-            result.Add("Irish", "ga");
-            result.Add("Italian", "it");
-            result.Add("Japanese", "ja");
-            result.Add("Javanese", "jw");
-            result.Add("Kannada", "kn");
-            result.Add("Kazakh", "kk");
-            result.Add("Kinyarwanda", "rw");
-            result.Add("Kirundi", "rn");
-            result.Add("Klingon", "xx-klingon");
-            result.Add("Kongo", "kg");
-            result.Add("Korean", "ko");
-            result.Add("Krio (Sierra Leone)", "kri");
-            result.Add("Kurdish", "ku");
-            result.Add("Kurdish (Soranî)", "ckb");
-            result.Add("Kyrgyz", "ky");
-            result.Add("Laothian", "lo");
-            result.Add("Latin", "la");
-            result.Add("Latvian", "lv");
-            result.Add("Lingala", "ln");
-            result.Add("Lithuanian", "lt");
-            result.Add("Lozi", "loz");
-            result.Add("Luganda", "lg");
-            result.Add("Luo", "ach");
-            result.Add("Macedonian", "mk");
-            result.Add("Malagasy", "mg");
-            result.Add("Malay", "ms");
-            result.Add("Malayalam", "ml");
-            result.Add("Maltese", "mt");
-            result.Add("Maori", "mi");
-            result.Add("Marathi", "mr");
-            result.Add("Mauritian Creole", "mfe");
-            result.Add("Moldavian", "mo");
-            result.Add("Mongolian", "mn");
-            result.Add("Montenegrin", "sr-ME");
-            result.Add("Nepali", "ne");
-            result.Add("Nigerian Pidgin", "pcm");
-            result.Add("Northern Sotho", "nso");
-            result.Add("Norwegian", "no");
-            result.Add("Norwegian (Nynorsk)", "nn");
-            result.Add("Occitan", "oc");
-            result.Add("Oriya", "or");
-            result.Add("Oromo", "om");
-            result.Add("Pashto", "ps");
-            result.Add("Persian", "fa");
-            result.Add("Pirate", "xx-pirate");
-            result.Add("Polish", "pl");
-            result.Add("Portuguese (Brazil)", "pt-BR");
-            result.Add("Portuguese (Portugal)", "pt-PT");
-            result.Add("Punjabi", "pa");
-            result.Add("Quechua", "qu");
-            result.Add("Romanian", "ro");
-            result.Add("Romansh", "rm");
-            result.Add("Runyakitara", "nyn");
-            result.Add("Russian", "ru");
-            result.Add("Scots Gaelic", "gd");
-            result.Add("Serbian", "sr");
-            result.Add("Serbo-Croatian", "sh");
-            result.Add("Sesotho", "st");
-            result.Add("Setswana", "tn");
-            result.Add("Seychellois Creole", "crs");
-            result.Add("Shona", "sn");
-            result.Add("Sindhi", "sd");
-            result.Add("Sinhalese", "si");
-            result.Add("Slovak", "sk");
-            result.Add("Slovenian", "sl");
-            result.Add("Somali", "so");
-            result.Add("Spanish", "es");
-            result.Add("Spanish (Latin American)", "es-419");
-            result.Add("Sundanese", "su");
-            result.Add("Swahili", "sw");
-            result.Add("Swedish", "sv");
-            result.Add("Tajik", "tg");
-            result.Add("Tamil", "ta");
-            result.Add("Tatar", "tt");
-            result.Add("Telugu", "te");
-            result.Add("Thai", "th");
-            result.Add("Tigrinya", "ti");
-            result.Add("Tonga", "to");
-            result.Add("Tshiluba", "lua");
-            result.Add("Tumbuka", "tum");
-            result.Add("Turkish", "tr");
-            result.Add("Turkmen", "tk");
-            result.Add("Twi", "tw");
-            result.Add("Uighur", "ug");
-            result.Add("Ukrainian", "uk");
-            result.Add("Urdu", "ur");
-            result.Add("Uzbek", "uz");
-            result.Add("Vietnamese", "vi");
-            result.Add("Welsh", "cy");
-            result.Add("Wolof", "wo");
-            result.Add("Xhosa", "xh");
-            result.Add("Yiddish", "yi");
-            result.Add("Yoruba", "yo");
-            result.Add("Zulu", "zu");
+            var result = new Dictionary<string, string>
+            {
+                // Add all language mappings to the dictionary
+                { "Afrikaans", "af" },
+                { "Akan", "ak" },
+                { "Albanian", "sq" },
+                { "Amharic", "am" },
+                { "Arabic", "ar" },
+                { "Armenian", "hy" },
+                { "Azerbaijani", "az" },
+                { "Basque", "eu" },
+                { "Belarusian", "be" },
+                { "Bemba", "bem" },
+                { "Bengali", "bn" },
+                { "Bihari", "bh" },
+                { "Bork, bork, bork!", "xx-bork" },
+                { "Bosnian", "bs" },
+                { "Breton", "br" },
+                { "Bulgarian", "bg" },
+                { "Cambodian", "km" },
+                { "Catalan", "ca" },
+                { "Cherokee", "chr" },
+                { "Chichewa", "ny" },
+                { "Chinese (Simplified)", "zh-Hans-CN" },
+                { "Chinese (Traditional)", "zh-TW" },
+                { "Corsican", "co" },
+                { "Croatian", "hr" },
+                { "Czech", "cs" },
+                { "Danish", "da" },
+                { "Dutch", "nl" },
+                { "Elmer Fudd", "xx-elmer" },
+                { "English", "en" },
+                { "Esperanto", "eo" },
+                { "Estonian", "et" },
+                { "Ewe", "ee" },
+                { "Faroese", "fo" },
+                { "Filipino", "tl" },
+                { "Finnish", "fi" },
+                { "French", "fr" },
+                { "Frisian", "fy" },
+                { "Ga", "gaa" },
+                { "Galician", "gl" },
+                { "Georgian", "ka" },
+                { "German", "de" },
+                { "Greek", "el" },
+                { "Guarani", "gn" },
+                { "Gujarati", "gu" },
+                { "Hacker", "xx-hacker" },
+                { "Haitian Creole", "ht" },
+                { "Hausa", "ha" },
+                { "Hawaiian", "haw" },
+                { "Hebrew", "iw" },
+                { "Hindi", "hi" },
+                { "Hungarian", "hu" },
+                { "Icelandic", "is" },
+                { "Igbo", "ig" },
+                { "Indonesian", "id" },
+                { "Interlingua", "ia" },
+                { "Irish", "ga" },
+                { "Italian", "it" },
+                { "Japanese", "ja" },
+                { "Javanese", "jw" },
+                { "Kannada", "kn" },
+                { "Kazakh", "kk" },
+                { "Kinyarwanda", "rw" },
+                { "Kirundi", "rn" },
+                { "Klingon", "xx-klingon" },
+                { "Kongo", "kg" },
+                { "Korean", "ko" },
+                { "Krio (Sierra Leone)", "kri" },
+                { "Kurdish", "ku" },
+                { "Kurdish (Soranî)", "ckb" },
+                { "Kyrgyz", "ky" },
+                { "Laothian", "lo" },
+                { "Latin", "la" },
+                { "Latvian", "lv" },
+                { "Lingala", "ln" },
+                { "Lithuanian", "lt" },
+                { "Lozi", "loz" },
+                { "Luganda", "lg" },
+                { "Luo", "ach" },
+                { "Macedonian", "mk" },
+                { "Malagasy", "mg" },
+                { "Malay", "ms" },
+                { "Malayalam", "ml" },
+                { "Maltese", "mt" },
+                { "Maori", "mi" },
+                { "Marathi", "mr" },
+                { "Mauritian Creole", "mfe" },
+                { "Moldavian", "mo" },
+                { "Mongolian", "mn" },
+                { "Montenegrin", "sr-ME" },
+                { "Nepali", "ne" },
+                { "Nigerian Pidgin", "pcm" },
+                { "Northern Sotho", "nso" },
+                { "Norwegian", "no" },
+                { "Norwegian (Nynorsk)", "nn" },
+                { "Occitan", "oc" },
+                { "Oriya", "or" },
+                { "Oromo", "om" },
+                { "Pashto", "ps" },
+                { "Persian", "fa" },
+                { "Pirate", "xx-pirate" },
+                { "Polish", "pl" },
+                { "Portuguese (Brazil)", "pt-BR" },
+                { "Portuguese (Portugal)", "pt-PT" },
+                { "Punjabi", "pa" },
+                { "Quechua", "qu" },
+                { "Romanian", "ro" },
+                { "Romansh", "rm" },
+                { "Runyakitara", "nyn" },
+                { "Russian", "ru" },
+                { "Scots Gaelic", "gd" },
+                { "Serbian", "sr" },
+                { "Serbo-Croatian", "sh" },
+                { "Sesotho", "st" },
+                { "Setswana", "tn" },
+                { "Seychellois Creole", "crs" },
+                { "Shona", "sn" },
+                { "Sindhi", "sd" },
+                { "Sinhalese", "si" },
+                { "Slovak", "sk" },
+                { "Slovenian", "sl" },
+                { "Somali", "so" },
+                { "Spanish", "es" },
+                { "Spanish (Latin American)", "es-419" },
+                { "Sundanese", "su" },
+                { "Swahili", "sw" },
+                { "Swedish", "sv" },
+                { "Tajik", "tg" },
+                { "Tamil", "ta" },
+                { "Tatar", "tt" },
+                { "Telugu", "te" },
+                { "Thai", "th" },
+                { "Tigrinya", "ti" },
+                { "Tonga", "to" },
+                { "Tshiluba", "lua" },
+                { "Tumbuka", "tum" },
+                { "Turkish", "tr" },
+                { "Turkmen", "tk" },
+                { "Twi", "tw" },
+                { "Uighur", "ug" },
+                { "Ukrainian", "uk" },
+                { "Urdu", "ur" },
+                { "Uzbek", "uz" },
+                { "Vietnamese", "vi" },
+                { "Welsh", "cy" },
+                { "Wolof", "wo" },
+                { "Xhosa", "xh" },
+                { "Yiddish", "yi" },
+                { "Yoruba", "yo" },
+                { "Zulu", "zu" }
+            };
 
             // Output the dictionary
             WriteObject(result);

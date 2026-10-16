@@ -61,7 +61,7 @@ Get the file path for a local key-value store.
         /// </summary>
         protected override void BeginProcessing()
         {
-            BasePath = BasePath == null ? GetGenXdevAppDataPath("KeyValueStore") : BasePath;
+            BasePath ??= GetGenXdevAppDataPath("KeyValueStore");
             WriteVerbose($"Constructing store file path for store '{StoreName}'");
         }
 

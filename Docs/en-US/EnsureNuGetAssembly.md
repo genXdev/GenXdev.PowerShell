@@ -12,9 +12,9 @@ This function ensures that the specified NuGet package assemblies are downloaded
 and loaded into the current PowerShell session. It supports automatic detection
 and loading with fallback to a JSON manifest for configuration overrides,
 handling edge cases like stub dependencies (e.g., SQLite). Installation uses
-the dotnet CLI exclusively for reliable package management and loads assemblies
-directly from the global NuGet cache without copying. Lazy loading checks if
-the type is already available before proceeding.
+the NuGet CLI, which resolves the dependency graph and lays each package out
+next to its dependencies in the destination, from where the assemblies are then
+loaded. Lazy loading checks if the type is already available before proceeding.
 
 
 ## Syntax

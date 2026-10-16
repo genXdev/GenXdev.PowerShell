@@ -97,14 +97,14 @@ name.
         /// </summary>
         /// <param name="process">The process to find the parent of</param>
         /// <returns>The parent process, or null if not found</returns>
-        private Process GetParentProcess(Process process)
+        private static Process GetParentProcess(Process process)
         {
             try
             {
                 using (var searcher = new ManagementObjectSearcher(
                     $"SELECT ParentProcessId FROM Win32_Process WHERE ProcessId = {process.Id}"))
                 {
-                    foreach (ManagementObject obj in searcher.Get())
+                    foreach (ManagementObject obj in searcher.Get().Cast<ManagementObject>())
                     {
                         int parentId = (int)(uint)obj["ParentProcessId"];
                         return Process.GetProcessById(parentId);

@@ -761,7 +761,7 @@ function New-LLMAudioChat {
                             'UserAgent=string'
                         )
                         OutputText    = $true
-                        Confirm       = $false
+                        Confirm       = $true
                         JsonDepth     = 6
                     },
                     @{
@@ -775,7 +775,7 @@ function New-LLMAudioChat {
                             'UserAgent=string'
                         )
                         OutputText    = $false
-                        Confirm       = $false
+                        Confirm       = $true
                         JsonDepth     = 99
                     },
                     @{

@@ -8,9 +8,9 @@ This function ensures that the specified NuGet package assemblies are downloaded
 and loaded into the current PowerShell session. It supports automatic detection
 and loading with fallback to a JSON manifest for configuration overrides,
 handling edge cases like stub dependencies (e.g., SQLite). Installation uses
-the dotnet CLI exclusively for reliable package management and loads assemblies
-directly from the global NuGet cache without copying. Lazy loading checks if
-the type is already available before proceeding.
+the NuGet CLI, which resolves the dependency graph and lays each package out
+next to its dependencies in the destination, from where the assemblies are then
+loaded. Lazy loading checks if the type is already available before proceeding.
 
 .LICENSE
 Copyright (C) 2026 René Vaessen / GenXdev
@@ -163,15 +163,6 @@ function EnsureNuGetAssembly {
             Microsoft.PowerShell.Utility\Write-Verbose "Using provided destination: ${Destination}"
         }
 
-        # Global cache fallback path (cross-platform)
-        $globalCache = if ($env:OS -eq 'Windows_NT') {
-            "$env:USERPROFILE\.nuget\packages"
-        }
-        else {
-            "$env:HOME/.nuget/packages"
-        }
-        Microsoft.PowerShell.Utility\Write-Verbose "Global cache path: ${globalCache}"
-
         # Load JSON if exists
         $packages = $null
         $pkgConfig = $null
@@ -238,18 +229,10 @@ function EnsureNuGetAssembly {
                 Microsoft.PowerShell.Utility\Write-Verbose "Using JSON default version: ${Version}"
             }
             else {
-                # Find latest version using dotnet list command
-                Microsoft.PowerShell.Utility\Write-Verbose "No version specified or in JSON; querying latest from NuGet using dotnet"
-                try {
-                    $null = & dotnet list package --outdated --include-prerelease --source https://api.nuget.org/v3/index.json 2>$null
-                    # For simplicity, we'll use a default "latest" approach via dotnet add package without version
-                    $Version = "latest"
-                    Microsoft.PowerShell.Utility\Write-Verbose "Will use latest version available"
-                }
-                catch {
-                    Microsoft.PowerShell.Utility\Write-Warning "Could not determine latest version, will use dotnet's default behavior"
-                    $Version = "latest"
-                }
+                # The NuGet CLI resolves the newest version itself, so there is nothing
+                # to probe here - a probe would cost a network round trip per invocation
+                $Version = "latest"
+                Microsoft.PowerShell.Utility\Write-Verbose "No version declared for ${PackageKey}; the NuGet CLI will resolve the latest"
             }
         }
         else {
@@ -295,61 +278,17 @@ function EnsureNuGetAssembly {
 
 
 
-        # Check and install dotnet SDK if missing (for fallback)
-        Microsoft.PowerShell.Utility\Write-Verbose "Checking for dotnet CLI"
-        if (-not (Microsoft.PowerShell.Core\Get-Command dotnet -ErrorAction SilentlyContinue)) {
-            Microsoft.PowerShell.Utility\Write-Host "dotnet CLI not found; attempting install via winget if available..."
+        # the NuGet CLI resolves and downloads a package, so the .NET SDK is not needed
+        Microsoft.PowerShell.Utility\Write-Verbose "Ensuring the NuGet CLI is available"
 
-            # verify administrative privileges are available
-            if (-not (GenXdev\CurrentUserHasElevatedRights)) {
+        $nugetParams = GenXdev\Copy-IdenticalParamValues `
+            -BoundParameters $PSBoundParameters `
+            -FunctionName 'GenXdev\EnsureNuGetCli' `
+            -DefaultValues (Microsoft.PowerShell.Utility\Get-Variable -Scope Local -ErrorAction SilentlyContinue)
 
-                $json = $PSBoundParameters | Microsoft.PowerShell.Utility\ConvertTo-Json -Compress
+        $nugetExe = GenXdev\EnsureNuGetCli @nugetParams
 
-                GenXdev\Invoke-CommandElevated ([ScriptBlock]::Create(@"
-
-            `$params = '$json' | ConvertFrom-Json -AsHashTable
-            GenXdev\EnsureNuGetAssembly @params
-"@)) -PauseAfterCompletion -JobDescription 'Installing .Net SDK 10 for NuGet package management and compilation'
-            }
-            else {
-                # Request consent for .NET SDK installation using embedded consent logic
-                $sdkDescription = if ($Description) { $Description } else { "Required for NuGet package management and compilation" }
-
-                # Use Copy-IdenticalParamValues to pass parameters to Confirm-InstallationConsent
-                $sdkConsentParams = GenXdev\Copy-IdenticalParamValues `
-                    -BoundParameters $PSBoundParameters `
-                    -FunctionName 'GenXdev\Confirm-InstallationConsent' `
-                    -DefaultValues (Microsoft.PowerShell.Utility\Get-Variable -Scope Local -ErrorAction SilentlyContinue)
-
-                # Set fixed values for .NET SDK consent
-                $sdkConsentParams['ApplicationName'] = "Microsoft .NET SDK 10"
-                $sdkConsentParams['Source'] = 'Winget'
-                $sdkConsentParams['Description'] = $sdkDescription
-                $sdkConsentParams['Publisher'] = "Microsoft"
-
-                $consentResult = GenXdev\Confirm-InstallationConsent @sdkConsentParams
-
-                if (-not $consentResult) {
-                    throw "Installation consent denied for Microsoft .NET SDK 10. Cannot proceed without dotnet CLI. Please install .NET SDK 9+ manually from https://dotnet.microsoft.com/download/dotnet/9.0"
-                }
-
-                Microsoft.PowerShell.Utility\Write-Verbose "Invoking winget install Microsoft.DotNet.SDK.9 --accept-package-agreements --accept-source-agreements"
-                winget install Microsoft.DotNet.SDK.10 --accept-package-agreements --accept-source-agreements
-                # Reload PATH after install
-                Microsoft.PowerShell.Utility\Write-Verbose "Reloading PATH environment variable"
-                $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-                Microsoft.PowerShell.Utility\Write-Verbose "PATH reloaded"
-            }
-
-            # Re-check after install
-            if (-not (Microsoft.PowerShell.Core\Get-Command dotnet -ErrorAction SilentlyContinue)) {
-                throw "dotnet install failed; manual installation required."
-            }
-            Microsoft.PowerShell.Utility\Write-Verbose "dotnet CLI installed successfully"
-        }
-        else {
-            Microsoft.PowerShell.Utility\Write-Verbose "dotnet CLI already available"
-        }
+        Microsoft.PowerShell.Utility\Write-Verbose "NuGet CLI available at ${nugetExe}"
 
         # Loaded tracking as in old
         $loadedAssemblies = @()
@@ -502,111 +441,36 @@ function EnsureNuGetAssembly {
                 Microsoft.PowerShell.Utility\Write-Host "One-time only just-in-time Installation of ${PackageId}, started, one moment please..." -ForegroundColor Cyan
                 Microsoft.PowerShell.Utility\Write-Host "Installing ${PackageId} ${Version}..."
 
-                # Install using dotnet CLI
-                $tempDir = Microsoft.PowerShell.Management\Join-Path ([System.IO.Path]::GetTempPath()) ([Guid]::NewGuid())
-                Microsoft.PowerShell.Utility\Write-Verbose "Creating temporary directory for dotnet installation: ${tempDir}"
-                Microsoft.PowerShell.Management\New-Item -Path $tempDir -ItemType Directory -Force | Microsoft.PowerShell.Core\Out-Null
-                Microsoft.PowerShell.Utility\Write-Verbose "Pushing location to ${tempDir}"
-                Microsoft.PowerShell.Management\Push-Location -LiteralPath $tempDir
-                try {
-                    Microsoft.PowerShell.Utility\Write-Verbose "Invoking dotnet new classlib -n dummy --force"
-                    & dotnet new classlib -n dummy --force | Microsoft.PowerShell.Core\Out-Null
-                    Microsoft.PowerShell.Management\Set-Location dummy
+                # the NuGet CLI resolves the dependency graph and lays the package out
+                # next to its dependencies in the destination
+                $nugetCommand = @(
+                    'install'
+                    $PackageId
+                    '-OutputDirectory'
+                    $Destination
+                    '-NonInteractive'
+                    '-Source'
+                    'https://api.nuget.org/v3/index.json'
+                )
 
-                    $actualVersion = $Version
-                    if ($Version -eq "latest") {
-                        $addCmd = "dotnet add package $PackageId"
-                        Microsoft.PowerShell.Utility\Write-Verbose "Invoking ${addCmd}"
-                        & dotnet add package $PackageId | Microsoft.PowerShell.Core\Out-Null
-                    }
-                    else {
-                        $addCmd = "dotnet add package $PackageId --version $Version"
-                        Microsoft.PowerShell.Utility\Write-Verbose "Invoking ${addCmd}"
-                        & dotnet add package $PackageId --version $Version | Microsoft.PowerShell.Core\Out-Null
-                    }
-                    # Always discover the actual installed version from project.assets.json
-                    $objDir = Microsoft.PowerShell.Management\Join-Path (Microsoft.PowerShell.Management\Get-Location) "obj"
-                    $assetsFile = Microsoft.PowerShell.Management\Join-Path $objDir "project.assets.json"
-                    if (Microsoft.PowerShell.Management\Test-Path -LiteralPath $assetsFile) {
-                        $assets = Microsoft.PowerShell.Management\Get-Content -LiteralPath $assetsFile | Microsoft.PowerShell.Utility\ConvertFrom-Json
-                        if ($assets.libraries) {
-                            foreach ($libName in $assets.libraries.PSObject.Properties.Name) {
-                                $parts = $libName -split '/'
-                                if ($parts.Length -eq 2 -and $parts[0].ToLower() -eq $packageLower) {
-                                    $rawVersion = $parts[1]
-                                    $actualVersion = $rawVersion
-                                    Microsoft.PowerShell.Utility\Write-Verbose "Discovered installed version: ${actualVersion}"
-                                    break
-                                }
-                            }
-                        }
-                    }
-                    if (-not $actualVersion -or $actualVersion -eq "latest") {
-                        throw "Could not determine actual version installed for ${PackageId}"
-                    }
-
-                    Microsoft.PowerShell.Utility\Write-Verbose "Invoking dotnet restore"
-                    & dotnet restore | Microsoft.PowerShell.Core\Out-Null
-
-                    # Copy main package and all dependencies from global cache to local destination
-                    $cacheDir = Microsoft.PowerShell.Management\Join-Path $globalCache "$packageLower\$actualVersion"
-                    Microsoft.PowerShell.Utility\Write-Verbose "Checking main package cache directory: ${cacheDir}"
-
-                    if (-not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $cacheDir)) {
-                        throw "Package not found in global cache at: ${cacheDir}"
-                    }
-                    if ($cacheDir) {
-                        # Calculate the correct target directory name using actual version
-                        $targetPkgDir = Microsoft.PowerShell.Management\Join-Path $Destination "$packageLower.$actualVersion"
-
-                        # Remove target directory if it exists to avoid nested structure
-                        if (Microsoft.PowerShell.Management\Test-Path -LiteralPath $targetPkgDir) {
-                            Microsoft.PowerShell.Management\Remove-Item -LiteralPath $targetPkgDir -Recurse -Force -ErrorAction SilentlyContinue
-                        }
-
-                        Microsoft.PowerShell.Utility\Write-Verbose "Copying main package from ${cacheDir} to ${targetPkgDir}"
-                        Microsoft.PowerShell.Management\Copy-Item $cacheDir -Destination $targetPkgDir -Recurse -Force
-                        Microsoft.PowerShell.Utility\Write-Verbose "Main package copied to ${targetPkgDir}"
-
-                        # Update pkgDir to the actual location after copying
-                        $pkgDir = $targetPkgDir                        # Also copy dependencies by parsing the project assets
-                        if (Microsoft.PowerShell.Management\Test-Path -LiteralPath $assetsFile) {
-                            Microsoft.PowerShell.Utility\Write-Verbose "Reading project assets for dependencies: ${assetsFile}"
-                            $assets = Microsoft.PowerShell.Management\Get-Content -LiteralPath $assetsFile | Microsoft.PowerShell.Utility\ConvertFrom-Json
-                            if ($assets.libraries) {
-                                foreach ($libName in $assets.libraries.PSObject.Properties.Name) {
-                                    if ($libName -ne "$packageLower/$actualVersion") {
-                                        $parts = $libName -split '/'
-                                        if ($parts.Length -eq 2) {
-                                            $depName = $parts[0].ToLower()
-                                            $depVersion = $parts[1]
-
-                                            $depCacheDir = Microsoft.PowerShell.Management\Join-Path $globalCache "$depName\$depVersion"
-                                            $depDestDir = Microsoft.PowerShell.Management\Join-Path $Destination "$depName.$depVersion"
-
-                                            if ((Microsoft.PowerShell.Management\Test-Path -LiteralPath $depCacheDir) -and (-not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $depDestDir))) {
-                                                Microsoft.PowerShell.Utility\Write-Verbose "Copying dependency ${depName} ${depVersion} from cache"
-                                                Microsoft.PowerShell.Management\Copy-Item $depCacheDir -Destination $Destination -Recurse -Force
-                                                $copiedDepDir = Microsoft.PowerShell.Management\Join-Path $Destination (Microsoft.PowerShell.Management\Split-Path $depCacheDir -Leaf)
-                                                if (Microsoft.PowerShell.Management\Test-Path -LiteralPath $copiedDepDir) {
-                                                    Microsoft.PowerShell.Management\Rename-Item $copiedDepDir $depDestDir -Force -ErrorAction SilentlyContinue
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    else {
-                        throw "Cache directory not found: ${cacheDir}"
-                    }
+                if ($Version -ne 'latest') {
+                    $nugetCommand += @('-Version', $Version)
                 }
-                finally {
-                    # Store assets file content before cleaning up temp directory
-                    Microsoft.PowerShell.Management\Pop-Location
-                    Microsoft.PowerShell.Utility\Write-Verbose "Cleaning up temp directory: ${tempDir}"
-                    Microsoft.PowerShell.Management\Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+
+                Microsoft.PowerShell.Utility\Write-Verbose "Invoking NuGet: $($nugetCommand -join ' ')"
+                & $nugetExe @nugetCommand | Microsoft.PowerShell.Core\Out-Null
+
+                # the CLI lays every package out as <package id>.<version>
+                $installedDir = Microsoft.PowerShell.Management\Get-ChildItem $Destination -Directory |
+                    Microsoft.PowerShell.Core\Where-Object { $_.Name -match "^${packageLower}\.\d" } |
+                    Microsoft.PowerShell.Utility\Sort-Object Name -Descending |
+                    Microsoft.PowerShell.Utility\Select-Object -First 1
+
+                if ($installedDir) {
+
+                    $pkgDir = $installedDir.FullName
+                    $actualVersion = $installedDir.Name.Substring($packageLower.Length + 1)
+                    Microsoft.PowerShell.Utility\Write-Verbose "Installed ${PackageId} ${actualVersion} at ${pkgDir}"
                 }
 
                 if (-not (Microsoft.PowerShell.Management\Test-Path -LiteralPath $pkgDir)) {

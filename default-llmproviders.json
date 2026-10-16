@@ -78,8 +78,8 @@
       "Provider": "DeepSeek"
     },
     {
-      "DisplayName": "DeepSeek Flash V4",
-      "Model": "deepseek-v4-flash",
+      "DisplayName": "DeepSeek Flash V4.1",
+      "Model": "deepseek-flash",
       "ApiEndpoint": "https://api.deepseek.com/chat/completions",
       "ApiKey": null,
       "TimeoutSeconds": 86400,
@@ -201,8 +201,8 @@
       "Provider": "DeepSeek"
     },
     {
-      "DisplayName": "DeepSeek Flash V4",
-      "Model": "deepseek-v4-flash",
+      "DisplayName": "DeepSeek Flash V4.1",
+      "Model": "deepseek-flash",
       "ApiEndpoint": "https://api.deepseek.com/chat/completions",
       "ApiKey": null,
       "TimeoutSeconds": 86400,
@@ -425,8 +425,8 @@
       "Provider": "DeepSeek"
     },
     {
-      "DisplayName": "DeepSeek Flash V4",
-      "Model": "deepseek-v4-flash",
+      "DisplayName": "DeepSeek Flash V4.1",
+      "Model": "deepseek-flash",
       "ApiEndpoint": "https://api.deepseek.com/chat/completions",
       "ApiKey": null,
       "TimeoutSeconds": 86400,
@@ -548,8 +548,8 @@
       "Provider": "DeepSeek"
     },
     {
-      "DisplayName": "DeepSeek Flash V4",
-      "Model": "deepseek-v4-flash",
+      "DisplayName": "DeepSeek Flash V4.1",
+      "Model": "deepseek-flash",
       "ApiEndpoint": "https://api.deepseek.com/chat/completions",
       "ApiKey": null,
       "TimeoutSeconds": 86400,
@@ -671,8 +671,8 @@
       "Provider": "DeepSeek"
     },
     {
-      "DisplayName": "DeepSeek Flash V4",
-      "Model": "deepseek-v4-flash",
+      "DisplayName": "DeepSeek Flash V4.1",
+      "Model": "deepseek-flash",
       "ApiEndpoint": "https://api.deepseek.com/chat/completions",
       "ApiKey": null,
       "TimeoutSeconds": 86400,

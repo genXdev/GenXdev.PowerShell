@@ -382,7 +382,7 @@ function Open-SourceFileInIde {
                     Microsoft.PowerShell.Management\Start-Process `
                         -FilePath $idePath `
                         -ArgumentList $arguments
-                } -ArgumentList @($idePath, $PSRoot) |
+                } -ArgumentList @($idePath, ('"' + $PSRoot + '"')) |
                     Microsoft.PowerShell.Core\Wait-Job
             }
         }
@@ -398,7 +398,7 @@ function Open-SourceFileInIde {
                     Microsoft.PowerShell.Management\Start-Process `
                         -FilePath $idePath `
                         -ArgumentList $arguments
-                } -ArgumentList @($idePath, "$PSRoot\.") |
+                } -ArgumentList @($idePath, ('"' + "$PSRoot\." + '"')) |
                     Microsoft.PowerShell.Core\Wait-Job
             }
 
@@ -413,7 +413,7 @@ function Open-SourceFileInIde {
                 Microsoft.PowerShell.Management\Start-Process `
                     -FilePath $idePath `
                     -ArgumentList $arguments
-            } -ArgumentList @($idePath, @('-g', "$($Path):$LineNo")) |
+            } -ArgumentList @($idePath, @('-g', ('"' + "$($Path):$LineNo" + '"'))) |
                 Microsoft.PowerShell.Core\Wait-Job
         }
         else {
@@ -430,7 +430,7 @@ function Open-SourceFileInIde {
                 Microsoft.PowerShell.Management\Start-Process `
                     -FilePath $idePath `
                     -ArgumentList $arguments
-            } -ArgumentList @($idePath, @($Path)) |
+            } -ArgumentList @($idePath, @('"' + $Path + '"')) |
                 Microsoft.PowerShell.Core\Wait-Job
         }
 

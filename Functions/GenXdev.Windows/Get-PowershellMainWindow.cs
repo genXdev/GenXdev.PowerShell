@@ -64,7 +64,7 @@ Retrieves the WindowObj for the current PowerShell terminal window.
                     ErrorCategory.ObjectNotFound,
                     null));
 
-                processResult = InvokeCommand.InvokeScript($"Microsoft.PowerShell.Management\\Get-Process -Id {System.Diagnostics.Process.GetCurrentProcess().Id}");
+                processResult = InvokeCommand.InvokeScript($"Microsoft.PowerShell.Management\\Get-Process -Id {Environment.ProcessId}");
 
                 process = processResult.Count > 0 ? processResult[0] : null;
             }

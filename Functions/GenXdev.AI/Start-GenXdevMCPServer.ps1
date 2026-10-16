@@ -40,8 +40,21 @@ function Start-GenXdevMCPServer {
     .PARAMETER MaxOutputLength
         Maximum length of tool output in characters. Output exceeding this length will be trimmed with a warning message. Default is 75000 characters (100KB).
 
+    .PARAMETER Stdio
+        Serves the Model Context Protocol on stdin and stdout instead of HTTP, for
+        a client that launches this process itself. No port is opened and no bearer
+        token is consulted, since only the process that started this server can
+        reach its standard streams. Everything the exposed cmdlets print goes to
+        stderr, so stdout carries protocol messages only.
+
     .EXAMPLE
         Start-GenXdevMCPServer -Port 2175
+
+    .EXAMPLE
+        Start-GenXdevMCPServer -Stdio
+
+        Serves the Model Context Protocol on stdin and stdout for the client that
+        launched this process.
 
     .EXAMPLE
         $exposedCmdlets = @(
@@ -97,7 +110,14 @@ function Start-GenXdevMCPServer {
             HelpMessage = 'Authentication token required for clients ' +
             'to connect to the MCP server'
         )]
-        [string]$Token = $null
+        [string]$Token = $null,
+
+        [Parameter(
+            Mandatory = $false,
+            HelpMessage = 'Serve the Model Context Protocol on stdin ' +
+            'and stdout instead of HTTP'
+        )]
+        [switch]$Stdio
     )
 
     function Stop-GenXdevMCPServer {
@@ -185,7 +205,7 @@ function Start-GenXdevMCPServer {
                     }
                     serverInfo      = @{
                         name    = 'GenXdev-PowerShell-MCP-Server'
-                        version = '3.35.0'
+                        version = '3.36.0'
                     }
                 }
             }
@@ -269,14 +289,28 @@ function Start-GenXdevMCPServer {
         )
 
         try {
+            if ($Request.method -like 'notifications/*') {
+                return ''
+            }
+
             # Handle different MCP methods
             switch ($Request.method) {
                 'initialize' {
+                    $supportedProtocolVersions = @(
+                        '2025-06-18',
+                        '2025-03-26',
+                        '2024-11-05'
+                    )
+                    $negotiatedProtocolVersion = (
+                        $supportedProtocolVersions -contains
+                        $Request.params.protocolVersion
+                    ) ? $Request.params.protocolVersion : $supportedProtocolVersions[0]
+
                     $response = @{
                         jsonrpc = '2.0'
                         id      = $Request.id
                         result  = @{
-                            protocolVersion = '2024-11-05'
+                            protocolVersion = $negotiatedProtocolVersion
                             capabilities    = @{
                                 tools = @{
                                     listChanged = $true
@@ -284,15 +318,11 @@ function Start-GenXdevMCPServer {
                             }
                             serverInfo      = @{
                                 name    = 'GenXdev-PowerShell-MCP-Server'
-                                version = '3.35.0'
+                                version = '3.36.0'
                             }
                         }
                     }
                     return $response | Microsoft.PowerShell.Utility\ConvertTo-Json -Depth 10 -Compress -ErrorAction SilentlyContinue
-                }
-                'initialized' {
-                    # Just acknowledge the initialized notification
-                    return ''
                 }
                 'tools/list' {
                     $tools = @()
@@ -460,21 +490,52 @@ function Start-GenXdevMCPServer {
                                 $parsedOutput = $null
                                 $finalDepth = $targetDepth
 
-                                # Try progressively smaller depths until it fits or we reach minimum depth of 2
-                                $foundValidDepth = $false
-                                while ($finalDepth -ge 2) {
-                                    $parsedOutput = $invocationResult.Output | Microsoft.PowerShell.Utility\ConvertTo-Json -Depth $finalDepth -Compress
+                                # The invoker already serialized json output, so re-encoding that
+                                # string would escape the whole payload a second time
+                                if ($invocationResult.Output -is [string]) {
 
-                                    if ($parsedOutput.Length -le $MaxOutputLength) {
-                                        # Success! It fits at this depth
-                                        $foundValidDepth = $true
-                                        if ($finalDepth -lt $targetDepth) {
-                                            Microsoft.PowerShell.Utility\Write-Verbose "Tool '$toolName' JSON output reduced from depth $targetDepth to $finalDepth to fit $MaxOutputLength character limit"
+                                    $parsedOutput = $invocationResult.Output
+                                    $foundValidDepth = $parsedOutput.Length -le $MaxOutputLength
+                                }
+                                else {
+
+                                    # Try progressively smaller depths until it fits or we reach minimum depth of 2
+                                    $foundValidDepth = $false
+                                    while ($finalDepth -ge 2) {
+                                        $parsedOutput = $invocationResult.Output | Microsoft.PowerShell.Utility\ConvertTo-Json -Depth $finalDepth -Compress
+
+                                        if (-not [string]::IsNullOrWhiteSpace($parsedOutput) -and $parsedOutput.Length -le $MaxOutputLength) {
+                                            # Success! It fits at this depth
+                                            $foundValidDepth = $true
+                                            if ($finalDepth -lt $targetDepth) {
+                                                Microsoft.PowerShell.Utility\Write-Verbose "Tool '$toolName' JSON output reduced from depth $targetDepth to $finalDepth to fit $MaxOutputLength character limit"
+                                            }
+                                            break
                                         }
-                                        break
+
+                                        $finalDepth--
+                                    }
+                                }
+
+                                # Nothing serialized. ConvertTo-Json emits no output at all for a null or
+                                # empty pipeline, so a command that returned no rows - or that failed -
+                                # would otherwise be answered with a null text. Report what the invocation
+                                # collected, which is where a thrown exception lands, before the plain text.
+                                if ([string]::IsNullOrWhiteSpace($parsedOutput)) {
+
+                                    $diagnostics = @(
+                                        $invocationResult.Error
+                                        @($invocationResult.Errors)
+                                    ) | Microsoft.PowerShell.Core\Where-Object { $_ }
+
+                                    $parsedOutput = if ($diagnostics.Count -gt 0) {
+                                        ($diagnostics | Microsoft.PowerShell.Utility\Out-String).Trim()
+                                    }
+                                    else {
+                                        $outputText
                                     }
 
-                                    $finalDepth--
+                                    $foundValidDepth = $true
                                 }
 
                                 # If we found a depth that works, use it
@@ -552,7 +613,7 @@ function Start-GenXdevMCPServer {
                         }
                     }
 
-                    return $response | Microsoft.PowerShell.Utility\ConvertTo-Json -Depth 10
+                    return $response | Microsoft.PowerShell.Utility\ConvertTo-Json -Depth 10 -Compress
                 }
                 default {
                     $response = @{
@@ -563,7 +624,7 @@ function Start-GenXdevMCPServer {
                             message = "Method not found: $($Request.method)"
                         }
                     }
-                    return $response | Microsoft.PowerShell.Utility\ConvertTo-Json -Depth 10
+                    return $response | Microsoft.PowerShell.Utility\ConvertTo-Json -Depth 10 -Compress
                 }
             }
         }
@@ -576,7 +637,7 @@ function Start-GenXdevMCPServer {
                     message = "Internal error: $($_.Exception.Message)"
                 }
             }
-            return $errorResponse | Microsoft.PowerShell.Utility\ConvertTo-Json -Depth 10
+            return $errorResponse | Microsoft.PowerShell.Utility\ConvertTo-Json -Depth 10 -Compress
         }
         finally {
             #  GenXdev\Send-Key @("^{PAGEDOWN}", "^``")
@@ -733,21 +794,52 @@ function Start-GenXdevMCPServer {
                         $parsedOutput = $null
                         $finalDepth = $targetDepth
 
-                        # Try progressively smaller depths until it fits or we reach minimum depth of 2
-                        $foundValidDepth = $false
-                        while ($finalDepth -ge 2) {
-                            $parsedOutput = $invocationResult.Output | Microsoft.PowerShell.Utility\ConvertTo-Json -Depth $finalDepth -Compress
+                        # The invoker already serialized json output, so re-encoding that
+                        # string would escape the whole payload a second time
+                        if ($invocationResult.Output -is [string]) {
 
-                            if ($parsedOutput.Length -le $MaxOutputLength) {
-                                # Success! It fits at this depth
-                                $foundValidDepth = $true
-                                if ($finalDepth -lt $targetDepth) {
-                                    Microsoft.PowerShell.Utility\Write-Verbose "Tool '$toolName' JSON output reduced from depth $targetDepth to $finalDepth to fit $MaxOutputLength character limit"
+                            $parsedOutput = $invocationResult.Output
+                            $foundValidDepth = $parsedOutput.Length -le $MaxOutputLength
+                        }
+                        else {
+
+                            # Try progressively smaller depths until it fits or we reach minimum depth of 2
+                            $foundValidDepth = $false
+                            while ($finalDepth -ge 2) {
+                                $parsedOutput = $invocationResult.Output | Microsoft.PowerShell.Utility\ConvertTo-Json -Depth $finalDepth -Compress
+
+                                if (-not [string]::IsNullOrWhiteSpace($parsedOutput) -and $parsedOutput.Length -le $MaxOutputLength) {
+                                    # Success! It fits at this depth
+                                    $foundValidDepth = $true
+                                    if ($finalDepth -lt $targetDepth) {
+                                        Microsoft.PowerShell.Utility\Write-Verbose "Tool '$toolName' JSON output reduced from depth $targetDepth to $finalDepth to fit $MaxOutputLength character limit"
+                                    }
+                                    break
                                 }
-                                break
+
+                                $finalDepth--
+                            }
+                        }
+
+                        # Nothing serialized. ConvertTo-Json emits no output at all for a null or
+                        # empty pipeline, so a command that returned no rows - or that failed -
+                        # would otherwise be answered with a null text. Report what the invocation
+                        # collected, which is where a thrown exception lands, before the plain text.
+                        if ([string]::IsNullOrWhiteSpace($parsedOutput)) {
+
+                            $diagnostics = @(
+                                $invocationResult.Error
+                                @($invocationResult.Errors)
+                            ) | Microsoft.PowerShell.Core\Where-Object { $_ }
+
+                            $parsedOutput = if ($diagnostics.Count -gt 0) {
+                                ($diagnostics | Microsoft.PowerShell.Utility\Out-String).Trim()
+                            }
+                            else {
+                                $outputText
                             }
 
-                            $finalDepth--
+                            $foundValidDepth = $true
                         }
 
                         # If we found a depth that works, use it
@@ -826,6 +918,63 @@ function Start-GenXdevMCPServer {
                 isError = $true
             }
             return $errorResponse | Microsoft.PowerShell.Utility\ConvertTo-Json -Depth 10
+        }
+    }
+
+    function HandleGenXdevMCPServerStdioTransport {
+        param(
+            [System.IO.TextWriter]$ProtocolOut,
+            [hashtable[]]$Functions,
+            [GenXdev.Helpers.ExposedCmdletDefinition[]]$ExposedCmdLets,
+            [string[]]$NoConfirmationToolFunctionNames,
+            [int]$MaxOutputLength = 75000
+        )
+
+        $protocolIn = [System.Console]::In
+
+        Microsoft.PowerShell.Utility\Write-Host 'Serving the Model Context Protocol on stdin/stdout.' -ForegroundColor Green
+        Microsoft.PowerShell.Utility\Write-Host 'No port is opened and no bearer token is consulted: the client that launched this process is the only caller.' -ForegroundColor Gray
+        Microsoft.PowerShell.Utility\Write-Host 'Everything printed below is cmdlet output on its way to the client log.' -ForegroundColor DarkGray
+
+        try {
+            while ($true) {
+                $requestLine = $protocolIn.ReadLine()
+
+                if ($null -eq $requestLine) {
+                    Microsoft.PowerShell.Utility\Write-Host 'Client closed the connection, stopping.' -ForegroundColor Yellow
+                    return
+                }
+
+                if ([string]::IsNullOrWhiteSpace($requestLine)) {
+                    continue
+                }
+
+                try {
+                    $jsonRequest = $requestLine |
+                        Microsoft.PowerShell.Utility\ConvertFrom-Json
+                }
+                catch {
+                    Microsoft.PowerShell.Utility\Write-Warning "Discarding unparsable request: $($_.Exception.Message)"
+                    continue
+                }
+
+                $responseJson = HandleGenXdevMCPServerMCPRequest `
+                    -Request $jsonRequest `
+                    -Functions $Functions `
+                    -ExposedCmdLets $ExposedCmdLets `
+                    -NoConfirmationToolFunctionNames $NoConfirmationToolFunctionNames `
+                    -MaxOutputLength $MaxOutputLength
+
+                if ([string]::IsNullOrWhiteSpace($responseJson)) {
+                    continue
+                }
+
+                $ProtocolOut.WriteLine($responseJson)
+                $ProtocolOut.Flush()
+            }
+        }
+        finally {
+            [System.Console]::SetOut($ProtocolOut)
         }
     }
 
@@ -1058,11 +1207,97 @@ function Start-GenXdevMCPServer {
                 OutputText                           = $true
                 JsonDepth                            = 2
                 Confirm                              = $false
+            },
+            [GenXdev.Helpers.ExposedCmdletDefinition]@{
+                Name                                 = 'Open-PlayWrightBrowser'
+                Description                          = "Launches a Playwright browser that keeps running for later tool calls, or reuses the one already open. BrowserType must be exactly one of ChromeNormal, EdgeNormal, ChromiumNormal, ChromiumPlaywright, FirefoxPlaywright, WebKitPlaywright - any other value throws. On a slow machine allow 10 to 30 seconds before the first navigation. SessionOnly, ClearSession and SkipSession decide whether the browser profile and its logins persist between runs."
+                AllowedParams                        = @(
+                    'BrowserType=string',
+                    'Headless',
+                    'Width',
+                    'Height'
+                )
+                DontShowDuringConfirmationParamNames = @()
+                ForcedParams                         = @()
+                OutputText                           = $true
+                JsonDepth                            = 2
+                Confirm                              = $false
+            },
+            [GenXdev.Helpers.ExposedCmdletDefinition]@{
+                Name                                 = 'Select-WebbrowserTab'
+                Description                          = "Selects a Playwright tab by Id (its index) or by Name, and every later browser tool call acts on that tab. One of the two has to be given: the tool layer enforces Name, which is mandatory in one of the cmdlet's parameter sets, so a call without either is refused."
+                AllowedParams                        = @(
+                    'Id',
+                    'Name=string'
+                )
+                DontShowDuringConfirmationParamNames = @()
+                ForcedParams                         = @()
+                OutputText                           = $true
+                JsonDepth                            = 2
+                Confirm                              = $false
+            },
+            [GenXdev.Helpers.ExposedCmdletDefinition]@{
+                Name                                 = 'Set-WebbrowserTabLocation'
+                Description                          = "Navigates the selected Playwright tab to a URL. NoAutoSelectTab stops it from switching to another tab first."
+                AllowedParams                        = @(
+                    'Url=string',
+                    'NoAutoSelectTab'
+                )
+                DontShowDuringConfirmationParamNames = @()
+                ForcedParams                         = @()
+                OutputText                           = $true
+                JsonDepth                            = 2
+                Confirm                              = $false
+            },
+            [GenXdev.Helpers.ExposedCmdletDefinition]@{
+                Name                                 = 'Invoke-WebbrowserEvaluation'
+                Description                          = "Executes JavaScript in the selected Playwright tab and returns the script's value as JSON. It awaits promises, so an expression that resolves a promise reports the resolved value, and it can read IndexedDB, localStorage and sessionStorage of the page. Pass one script and return one value: only the first output object reaches the client, so wrap results in JSON.stringify(...) when you need structure. The script may be inline code, a file path, or a URL."
+                AllowedParams                        = @(
+                    'Scripts',
+                    'NoAutoSelectTab'
+                )
+                DontShowDuringConfirmationParamNames = @()
+                ForcedParams                         = @()
+                OutputText                           = $false
+                JsonDepth                            = 10
+                Confirm                              = $false
+            },
+            [GenXdev.Helpers.ExposedCmdletDefinition]@{
+                Name                                 = 'Get-WebbrowserTabDomNodes'
+                Description                          = "Returns the DOM nodes matching a CSS selector in the selected Playwright tab, as JSON. ModifyScript optionally transforms the matched nodes before they are returned."
+                AllowedParams                        = @(
+                    'QuerySelector',
+                    'ModifyScript=string',
+                    'NoAutoSelectTab'
+                )
+                DontShowDuringConfirmationParamNames = @()
+                ForcedParams                         = @()
+                OutputText                           = $false
+                JsonDepth                            = 5
+                Confirm                              = $false
+            },
+            [GenXdev.Helpers.ExposedCmdletDefinition]@{
+                Name                                 = 'Close-Webbrowser'
+                Description                          = "Closes the Playwright browser this server opened. It is pinned to -PlayWright, so it cannot be aimed at a real Chrome or Edge window, and it never closes background processes."
+                AllowedParams                        = @()
+                DontShowDuringConfirmationParamNames = @()
+                ForcedParams                         = @(
+                    @{
+                        Name  = 'PlayWright'
+                        Value = $true
+                    }
+                )
+                OutputText                           = $true
+                JsonDepth                            = 2
+                Confirm                              = $false
             }
         )
     }
 
-    # Stop existing server if requested
+    if ($Stdio -and -not [string]::IsNullOrEmpty($Token)) {
+        throw 'The stdio transport is reachable only by the process that started this server, so -Token has no meaning with -Stdio.'
+    }
+
     if ($StopExisting) {
         if ($PSCmdlet.ShouldProcess("MCP Server on port $Port", "Stop existing server")) {
             GenXdev\Stop-GenXdevMCPServer -Port $Port
@@ -1070,48 +1305,84 @@ function Start-GenXdevMCPServer {
     }
 
     if ($PSCmdlet.ShouldProcess("MCP Server on port $Port", "Start server")) {
-        Microsoft.PowerShell.Utility\Write-Host "Starting GenXdev MCP server on port $Port..." -ForegroundColor Green
+        $protocolOut = [System.Console]::Out
+        if ($Stdio) {
+            [System.Console]::SetOut([System.Console]::Error)
+        }
+
+        $transportDescription = $Stdio ? 'stdio' : "http://localhost:$Port"
+        Microsoft.PowerShell.Utility\Write-Host "Starting GenXdev MCP server on $transportDescription..." -ForegroundColor Green
         Microsoft.PowerShell.Utility\Write-Host "Exposed cmdlets: $($ExposedCmdLets.Name -join ', ')" -ForegroundColor Cyan
         Microsoft.PowerShell.Utility\Write-Host "Max output length: $MaxOutputLength characters ($([math]::Round($MaxOutputLength / 1024, 1))KB)" -ForegroundColor Cyan
 
-        # Display authentication status
-        $authToken = $Token
-        if ([string]::IsNullOrEmpty($authToken)) {
-            $authToken = [System.Environment]::GetEnvironmentVariable('GENXDEV_MCP_TOKEN', 'User')
-        }
-        if (-not [string]::IsNullOrEmpty($authToken)) {
-            Microsoft.PowerShell.Utility\Write-Host "Authentication: Bearer token configured (LAN access requires token, localhost allowed without token)" -ForegroundColor Yellow
-        }
-        else {
-            Microsoft.PowerShell.Utility\Write-Host "Authentication: No token configured (open access - set GENXDEV_MCP_TOKEN environment variable to secure)" -ForegroundColor Red
-        }
+        $authToken = $null
+        $listener = $null
 
-        # Convert cmdlets to function definitions
-        $functions = GenXdev\ConvertTo-LLMOpenAIApiFunctionDefinition -ExposedCmdLets $ExposedCmdLets
-
-        # Create HTTP listener
-        $listener = Microsoft.PowerShell.Utility\New-Object System.Net.HttpListener
-        $listener.Prefixes.Add("http://localhost:$Port/")
-
-        while ($true) {
-            try {
-                $listener.Start()
-                Microsoft.PowerShell.Utility\Write-Host "Server started successfully at http://localhost:$Port" -ForegroundColor Green
-                Microsoft.PowerShell.Utility\Write-Host 'Available endpoints:' -ForegroundColor Yellow
-                Microsoft.PowerShell.Utility\Write-Host '  GET /mcp - List tools (normal HTTP)' -ForegroundColor Gray
-                Microsoft.PowerShell.Utility\Write-Host '  POST /mcp - MCP HTTP transport (VS Code)' -ForegroundColor Gray
-                Microsoft.PowerShell.Utility\Write-Host '  GET|POST /mcp/list-tools - List available tools' -ForegroundColor Gray
-                Microsoft.PowerShell.Utility\Write-Host '  POST /mcp/call-tool - Execute a tool' -ForegroundColor Gray
-                Microsoft.PowerShell.Utility\Write-Host '  GET /sse - SSE connection for legacy transport' -ForegroundColor Gray
-                Microsoft.PowerShell.Utility\Write-Host '  POST /messages - Legacy SSE transport POST endpoint' -ForegroundColor Gray
-                Microsoft.PowerShell.Utility\Write-Host 'Press Ctrl+C to stop the server' -ForegroundColor Yellow
-                break
+        if (-not $Stdio) {
+            # token precedence: -Token, then the DPAPI protected token file, then the
+            # GENXDEV_MCP_TOKEN environment variable
+            $authToken = $Token
+            if ([string]::IsNullOrEmpty($authToken)) {
+                $authToken = GenXdev\Get-GenXdevMCPToken
             }
-            catch {
-                Microsoft.PowerShell.Utility\Write-Verbose "Failed to start server: $($_.Exception.Message)"
-                Microsoft.PowerShell.Utility\Start-Sleep 2
+            if (-not [string]::IsNullOrEmpty($authToken)) {
+                Microsoft.PowerShell.Utility\Write-Host "Authentication: Bearer token configured (required for every request, localhost included)" -ForegroundColor Yellow
+            }
+            else {
+                Microsoft.PowerShell.Utility\Write-Host "Authentication: No token configured (open access - set GENXDEV_MCP_TOKEN environment variable to secure)" -ForegroundColor Red
+            }
+
+            # Create the HTTP listener and bind the port before the tool definitions
+            # are built.  http.sys queues requests from the moment the port is bound,
+            # so a client probing the port right after launch waits for the schemas
+            # instead of being refused while they are still being built.
+            $listener = Microsoft.PowerShell.Utility\New-Object System.Net.HttpListener
+            $listener.Prefixes.Add("http://localhost:$Port/")
+
+            while ($true) {
+                try {
+                    $listener.Start()
+                    break
+                }
+                catch {
+                    Microsoft.PowerShell.Utility\Write-Verbose "Failed to start server: $($_.Exception.Message)"
+                    Microsoft.PowerShell.Utility\Start-Sleep 2
+                }
             }
         }
+
+        # Convert cmdlets to function definitions.  Failing here must not leave
+        # the port bound with nothing accepting on it.
+        try {
+            $functions = GenXdev\ConvertTo-LLMOpenAIApiFunctionDefinition -ExposedCmdLets $ExposedCmdLets
+        }
+        catch {
+            if ($listener) {
+                try { $listener.Stop() } catch { }
+                try { $listener.Close() } catch { }
+            }
+            throw
+        }
+
+        if ($Stdio) {
+            HandleGenXdevMCPServerStdioTransport `
+                -ProtocolOut $protocolOut `
+                -Functions $functions `
+                -ExposedCmdLets $ExposedCmdLets `
+                -NoConfirmationToolFunctionNames $NoConfirmationToolFunctionNames `
+                -MaxOutputLength $MaxOutputLength
+            return
+        }
+
+        Microsoft.PowerShell.Utility\Write-Host "Server started successfully at http://localhost:$Port" -ForegroundColor Green
+        Microsoft.PowerShell.Utility\Write-Host 'Available endpoints:' -ForegroundColor Yellow
+        Microsoft.PowerShell.Utility\Write-Host '  GET /mcp - List tools (normal HTTP)' -ForegroundColor Gray
+        Microsoft.PowerShell.Utility\Write-Host '  POST /mcp - MCP HTTP transport (VS Code)' -ForegroundColor Gray
+        Microsoft.PowerShell.Utility\Write-Host '  GET|POST /mcp/list-tools - List available tools' -ForegroundColor Gray
+        Microsoft.PowerShell.Utility\Write-Host '  POST /mcp/call-tool - Execute a tool' -ForegroundColor Gray
+        Microsoft.PowerShell.Utility\Write-Host '  GET /sse - SSE connection for legacy transport' -ForegroundColor Gray
+        Microsoft.PowerShell.Utility\Write-Host '  POST /messages - Legacy SSE transport POST endpoint' -ForegroundColor Gray
+        Microsoft.PowerShell.Utility\Write-Host 'Press Ctrl+C to stop the server' -ForegroundColor Yellow
         # Store server info in script scope for stop function
         $script:GenXdevMCPServer = @{
             Listener                        = $listener
@@ -1203,25 +1474,17 @@ function Start-GenXdevMCPServer {
                         }
 
                         # Security check: Validate Bearer token if configured
-                        # Token is required for non-localhost origins OR when explicitly set via -Token parameter
-                        $expectedToken = $Token
-                        if ([string]::IsNullOrEmpty($expectedToken)) {
-                            $expectedToken = [System.Environment]::GetEnvironmentVariable('GENXDEV_MCP_TOKEN', 'User')
-                        }
+                        # A configured token is required for every request, localhost included
+                        $isOAuthDiscoveryProbe = $request.Url.AbsolutePath.StartsWith('/.well-known/')
+                        $requireToken = -not [string]::IsNullOrEmpty($authToken) -and
+                        -not $isOAuthDiscoveryProbe
 
-                        if (-not [string]::IsNullOrEmpty($expectedToken)) {
-                            # Token is configured - validate it
-                            # Allow localhost without token for backward compatibility, but require it from LAN
-                            $requireToken = $origin -or ($request.RemoteEndPoint.Address.ToString() -ne '127.0.0.1' -and
-                                $request.RemoteEndPoint.Address.ToString() -ne '::1')
-
-                            if ($requireToken) {
-                                $authHeader = $request.Headers['Authorization']
+                        if ($requireToken) {
+                            $authHeader = $request.Headers['Authorization']
 
                                 if ([string]::IsNullOrEmpty($authHeader)) {
                                     Microsoft.PowerShell.Utility\Write-Verbose "Missing Authorization header from $($request.RemoteEndPoint.Address)"
-                                    $response.StatusCode = 401
-                                    $response.Headers.Add('WWW-Authenticate', 'Bearer realm="GenXdev MCP Server"')
+                                    $response.StatusCode = 403
                                     $errorJson = @{
                                         error = @{
                                             code    = -32600
@@ -1238,8 +1501,7 @@ function Start-GenXdevMCPServer {
 
                                 if (-not $authHeader.StartsWith('Bearer ', [StringComparison]::OrdinalIgnoreCase)) {
                                     Microsoft.PowerShell.Utility\Write-Verbose "Invalid Authorization header format from $($request.RemoteEndPoint.Address)"
-                                    $response.StatusCode = 401
-                                    $response.Headers.Add('WWW-Authenticate', 'Bearer realm="GenXdev MCP Server"')
+                                    $response.StatusCode = 403
                                     $errorJson = @{
                                         error = @{
                                             code    = -32600
@@ -1256,10 +1518,9 @@ function Start-GenXdevMCPServer {
 
                                 $providedToken = $authHeader.Substring(7).Trim()
 
-                                if ($providedToken -ne $expectedToken) {
+                                if ($providedToken -ne $authToken) {
                                     Microsoft.PowerShell.Utility\Write-Verbose "Invalid token from $($request.RemoteEndPoint.Address)"
-                                    $response.StatusCode = 401
-                                    $response.Headers.Add('WWW-Authenticate', 'Bearer realm="GenXdev MCP Server"')
+                                    $response.StatusCode = 403
                                     $errorJson = @{
                                         error = @{
                                             code    = -32600
@@ -1276,7 +1537,6 @@ function Start-GenXdevMCPServer {
 
                                 Microsoft.PowerShell.Utility\Write-Verbose "Successfully authenticated request from $($request.RemoteEndPoint.Address)"
                             }
-                        }
 
                         # Read request body
                         $requestBody = ''
@@ -1435,6 +1695,10 @@ function Start-GenXdevMCPServer {
                             # Ignore errors when trying to send error response
                         }
                     }
+
+                    # Yield the thread briefly so a tight accept loop can never
+                    # spin a whole core.
+                    Microsoft.PowerShell.Utility\Start-Sleep -Milliseconds 1
                 }
             }
             catch [System.Management.Automation.PipelineStoppedException] {

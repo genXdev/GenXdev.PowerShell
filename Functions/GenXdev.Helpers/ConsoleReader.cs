@@ -57,22 +57,22 @@ namespace GenXdev.Helpers
         {
             if (width <= 0 || height <= 0)
             {
-                return Array.Empty<string>();
+                return [];
             }
 
             IntPtr handle = GetStdHandle(StdOutputHandle);
 
             if (handle == IntPtr.Zero || handle == new IntPtr(-1))
             {
-                return Array.Empty<string>();
+                return [];
             }
 
             CharInfo[] buffer = new CharInfo[width * height];
 
-            Coord bufferSize = new Coord { X = (short)width, Y = (short)height };
-            Coord bufferCoord = new Coord { X = 0, Y = 0 };
+            Coord bufferSize = new() { X = (short)width, Y = (short)height };
+            Coord bufferCoord = new() { X = 0, Y = 0 };
 
-            SmallRect readRegion = new SmallRect
+            SmallRect readRegion = new()
             {
                 Left = (short)left,
                 Top = (short)top,
@@ -82,14 +82,14 @@ namespace GenXdev.Helpers
 
             if (!ReadConsoleOutput(handle, buffer, bufferSize, bufferCoord, ref readRegion))
             {
-                return Array.Empty<string>();
+                return [];
             }
 
             string[] lines = new string[height];
 
             for (int row = 0; row < height; row++)
             {
-                StringBuilder sb = new StringBuilder(width);
+                StringBuilder sb = new(width);
 
                 for (int col = 0; col < width; col++)
                 {

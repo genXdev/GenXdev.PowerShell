@@ -82,7 +82,7 @@ Convert a PSCustomObject to a HashTable with nested properties.
             //WriteVerbose("Completed HashTable conversion");
         }
 
-        private object ConvertToHashTable(object input)
+        private static object ConvertToHashTable(object input)
         {
 
             if (input == null)
@@ -145,7 +145,7 @@ Convert a PSCustomObject to a HashTable with nested properties.
                         value = ConvertToHashTable(value);
                     }
                     // handle collection properties
-                    else if (value is System.Collections.IEnumerable && !(value is string))
+                    else if (value is System.Collections.IEnumerable && value is not string)
                     {
                         var list = new List<object>();
                         foreach (var element in (System.Collections.IEnumerable)value)
@@ -181,7 +181,7 @@ Convert a PSCustomObject to a HashTable with nested properties.
             }
 
             // handle collection types
-            else if (input is System.Collections.IEnumerable && !(input is string))
+            else if (input is System.Collections.IEnumerable && input is not string)
             {
                 var list = new List<object>();
                 foreach (var element in (System.Collections.IEnumerable)input)

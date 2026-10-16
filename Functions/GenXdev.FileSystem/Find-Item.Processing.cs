@@ -120,7 +120,7 @@ namespace GenXdev.FileSystem
                     {
                         // if no more directories to process, but upwards dirs exist and
                         // no files found yet, start processing upwards dirs
-                        if (DirQueue.Count == 0 && UpwardsDirQueue.Count > 0 && Interlocked.Read(ref filesFound) == 0)
+                        if (DirQueue.IsEmpty && !UpwardsDirQueue.IsEmpty && Interlocked.Read(ref filesFound) == 0)
                         {
                             // get the upwards dir with the lowest depth value
                             var firstKey = (from q in UpwardsDirQueue.Keys
@@ -211,36 +211,29 @@ namespace GenXdev.FileSystem
                         {
 
                             // declare workload variables
-                            string remainingNameInput, remainingNameToRepeatWhenFound,
-                                currentLocation, currentFileName,
-                                uncMachineNameToEnumerate;
 
                             // more workload variables
-                            bool isUncPath, hasLongPathPrefix, recurseSubDirectories,
-                                noMoreCustomWildcards, shouldEnumerateFiles,
-                                shouldEnumerateDirectories;
 
                             // depth variables
-                            int currentRecursionDepth, currentRecursionLimit;
 
                             // get parameters for current workload
                             GetCurrentWorkloadParameters(
 
                                 name,
 
-                                out currentRecursionDepth,
-                                out currentRecursionLimit,
-                                out recurseSubDirectories,
-                                out shouldEnumerateFiles,
-                                out shouldEnumerateDirectories,
-                                out isUncPath,
-                                out noMoreCustomWildcards,
-                                out hasLongPathPrefix,
-                                out remainingNameInput,
-                                out remainingNameToRepeatWhenFound,
-                                out currentLocation,
-                                out currentFileName,
-                                out uncMachineNameToEnumerate
+                                out int currentRecursionDepth,
+                                out int currentRecursionLimit,
+                                out bool recurseSubDirectories,
+                                out bool shouldEnumerateFiles,
+                                out bool shouldEnumerateDirectories,
+                                out bool isUncPath,
+                                out bool noMoreCustomWildcards,
+                                out bool hasLongPathPrefix,
+                                out string remainingNameInput,
+                                out string remainingNameToRepeatWhenFound,
+                                out string currentLocation,
+                                out string currentFileName,
+                                out string uncMachineNameToEnumerate
                             );
 
                             // check if this location + name has already been visited
@@ -430,7 +423,7 @@ namespace GenXdev.FileSystem
         /// mask.</param>
         /// <param name="UncMachineNameToEnumerate">Outputs the UNC machine name
         /// to enumerate.</param>
-        void GetCurrentWorkloadParameters(
+        private void GetCurrentWorkloadParameters(
 
             string ProvidedLocation,
 
@@ -628,7 +621,7 @@ namespace GenXdev.FileSystem
             // Remove leading .\ for clean path
             if (ProvidedLocation.StartsWith(".\\"))
             {
-                ProvidedLocation = ProvidedLocation.Substring(2);
+                ProvidedLocation = ProvidedLocation[2..];
             }
 
             // split the input string to separate location and search pattern for
@@ -650,7 +643,7 @@ namespace GenXdev.FileSystem
             {
 
                 // remove \\?\
-                ProvidedLocation = ProvidedLocation.Substring(4);
+                ProvidedLocation = ProvidedLocation[4..];
             }
 
             // expand ~ to user home directory if requested
@@ -663,7 +656,7 @@ namespace GenXdev.FileSystem
 
                 // combine with rest
                 ProvidedLocation = Path.Combine(homePath,
-                    ProvidedLocation.Substring(1).TrimStart('\\', '/')
+                    ProvidedLocation[1..].TrimStart('\\', '/')
                 );
             }
 
@@ -681,7 +674,7 @@ namespace GenXdev.FileSystem
                 {
 
                     // adjust for unc
-                    ProvidedLocation = @"\" + ProvidedLocation.Substring(3);
+                    ProvidedLocation = @"\" + ProvidedLocation[3..];
 
                     // set unc flag
                     IsUncPath = true;
@@ -713,10 +706,10 @@ namespace GenXdev.FileSystem
 
                 // get drive current path
                 // Get current path for the drive
-                var currentPath = InvokeScript<string>($@"(Microsoft.PowerShell.Management\Get-Location -PSDrive {ProvidedLocation.Substring(0, 1)}).Path");
+                var currentPath = InvokeScript<string>($@"(Microsoft.PowerShell.Management\Get-Location -PSDrive {ProvidedLocation[..1]}).Path");
 
                 // combine
-                ProvidedLocation = Path.Combine(currentPath, ProvidedLocation.Substring(2));
+                ProvidedLocation = Path.Combine(currentPath, ProvidedLocation[2..]);
             }
 
             // add separator if needed
@@ -758,8 +751,7 @@ namespace GenXdev.FileSystem
                 int secondSlash = ProvidedLocation.IndexOf('\\', 2);
 
                 // extract machine name
-                UncMachineNameToEnumerate = ProvidedLocation.Substring(2,
-                    secondSlash - 2).Trim();
+                UncMachineNameToEnumerate = ProvidedLocation[2..secondSlash].Trim();
 
                 // handle local names
                 if (UncMachineNameToEnumerate.Equals(".") ||
@@ -774,7 +766,7 @@ namespace GenXdev.FileSystem
 
                 // rebuild provided location
                 ProvidedLocation = @"\\" + UncMachineNameToEnumerate +
-                    ProvidedLocation.Substring(secondSlash);
+                    ProvidedLocation[secondSlash..];
 
                 // find second slash again
                 secondSlash = ProvidedLocation.IndexOf('\\', 2);
@@ -798,9 +790,8 @@ namespace GenXdev.FileSystem
                     {
 
                         // combine parts
-                        ProvidedLocation = ProvidedLocation.Substring(0,
-                            secondSlash + 1) +
-                            uncShareName + ProvidedLocation.Substring(thirdSlash);
+                        ProvidedLocation = ProvidedLocation[..(secondSlash + 1)] +
+                            uncShareName + ProvidedLocation[thirdSlash..];
                     }
                     else
                     {
@@ -846,7 +837,7 @@ namespace GenXdev.FileSystem
         /// <param name="CurrentFileName">Current filename by
         /// ref.</param>
         /// <returns>Whether it was a recurse pattern.</returns>
-        bool DetermineAndStripRecursePattern(
+        private bool DetermineAndStripRecursePattern(
 
             ref string RemainingNamePart,
             ref string CurrentFileName
@@ -871,13 +862,11 @@ namespace GenXdev.FileSystem
                 {
 
                     // set current mask
-                    CurrentFileName = RemainingNamePart.Substring(0,
-                        firstSlash);
+                    CurrentFileName = RemainingNamePart[..firstSlash];
 
                     // update remaining
-                    RemainingNamePart = RemainingNamePart.Substring(
-                        firstSlash + 1
-                    );
+                    RemainingNamePart = RemainingNamePart[
+                        (firstSlash + 1)..];
                 }
                 else
                 {
@@ -978,7 +967,7 @@ namespace GenXdev.FileSystem
         /// <param name="RemainingNamePart">Outputs remaining search
         /// mask.</param>
         /// <param name="CurrentLocation">Outputs current location.</param>
-        protected void DetermineRemainingNamePart(
+        protected static void DetermineRemainingNamePart(
 
            string ProvidedLocation,
            bool IsUncPath,
@@ -1030,10 +1019,10 @@ namespace GenXdev.FileSystem
             // separate the fixed path prefix from the wildcard-containing parts
 
             // set current location
-            CurrentLocation = ProvidedLocation.Substring(0, idxS);
+            CurrentLocation = ProvidedLocation[..idxS];
 
             // get remaining
-            var remainingDetermined = ProvidedLocation.Substring(idxS);
+            var remainingDetermined = ProvidedLocation[idxS..];
 
             // split parts
             var remainingDeterminedParts = remainingDetermined.Split(
@@ -1132,13 +1121,11 @@ namespace GenXdev.FileSystem
             if (firstSlash >= 0)
             {
                 // set current mask
-                CurrentFileName = RemainingNamePart.Substring(0,
-                    firstSlash);
+                CurrentFileName = RemainingNamePart[..firstSlash];
 
                 // update remaining
-                RemainingNamePart = RemainingNamePart.Substring(
-                    firstSlash + 1
-                );
+                RemainingNamePart = RemainingNamePart[
+                    (firstSlash + 1)..];
 
                 // strip recurse
                 wasRecursePattern = DetermineAndStripRecursePattern(
@@ -1148,7 +1135,7 @@ namespace GenXdev.FileSystem
                 );
 
                 // find next slash
-                firstSlash = RemainingNamePart.IndexOf('\\');
+                _ = RemainingNamePart.IndexOf('\\');
 
                 // set repeat
                 RemainingNameToRepeatWhenFound = RemainingNamePart;
@@ -1207,7 +1194,7 @@ namespace GenXdev.FileSystem
             // check no more
             NoMoreCustomWildcards = RemainingNamePart == string.Empty ||
                 RemainingNamePart == "*";
-            moreCustomWildcards = !NoMoreCustomWildcards;
+            _ = !NoMoreCustomWildcards;
 
             // set current
             CurrentFileName = RemainingNamePart;
@@ -1303,7 +1290,7 @@ namespace GenXdev.FileSystem
 
             // create options
             System.IO.EnumerationOptions options =
-                new System.IO.EnumerationOptions
+                new()
                 {
 
                     // no recurse
@@ -1344,13 +1331,13 @@ namespace GenXdev.FileSystem
             {
 
                 // get stream name
-                streamName = CurrentFileName.Substring(idp + 1);
+                streamName = CurrentFileName[(idp + 1)..];
 
                 // default *
                 if (streamName == string.Empty) streamName = "*";
 
                 // update mask
-                CurrentFileName = CurrentFileName.Substring(0, idp);
+                CurrentFileName = CurrentFileName[..idp];
             }
 
             // create matcher
@@ -1364,7 +1351,7 @@ namespace GenXdev.FileSystem
             foreach (var filePath in System.IO.Directory.EnumerateFiles(
                 (
                 IsUncPath ?
-                    ("\\\\?\\UNC" + StartLocation.Substring(1)) :
+                    ("\\\\?\\UNC" + StartLocation[1..]) :
                     ("\\\\?\\" + StartLocation)
                 ),
                 CurrentFileName,
@@ -1696,7 +1683,7 @@ namespace GenXdev.FileSystem
 
                                 // substring if found
                                 if (dataIdx > 0)
-                                    streamName = streamName.Substring(0, dataIdx);
+                                    streamName = streamName[..dataIdx];
 
                                 // skip if no match
                                 if (wildcardPattern != null &&
@@ -1928,7 +1915,7 @@ namespace GenXdev.FileSystem
         /// <param name="HasLongPathPrefix">Long prefix.</param>
         /// <param name="IsUncPath">UNC.</param>
         /// <param name="token">Token.</param>
-        void EnumerateSubDirectories(
+        private void EnumerateSubDirectories(
         string CurrentLocation,
         string CurrentFileName,
         string RemainingNamePart,
@@ -1959,7 +1946,7 @@ namespace GenXdev.FileSystem
             if (remainingFull.StartsWith("**\\"))
             {
                 // trim recursive prefix
-                remainingFull = remainingFull.Substring(3);
+                remainingFull = remainingFull[3..];
 
                 // clear if no more wildcards or default
                 if (NoMoreCustomWildcards || remainingFull == "*")
@@ -1986,11 +1973,11 @@ namespace GenXdev.FileSystem
 
                     // escape and add unc prefix
                     fullPattern = WildcardPattern.Escape("\\\\?\\UNC") +
-                        fullPattern.Substring(1);
+                        fullPattern[1..];
 
                     // same for recurse
                     fullPatternRecurse = WildcardPattern.Escape("\\\\?\\UNC") +
-                        fullPatternRecurse.Substring(1);
+                        fullPatternRecurse[1..];
                 }
                 else
                 {
@@ -2107,7 +2094,7 @@ namespace GenXdev.FileSystem
 
                 // set enumeration options
                 System.IO.EnumerationOptions options =
-                    new System.IO.EnumerationOptions
+                    new()
                     {
 
                         // no automatic recursion
@@ -2131,7 +2118,7 @@ namespace GenXdev.FileSystem
                 // enumerate directories with options
                 foreach (var subDir in System.IO.Directory.EnumerateDirectories(
                     (IsUncPath ?
-                        ("\\\\?\\UNC" + CurrentLocation.Substring(1)) :
+                        ("\\\\?\\UNC" + CurrentLocation[1..]) :
                         ("\\\\?\\" + CurrentLocation)
                     ),
                     "*",

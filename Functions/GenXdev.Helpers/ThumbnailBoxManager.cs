@@ -103,9 +103,9 @@ namespace GenXdev.Helpers
         private const int OffScreenX = -32000;
         private const int OffScreenY = -32000;
 
-        private static readonly IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
-        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
-        private static readonly IntPtr HWND_NOTOPMOST = new IntPtr(-2);
+        private static readonly IntPtr INVALID_HANDLE_VALUE = new(-1);
+        private static readonly IntPtr HWND_TOPMOST = new(-1);
+        private static readonly IntPtr HWND_NOTOPMOST = new(-2);
 
         [StructLayout(LayoutKind.Sequential)]
         private struct RECT
@@ -498,7 +498,7 @@ namespace GenXdev.Helpers
         // Fields
         // ------------------------------------------------------------------
         private readonly ConcurrentDictionary<int, Source> _sources = new();
-        private readonly object _sync = new();
+        private readonly Lock _sync = new();
         private readonly int _refreshMs;
 
         private int _topMargin;
@@ -569,7 +569,7 @@ namespace GenXdev.Helpers
                         if (hWnd == manager._chromeWnd)
                             manager.HandleChromePaint(hWnd);
                         else
-                            manager.HandlePaint(hWnd);
+                            HandlePaint(hWnd);
                         return IntPtr.Zero;
                     }
                 }
@@ -1048,8 +1048,7 @@ namespace GenXdev.Helpers
 
                     _windowReady.Set();
 
-                    MSG msg;
-                    while (GetMessage(out msg, IntPtr.Zero, 0, 0) > 0)
+                    while (GetMessage(out MSG msg, IntPtr.Zero, 0, 0) > 0)
                     {
                         TranslateMessage(ref msg);
                         DispatchMessage(ref msg);
@@ -1136,7 +1135,7 @@ namespace GenXdev.Helpers
 
             if (_hostTarget != IntPtr.Zero)
             {
-                POINT pt = new POINT { X = 0, Y = 0 };
+                POINT pt = new() { X = 0, Y = 0 };
                 ClientToScreen(_hostTarget, ref pt);
                 GetClientRect(_hostTarget, out var cr);
 
@@ -1375,13 +1374,12 @@ namespace GenXdev.Helpers
             }
         }
 
-        private void HandlePaint(IntPtr hWnd)
+        private static void HandlePaint(IntPtr hWnd)
         {
             IntPtr hdc = BeginPaint(hWnd, out var ps);
             if (hdc == IntPtr.Zero) return;
 
-            RECT cr;
-            GetClientRect(hWnd, out cr);
+            GetClientRect(hWnd, out RECT cr);
             int w = cr.Width;
             int h = cr.Height;
 
@@ -1394,7 +1392,7 @@ namespace GenXdev.Helpers
                 // Black (0x000000) is colorkey-transparent on the layered window;
                 // only the DWM thumbnails live here; chrome is a separate window.
                 IntPtr hbrBlack = CreateSolidBrush(0x000000);
-                RECT fullRect = new RECT { Left = 0, Top = 0, Right = w, Bottom = h };
+                RECT fullRect = new() { Left = 0, Top = 0, Right = w, Bottom = h };
                 FillRect(memDC, ref fullRect, hbrBlack);
                 DeleteObject(hbrBlack);
 
@@ -1414,8 +1412,7 @@ namespace GenXdev.Helpers
             IntPtr hdc = BeginPaint(hWnd, out var ps);
             if (hdc == IntPtr.Zero) return;
 
-            RECT cr;
-            GetClientRect(hWnd, out cr);
+            GetClientRect(hWnd, out RECT cr);
             int w = cr.Width;
             int h = cr.Height;
 
@@ -1427,7 +1424,7 @@ namespace GenXdev.Helpers
 
                 // Region clips everything outside borders/captions; fill neutral.
                 IntPtr hbrFill = CreateSolidBrush(0x000000);
-                RECT fullRect = new RECT { Left = 0, Top = 0, Right = w, Bottom = h };
+                RECT fullRect = new() { Left = 0, Top = 0, Right = w, Bottom = h };
                 FillRect(memDC, ref fullRect, hbrFill);
                 DeleteObject(hbrFill);
 
@@ -1598,14 +1595,14 @@ namespace GenXdev.Helpers
             ShowWindow(hwnd, SW_SHOWNOACTIVATE);
         }
 
-        private IntPtr FindHostWindow()
+        private static IntPtr FindHostWindow()
         {
             IntPtr cw = GetConsoleWindow();
             if (cw != IntPtr.Zero && GetWindowRect(cw, out var cr) && cr.Width > 0 && cr.Height > 0)
                 return cw;
 
             var map = BuildParentMap();
-            int cur = Process.GetCurrentProcess().Id;
+            int cur = Environment.ProcessId;
             int guard = 0;
             while (guard++ < 32 && map.TryGetValue(cur, out int pp) && pp != 0 && pp != cur)
             {

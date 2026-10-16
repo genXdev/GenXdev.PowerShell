@@ -218,6 +218,182 @@ function Add-LineToREADME {
             return "$((GenXdev\Expand-Path -FilePath "$(GenXdev\Get-KnownFolderPath -KnownFolder 'OneDrive')\README.md" -CreateDirectory))";
         }
 
+        # returns the dominant line ending used by the file content
+        function DetectLineEnding([string] $text) {
+
+            $crlf = ([regex]::Matches($text, "`r`n")).Count
+            $lf = ([regex]::Matches($text, "`n")).Count - $crlf
+            $cr = ([regex]::Matches($text, "`r")).Count - $crlf
+
+            if ($crlf -ge $lf -and $crlf -ge $cr) { return "`r`n" }
+            if ($lf -ge $cr) { return "`n" }
+            return "`r"
+        }
+
+        # true when the file starts with a UTF-8 byte order mark
+        function HasByteOrderMark([string] $path) {
+
+            $stream = [IO.File]::OpenRead($path)
+            try {
+                if ($stream.Length -lt 3) { return $false }
+                $bytes = [byte[]]::new(3)
+                $null = $stream.Read($bytes, 0, 3)
+                return ($bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and
+                    $bytes[2] -eq 0xBF)
+            }
+            finally { $stream.Dispose() }
+        }
+
+        # marks every line that sits inside a fenced code block so that
+        # lookalike headings and items inside code are never interpreted
+        # as document structure
+        function GetFenceMask([string[]] $lines) {
+
+            $mask = [bool[]]::new($lines.Count)
+            $openChar = ''
+            $openLen = 0
+
+            for ($i = 0; $i -lt $lines.Count; $i++) {
+
+                if ($openChar -eq '') {
+                    $m = [regex]::Match($lines[$i], '^\s{0,3}(`{3,}|~{3,})')
+                    if ($m.Success) {
+                        $openChar = $m.Groups[1].Value.Substring(0, 1)
+                        $openLen = $m.Groups[1].Value.Length
+                        $mask[$i] = $true
+                    }
+                    continue
+                }
+
+                $mask[$i] = $true
+                $close = '^\s{0,3}' + [regex]::Escape($openChar) +
+                '{' + $openLen + ',}\s*$'
+                if ([regex]::IsMatch($lines[$i], $close)) {
+                    $openChar = ''
+                    $openLen = 0
+                }
+            }
+
+            return , $mask
+        }
+
+        # a line that starts a README item
+        function IsItemHeader([string] $line) {
+            return ($line -match '^- (☐|☒)')
+        }
+
+        # markdown heading level of a line, or 0 when it is not a heading
+        function GetHeadingLevel([string] $line) {
+            $m = [regex]::Match($line, '^(#{1,6})\s*\S')
+            if ($m.Success) { return $m.Groups[1].Value.Length }
+            return 0
+        }
+
+        # section headings managed by these cmdlets
+        function IsKnownSection([string] $line) {
+            return ($line -match '^##\s+(Features|Issues|Todoos|Ideas|' +
+                'Release notes)(\s+-\s+Archive)?\s*$')
+        }
+
+        # locates the exact heading line for a section name
+        function FindSectionBounds(
+            [string[]] $lines, [bool[]] $fence, [string] $section) {
+
+            $wanted = $section.Trim()
+            for ($i = 0; $i -lt $lines.Count; $i++) {
+                if ($fence[$i]) { continue }
+                if ($lines[$i].Trim() -ieq $wanted) {
+                    return @{ Heading = $i; Start = $i + 1 }
+                }
+            }
+            return $null
+        }
+
+        # first line index that no longer belongs to the section
+        function FindSectionEnd(
+            [string[]] $lines, [bool[]] $fence, [int] $start, [int] $level) {
+
+            for ($i = $start; $i -lt $lines.Count; $i++) {
+
+                if ($fence[$i]) { continue }
+                $headingLevel = GetHeadingLevel $lines[$i]
+                if ($headingLevel -lt 1 -or $headingLevel -gt $level) { continue }
+
+                # a heading that follows a blank line always ends the section
+                # and so does one that is followed by a blank line; a heading
+                # glued into the middle of item text is part of that item
+                # unless it is one of the known section headings
+                $separated = ($i -eq 0) -or
+                [string]::IsNullOrWhiteSpace($lines[$i - 1])
+                $followedByBlank = ($i -ge $lines.Count - 1) -or
+                [string]::IsNullOrWhiteSpace($lines[$i + 1])
+                if ($separated -or $followedByBlank -or
+                    (IsKnownSection $lines[$i].Trim())) {
+                    return $i
+                }
+            }
+            return $lines.Count
+        }
+
+        # groups section lines into atomic blocks: an item header plus all of
+        # its continuation lines, so a multi line item can never be shredded
+        function ParseBlocks(
+            [string[]] $lines, [bool[]] $fence, [int] $start, [int] $end) {
+
+            $blocks = [System.Collections.Generic.List[object]]::new()
+            $current = $null
+
+            for ($i = $start; $i -lt $end; $i++) {
+
+                $startsItem = (-not $fence[$i]) -and (IsItemHeader $lines[$i])
+                if ($startsItem -or $null -eq $current) {
+                    $current = [pscustomobject]@{
+                        Lines = [System.Collections.Generic.List[string]]::new()
+                    }
+                    $null = $blocks.Add($current)
+                }
+                $null = $current.Lines.Add($lines[$i])
+            }
+
+            return , $blocks
+        }
+
+        # sort key of a block, taken from its header line
+        function BlockSortKey($block, [bool] $sortByDate, [bool] $ascending) {
+
+            $header = $block.Lines[0]
+
+            if ($sortByDate) {
+                if ($header -match '(\d{8})\s*-->') { return $Matches[1] }
+                if ($ascending) { return '00000000' }
+                return '99999999'
+            }
+
+            if ($header -match '\[P(-?\d+)\]') { return [int]$Matches[1] }
+            return 0
+        }
+
+        # sorts whole blocks on their header key, keeping ties in order
+        function SortBlocks($blocks, [bool] $sortByDate, [bool] $ascending) {
+
+            $sorted = $blocks |
+            Microsoft.PowerShell.Utility\Sort-Object {
+                BlockSortKey $_ $sortByDate $ascending
+            } -Descending:(-not $ascending) -Stable
+
+            return , @($sorted)
+        }
+
+        # flattens blocks back into a list of lines
+        function FlattenBlocks($blocks) {
+
+            $flat = [System.Collections.Generic.List[string]]::new()
+            foreach ($block in $blocks) {
+                foreach ($ln in $block.Lines) { $null = $flat.Add($ln) }
+            }
+            return , $flat
+        }
+
         # determine which readme file to use
         if ($UseHomeREADME) {
             $readmePath = GenXdev\Expand-Path `
@@ -239,107 +415,89 @@ function Add-LineToREADME {
             throw "README file not found at: $readmePath"
         }
 
-        # load readme content and detect line endings
+        # load readme content, remembering line endings and byte order mark
         $readme = [IO.File]::ReadAllText($readmePath)
-        $lineEnding = if ($readme.IndexOf("`r`n") -ge 0) { "`r`n" } else { "`n" }
+        $lineEnding = DetectLineEnding $readme
+        [bool] $hasBom = HasByteOrderMark $readmePath
+
+        # work on logical lines so CRLF, LF and CR files all behave the same
+        [System.Collections.Generic.List[string]] $lines =
+        [System.Collections.Generic.List[string]]::new()
+        foreach ($ln in ($readme -split "`r`n|`n|`r")) { $null = $lines.Add($ln) }
+
+        # code inside fences is never treated as document structure
+        [bool[]] $fence = GetFenceMask $lines
+        [int] $insertedCount = 0
 
         # Migrate existing lines to unified emoji prefix format
         # Converts old prefixes (- [X], - [☒], - [ ], * ) to - ☐ / - ☒
         # and adds [P1] priority if missing
-        function MigrateReadmeLines([ref] $readmeRef, [string] $lf) {
+        function MigrateReadmeLines(
+            [System.Collections.Generic.List[string]] $lines,
+            [bool[]] $fence, [string] $lf) {
+
             $knownSections = @(
                 '## Features', '## Ideas', '## Issues',
                 '## Todoos', '## Release notes'
             )
-            $content = $readmeRef.Value
             $migrated = $false
 
             foreach ($sec in $knownSections) {
-                $secStart = $content.IndexOf(
-                    $sec,
-                    [System.StringComparison]::OrdinalIgnoreCase
-                )
-                if ($secStart -lt 0) { continue }
 
-                $secContentStart = $secStart + $sec.Length + $lf.Length
-                # Guard: if section header is the last content without a
-                # trailing newline, skip — nothing to migrate
-                if ($secContentStart -ge $content.Length) { continue }
+                $bounds = FindSectionBounds $lines $fence $sec
+                if ($null -eq $bounds) { continue }
 
                 $secLevel = ($sec -replace '^([#]+).*$', '$1').Length
-                $rest = $content.Substring($secContentStart)
-                $nextHd = [regex]::Match($rest, "(?m)^#{1,$secLevel}\s")
-                $secEnd = if ($nextHd.Success) {
-                    $secContentStart + $nextHd.Index
-                } else { $content.Length }
+                $end = FindSectionEnd $lines $fence $bounds.Start $secLevel
 
-                $secLines = $content.Substring(
-                    $secContentStart,
-                    $secEnd - $secContentStart
-                ) -split $lf
+                for ($i = $bounds.Start; $i -lt $end; $i++) {
 
-                $newLines = [System.Collections.Generic.List[string]]::new()
-                foreach ($ln in $secLines) {
-                    if ([string]::IsNullOrWhiteSpace($ln)) {
-                        $null = $newLines.Add($ln)
-                        continue
-                    }
-                    # Already in new format? Skip
-                    if ($ln -match '^- (☐|☒) \[P') {
-                        $null = $newLines.Add($ln)
-                        continue
-                    }
-                    # Extract existing priority if present
+                    # never rewrite code, nor the inside of an item
+                    if ($fence[$i]) { continue }
+                    $ln = $lines[$i]
+                    if ([string]::IsNullOrWhiteSpace($ln)) { continue }
+                    if ($ln -match '^- (☐|☒) \[P') { continue }
+
                     $existingPrio = if ($ln -match '\[P(-?\d+)\]') {
                         "[P$($matches[1])]"
                     } else { '[P1]' }
-                    # Strip any existing prefix
+
                     $restText = $ln
-                    # Old completed patterns
+                    $replacement = $null
+
                     if ($ln -match '^- \[X\] ') {
-                        $restText = $ln -replace '^- \[X\] ', ''
-                        $restText = $restText -replace '\[P-?\d+\] ', ''
-                        $ln = "- ☒ $existingPrio $restText"
-                        $migrated = $true
+                        $restText = ($ln -replace '^- \[X\] ', '') -replace '\[P-?\d+\] ', ''
+                        $replacement = "- ☒ $existingPrio $restText"
                     }
                     elseif ($ln -match '^- \[☒\] ') {
-                        $restText = $ln -replace '^- \[☒\] ', ''
-                        $restText = $restText -replace '\[P-?\d+\] ', ''
-                        $ln = "- ☒ $existingPrio $restText"
-                        $migrated = $true
+                        $restText = ($ln -replace '^- \[☒\] ', '') -replace '\[P-?\d+\] ', ''
+                        $replacement = "- ☒ $existingPrio $restText"
                     }
-                    # Old uncompleted patterns
                     elseif ($ln -match '^- \[ \] ') {
-                        $restText = $ln -replace '^- \[ \] ', ''
-                        $restText = $restText -replace '\[P-?\d+\] ', ''
-                        $ln = "- ☐ $existingPrio $restText"
-                        $migrated = $true
+                        $restText = ($ln -replace '^- \[ \] ', '') -replace '\[P-?\d+\] ', ''
+                        $replacement = "- ☐ $existingPrio $restText"
                     }
                     elseif ($ln -match '^- ☐ ') {
-                        $restText = $ln -replace '^- ☐ ', ''
-                        $restText = $restText -replace '\[P-?\d+\] ', ''
-                        $ln = "- ☐ $existingPrio $restText"
-                        $migrated = $true
+                        $restText = ($ln -replace '^- ☐ ', '') -replace '\[P-?\d+\] ', ''
+                        $replacement = "- ☐ $existingPrio $restText"
                     }
                     elseif ($ln -match '^\* ') {
-                        $restText = $ln -replace '^\* ', ''
-                        $restText = $restText -replace '\[P-?\d+\] ', ''
-                        $ln = "- ☐ $existingPrio $restText"
+                        $restText = ($ln -replace '^\* ', '') -replace '\[P-?\d+\] ', ''
+                        $replacement = "- ☐ $existingPrio $restText"
+                    }
+
+                    if ($null -ne $replacement -and $replacement -cne $ln) {
+                        $lines[$i] = $replacement
                         $migrated = $true
                     }
-                    $null = $newLines.Add($ln)
-                }
-
-                if ($migrated) {
-                    $newSecContent = $newLines -join $lf
-                    $content = $content.Substring(0, $secContentStart) +
-                        $newSecContent +
-                        $content.Substring($secEnd)
                 }
             }
-            $readmeRef.Value = $content
+
+            return $migrated
         }
-        MigrateReadmeLines ([ref] $readme) $lineEnding
+
+        # content changed in-memory and must be persisted to disk
+        [bool] $mutated = MigrateReadmeLines $lines $fence $lineEnding
 
         # -OnlyCompleted and -ExcludeCompleted are mutually exclusive
         if ($OnlyCompleted -and $ExcludeCompleted) {
@@ -347,347 +505,247 @@ function Add-LineToREADME {
             ' Use one or neither.'
         }
 
-        [int] $insertIndex = $readme.IndexOf(
-            $Section,
-            [System.StringComparison]::OrdinalIgnoreCase
-        )
+        [int] $sectionLevel =
+        ($Section.Trim() -replace '^([#]+).*$', '$1').Length
 
-        # create section if it doesn't exist
-        if ($insertIndex -lt 0) {
-            $insertIndex = $readme.Length
-            if ($readme.Length -gt 0 -and !$readme.EndsWith("$lineEnding$lineEnding")) {
-                $readme += $lineEnding + $lineEnding
-            }
-            $readme += "$Section$lineEnding"
-            $insertIndex = $readme.Length
-        }
-        else {
-            $insertIndex += $Section.Length
+        # resolve the real heading; never one that sits inside a code fence
+        if ($null -eq (FindSectionBounds $lines $fence $Section)) {
 
-            # If section has no trailing newline (e.g., at end of file),
-            # append one so the insertion point stays within bounds
-            if ($insertIndex -ge $readme.Length) {
-                $readme += $lineEnding
-                $insertIndex = $readme.Length
+            if ($lines.Count -gt 0 -and
+                ![string]::IsNullOrWhiteSpace($lines[$lines.Count - 1])) {
+                $null = $lines.Add('')
             }
-            else {
-                $insertIndex += $lineEnding.Length
-            }
+            $null = $lines.Add($Section.Trim())
+            $fence = GetFenceMask $lines
         }
     }
 
     process {
 
-        if (![string]::IsNullOrWhiteSpace($Line)) {
-            if ($Done) {
-                # Find the section boundaries
-                $sectionStart = $readme.IndexOf(
-                    $Section,
-                    [System.StringComparison]::OrdinalIgnoreCase
-                )
-                if ($sectionStart -ge 0) {
-                    $sectionContentStart = $sectionStart +
-                    $Section.Length + $lineEnding.Length
-                    # Find next heading at same or higher level to
-                    # determine section boundaries
-                    $sectionLevel = ($Section -replace '^([#]+).*$', '$1').Length
-                    $restOfFile = $readme.Substring($sectionContentStart)
-                    $headingPattern = "(?m)^#{1,$sectionLevel}\s"
-                    $nextHeading = [regex]::Match($restOfFile, $headingPattern)
-                    $sectionEnd = if ($nextHeading.Success) {
-                        $sectionContentStart + $nextHeading.Index
-                    }
-                    else {
-                        $readme.Length
-                    }
-                    $sectionContent = $readme.Substring(
-                        $sectionContentStart,
-                        $sectionEnd - $sectionContentStart
-                    )
+        # an empty line means "display or archive only"
+        if ([string]::IsNullOrWhiteSpace($Line)) { return }
 
-                    # Find lines matching the wildcard pattern
-                    $lines = $sectionContent -split $lineEnding
-                    $found = $false
-                    $matchCount = 0
-                    # Build search pattern: - ☐ *<user's Line wildcard>
-                    # Use * to match the [Px] priority & optional date prefix
-                    $searchPattern = ('- ☐ *' + $Line)
-                    for ($i = 0; $i -lt $lines.Count; $i++) {
-                        if ($lines[$i] -like $searchPattern) {
-                            $matchCount++
-                            $found = $true
-                            # Replace ☐ with ☒ to mark as done
-                            $lines[$i] = $lines[$i].Replace('☐', '☒')
-                        }
-                    }
+        # resolve the section for every pipeline item, an earlier item of the
+        # same pipeline may have created it
+        $bounds = FindSectionBounds $lines $fence $Section
+        if ($null -eq $bounds) {
+            Microsoft.PowerShell.Utility\Write-Warning `
+                "Section '$Section' not found"
+            return
+        }
+        $sectionEnd = FindSectionEnd $lines $fence $bounds.Start $sectionLevel
 
-                    if (-not $found) {
-                        Microsoft.PowerShell.Utility\Write-Warning ("No line matching '" +
-                            $searchPattern + "' found in section '$Section'")
-                    }
-                    elseif ($matchCount -gt 1) {
-                        Microsoft.PowerShell.Utility\Write-Warning ("$matchCount lines matched '" +
-                            $searchPattern + "' in section '$Section'")
-                    }
+        if ($Done) {
+            # only item headers are matched, so continuation lines of a multi
+            # line item are never touched and the item stays intact
+            $searchPattern = '- ☐ *' + $Line
+            $literalPattern = '- ☐ *' +
+            [System.Management.Automation.WildcardPattern]::Escape($Line)
+            $found = $false
+            $matchCount = 0
 
-                    if ($found) {
-                        $newSectionContent = $lines -join $lineEnding
-                        $readme = $readme.Substring(0, $sectionContentStart) +
-                        $newSectionContent +
-                        $readme.Substring($sectionEnd)
-                    }
+            for ($i = $bounds.Start; $i -lt $sectionEnd; $i++) {
+
+                if ($fence[$i]) { continue }
+                if (-not (IsItemHeader $lines[$i])) { continue }
+
+                # user text may contain wildcard characters such as "byte[]"
+                # or "?"; fall back to a literal match when that happens
+                $isMatch = $false
+                try { $isMatch = $lines[$i] -like $searchPattern }
+                catch { $isMatch = $false }
+                if (-not $isMatch) {
+                    $isMatch = $lines[$i] -like $literalPattern
                 }
-                else {
-                    Microsoft.PowerShell.Utility\Write-Warning `
-                        "Section '$Section' not found for -Done operation"
-                }
+                if (-not $isMatch) { continue }
+
+                $matchCount++
+                $found = $true
+                $lines[$i] = $lines[$i].Replace('☐', '☒')
             }
-            else {
-                # Check for duplicate before inserting
-                $sectionStart = $readme.IndexOf(
-                    $Section,
-                    [System.StringComparison]::OrdinalIgnoreCase
-                )
-                if ($sectionStart -ge 0) {
-                    $sectionContentStart = $sectionStart +
-                        $Section.Length + $lineEnding.Length
-                    $sectionLevel = ($Section -replace '^([#]+).*$', '$1').Length
-                    $rest = $readme.Substring($sectionContentStart)
-                    $nextHeading = [regex]::Match(
-                        $rest, "(?m)^#{1,$sectionLevel}\s")
-                    $sectionEnd = if ($nextHeading.Success) {
-                        $sectionContentStart + $nextHeading.Index
-                    }
-                    else { $readme.Length }
-                    $sectionContent = $readme.Substring(
-                        $sectionContentStart,
-                        $sectionEnd - $sectionContentStart)
-                    $dupLine = "- ☐ [P$Priority] $Line"
-                    if ($sectionContent -split $lineEnding -ccontains $dupLine) {
-                        Microsoft.PowerShell.Utility\Write-Warning ("Duplicate line '$Line' in " +
-                            "section '$Section'")
-                        return
-                    }
-                }
 
-                # insert new line at section with priority prefix
-                $insertedText = "- ☐ [P$Priority] $Line$lineEnding"
-                $readme = $readme.Substring(0, $insertIndex) +
-                $insertedText +
-                $readme.Substring($insertIndex)
-                # Track insert position for pipeline input ordering (F11 fix)
-                $insertIndex += $insertedText.Length
+            if (-not $found) {
+                Microsoft.PowerShell.Utility\Write-Warning ("No line matching '" +
+                    $Line + "' found in section '$Section'")
+            }
+            elseif ($matchCount -gt 1) {
+                Microsoft.PowerShell.Utility\Write-Warning ("$matchCount lines matched '" +
+                    $Line + "' in section '$Section'")
+            }
+
+            if ($found) { $mutated = $true }
+            return
+        }
+
+        # duplicate detection compares whole item headers
+        $dupLine = "- ☐ [P$Priority] $Line"
+        for ($i = $bounds.Start; $i -lt $sectionEnd; $i++) {
+            if ($lines[$i] -ceq $dupLine) {
+                Microsoft.PowerShell.Utility\Write-Warning ("Duplicate line '$Line' in " +
+                    "section '$Section'")
+                return
             }
         }
+
+        # insert after the heading; extra lines of a multi line paste become
+        # continuation lines that belong to this item
+        $newItemLines = $Line -split "`r`n|`n|`r"
+        $insertAt = $bounds.Start + $insertedCount
+        $lines.Insert($insertAt, "- ☐ [P$Priority] " + $newItemLines[0])
+        for ($k = 1; $k -lt $newItemLines.Count; $k++) {
+            $lines.Insert($insertAt + $k, $newItemLines[$k])
+        }
+        $insertedCount += $newItemLines.Count
+        $fence = GetFenceMask $lines
+        $mutated = $true
     }
 
     end {
+
+        $bounds = FindSectionBounds $lines $fence $Section
+        $sectionEnd = if ($null -ne $bounds) {
+            FindSectionEnd $lines $fence $bounds.Start $sectionLevel
+        }
+        else { 0 }
+
         # Archive completed items if requested
-        if ($ArchiveCompleted) {
-            $sectionStart = $readme.IndexOf(
-                $Section,
-                [System.StringComparison]::OrdinalIgnoreCase
-            )
-            if ($sectionStart -ge 0) {
-                $sectionContentStart = $sectionStart +
-                    $Section.Length + $lineEnding.Length
-                $sectionLevel = ($Section -replace '^([#]+).*$', '$1').Length
-                $restOfFile = $readme.Substring($sectionContentStart)
-                $headingPattern = "(?m)^#{1,$sectionLevel}\s"
-                $nextHeading = [regex]::Match($restOfFile, $headingPattern)
-                $sectionEnd = if ($nextHeading.Success) {
-                    $sectionContentStart + $nextHeading.Index
-                }
-                else { $readme.Length }
-                $sectionContent = $readme.Substring(
-                    $sectionContentStart,
-                    $sectionEnd - $sectionContentStart
-                )
+        if ($ArchiveCompleted -and $null -ne $bounds) {
 
-                $lines = $sectionContent -split $lineEnding
-                $completedLines = [System.Collections.Generic.List[string]]::new()
-                $incompleteLines = [System.Collections.Generic.List[string]]::new()
-                foreach ($ln in $lines) {
-                    if ($ln -match '^\s*-\s*☒') {
-                        $null = $completedLines.Add($ln)
-                    }
-                    else {
-                        $null = $incompleteLines.Add($ln)
-                    }
-                }
+            $blocks = ParseBlocks $lines $fence $bounds.Start $sectionEnd
+            $completed = [System.Collections.Generic.List[object]]::new()
+            $remaining = [System.Collections.Generic.List[object]]::new()
 
-                if ($completedLines.Count -eq 0) {
-                    Microsoft.PowerShell.Utility\Write-Verbose (
-                        "No completed items found in section '$Section'")
+            foreach ($block in $blocks) {
+                if ((IsItemHeader $block.Lines[0]) -and
+                    ($block.Lines[0] -match '^- ☒')) {
+                    $null = $completed.Add($block)
                 }
                 else {
-                    $datePrefix = [DateTime]::Now.ToString('yyyyMMdd')
+                    $null = $remaining.Add($block)
+                }
+            }
 
-                    if ($ArchiveFilePath) {
-                        # Archive to external file
-                        $archivePath = GenXdev\Expand-Path `
-                            -FilePath $ArchiveFilePath -CreateDirectory
-                        $archiveHeader = "${lineEnding}### Archived from" +
-                        " '$Section' on $datePrefix${lineEnding}"
-                        $archiveContent = ($completedLines -join $lineEnding) +
-                            $lineEnding
-                        [System.IO.File]::AppendAllText(
-                            $archivePath,
-                            $archiveHeader + $archiveContent
-                        )
+            if ($completed.Count -eq 0) {
+                Microsoft.PowerShell.Utility\Write-Verbose (
+                    "No completed items found in section '$Section'")
+            }
+            else {
+                $mutated = $true
+                $datePrefix = [DateTime]::Now.ToString('yyyyMMdd')
 
-                        # Remove completed lines from section
-                        $newSectionContent = $incompleteLines -join $lineEnding
-                        $readme = $readme.Substring(0, $sectionContentStart) +
-                            $newSectionContent +
-                            $readme.Substring($sectionEnd)
-
-                        # Migrate previously archived items from same-README
-                        # archive section (if any) to the external file, then
-                        # remove the now-empty archive section.
-                        $migrateSectionHeading = "$Section - Archive"
-                        $prevArchiveIdx = $readme.IndexOf(
-                            $migrateSectionHeading,
-                            [System.StringComparison]::OrdinalIgnoreCase
-                        )
-                        if ($prevArchiveIdx -ge 0) {
-                            $prevContentStart = $prevArchiveIdx +
-                                $migrateSectionHeading.Length +
-                                $lineEnding.Length
-                            $prevSectionLevel =
-                                ($Section -replace '^([#]+).*$', '$1').Length
-                            $prevRest = $readme.Substring($prevContentStart)
-                            $prevHeadingPat = "(?m)^#{1,$prevSectionLevel}\s"
-                            $prevNext = [regex]::Match(
-                                $prevRest, $prevHeadingPat)
-                            $prevEnd = if ($prevNext.Success) {
-                                $prevContentStart + $prevNext.Index
-                            }
-                            else { $readme.Length }
-
-                            # Append previously archived items to
-                            # the external file.
-                            $prevContent = $readme.Substring(
-                                $prevContentStart,
-                                $prevEnd - $prevContentStart
-                            ).TrimEnd()
-                            if ($prevContent.Length -gt 0) {
-                                $migrateHeader = "${lineEnding}### Migrated" +
-                                " from '$migrateSectionHeading' on" +
-                                " $datePrefix${lineEnding}"
-                                [System.IO.File]::AppendAllText(
-                                    $archivePath,
-                                    $migrateHeader + $prevContent +
-                                    $lineEnding
-                                )
-                            }
-
-                            # Remove the archive section (heading +
-                            # content) from the README.
-                            $readme = $readme.Substring(0,
-                                $prevArchiveIdx) +
-                                $readme.Substring($prevEnd)
-                        }
-                    }
-                    else {
-                        # Move to same-README archive section
-                        $archiveSection = "$Section - Archive"
-
-                        # Remove completed lines from original section
-                        $newSectionContent = $incompleteLines -join $lineEnding
-                        $readme = $readme.Substring(0, $sectionContentStart) +
-                            $newSectionContent +
-                            $readme.Substring($sectionEnd)
-
-                        # Find or create archive section
-                        $archiveIndex = $readme.IndexOf(
-                            $archiveSection,
-                            [System.StringComparison]::OrdinalIgnoreCase
-                        )
-                        if ($archiveIndex -lt 0) {
-                            if ($readme.Length -gt 0 -and
-                                !$readme.EndsWith("$lineEnding$lineEnding")) {
-                                $readme += $lineEnding + $lineEnding
-                            }
-                            $readme += "$archiveSection$lineEnding"
-                            $archiveIndex = $readme.Length
+                # the date prefix goes on the header line; continuation lines
+                # of a multi line item move along untouched
+                $archivedLines = [System.Collections.Generic.List[string]]::new()
+                foreach ($block in $completed) {
+                    $isHeader = $true
+                    foreach ($ln in $block.Lines) {
+                        if ($isHeader) {
+                            $null = $archivedLines.Add(
+                                ($ln -replace '^- (☒) ', "- `$1 $datePrefix --> "))
+                            $isHeader = $false
                         }
                         else {
-                            $archiveIndex += $archiveSection.Length +
-                                $lineEnding.Length
+                            $null = $archivedLines.Add($ln)
+                        }
+                    }
+                }
+
+                # drop the completed blocks, keep the remaining ones intact
+                $lines.RemoveRange($bounds.Start, $sectionEnd - $bounds.Start)
+                $lines.InsertRange($bounds.Start, (FlattenBlocks $remaining))
+                $fence = GetFenceMask $lines
+
+                if (-not [string]::IsNullOrWhiteSpace($ArchiveFilePath)) {
+
+                    # Archive to external file
+                    $archivePath = GenXdev\Expand-Path `
+                        -FilePath $ArchiveFilePath -CreateDirectory
+                    $archiveHeader = "${lineEnding}### Archived from" +
+                    " '$Section' on $datePrefix${lineEnding}"
+                    [System.IO.File]::AppendAllText(
+                        $archivePath,
+                        $archiveHeader +
+                        (($archivedLines -join $lineEnding) + $lineEnding)
+                    )
+
+                    # Migrate a previously used same-README archive section to
+                    # the external file, then remove it from the README
+                    $migrateSectionHeading = "$Section - Archive"
+                    $prevBounds = FindSectionBounds $lines $fence `
+                        $migrateSectionHeading
+                    if ($null -ne $prevBounds) {
+                        $prevEnd = FindSectionEnd $lines $fence `
+                            $prevBounds.Start $sectionLevel
+                        $prevContent = if ($prevEnd -gt $prevBounds.Start) {
+                            @($lines[$prevBounds.Start..($prevEnd - 1)])
+                        }
+                        else { @() }
+
+                        while ($prevContent.Count -gt 0 -and
+                            [string]::IsNullOrWhiteSpace($prevContent[-1])) {
+                            $prevContent = @($prevContent[0..($prevContent.Count - 2)])
                         }
 
-                        # Prepend date to each archived line
-                        $archivedLines = $completedLines | Microsoft.PowerShell.Core\ForEach-Object {
-                            $_ -replace '^- (☒) ', "- `$1 $datePrefix --> "
+                        if ($prevContent.Count -gt 0) {
+                            $migrateHeader = "${lineEnding}### Migrated" +
+                            " from '$migrateSectionHeading' on" +
+                            " $datePrefix${lineEnding}"
+                            [System.IO.File]::AppendAllText(
+                                $archivePath,
+                                $migrateHeader +
+                                (($prevContent -join $lineEnding) + $lineEnding)
+                            )
                         }
-                        $archiveInsert = ($archivedLines -join $lineEnding) +
-                            $lineEnding
-                        $readme = $readme.Substring(0, $archiveIndex) +
-                            $archiveInsert +
-                            $readme.Substring($archiveIndex)
+
+                        $lines.RemoveRange($prevBounds.Heading,
+                            $prevEnd - $prevBounds.Heading)
+                        $fence = GetFenceMask $lines
                     }
+                }
+                else {
+                    # Move to a same-README archive section
+                    $archiveSection = "$Section - Archive"
+                    $archiveBounds = FindSectionBounds $lines $fence `
+                        $archiveSection
+                    if ($null -eq $archiveBounds) {
+                        if ($lines.Count -gt 0 -and
+                            ![string]::IsNullOrWhiteSpace($lines[$lines.Count - 1])) {
+                            $null = $lines.Add('')
+                        }
+                        $null = $lines.Add($archiveSection)
+                        $archiveBounds = @{
+                            Heading = $lines.Count - 1
+                            Start   = $lines.Count
+                        }
+                    }
+                    $lines.InsertRange($archiveBounds.Start, $archivedLines)
+                    $fence = GetFenceMask $lines
                 }
             }
         }
 
-        # Sort lines within the section by [Px] priority (descending)
-        # only do this for insert operations (not -Done), and only for
-        # sections that currently exist
-        if (!$Done -and $insertIndex -gt 0) {
-            $sectionStart = $readme.IndexOf(
-                $Section,
-                [System.StringComparison]::OrdinalIgnoreCase
-            )
-            if ($sectionStart -ge 0) {
-                $sectionContentStart = $sectionStart +
-                    $Section.Length + $lineEnding.Length
-                $sectionLevel = ($Section -replace '^([#]+).*$', '$1').Length
-                $restOfFile = $readme.Substring($sectionContentStart)
-                $headingPattern = "(?m)^#{1,$sectionLevel}\s"
-                $nextHeading = [regex]::Match($restOfFile, $headingPattern)
-                $sectionEnd = if ($nextHeading.Success) {
-                        $sectionContentStart + $nextHeading.Index
-                    } else {
-                        $readme.Length
-                    }
-                $sectionContent = $readme.Substring(
-                    $sectionContentStart,
-                    $sectionEnd - $sectionContentStart
-                )
-
-                # Parse and sort lines
-                $sectionLines = $sectionContent -split $lineEnding
-                $sortedLines = if ($SortByDate) {
-                    # Sort by date prefix (yyyyMMdd) — lines without
-                    # a date go to the end (or beginning with -Ascending)
-                    $sectionLines |
-                        Microsoft.PowerShell.Utility\Sort-Object {
-                            if ($_ -match '(\d{8})\s*-->') {
-                                $matches[1]
-                            } else {
-                                if ($Ascending) { '00000000' } else { '99999999' }
-                            }
-                        } -Descending:(-not $Ascending) -Stable
-                } else {
-                    # Sort by [Px] priority
-                    $sectionLines |
-                        Microsoft.PowerShell.Utility\Sort-Object {
-                            if ($_ -match '\[P(-?\d+)\]') {
-                                [int]$matches[1]
-                            } else { 0 }
-                        } -Descending:(-not $Ascending) -Stable
-                }
-
-                $sortedContent = $sortedLines -join $lineEnding
-                $readme = $readme.Substring(0, $sectionContentStart) +
-                    $sortedContent +
-                    $readme.Substring($sectionEnd)
+        # sort whole blocks so a multi line item always moves as one unit
+        if ($mutated -and !$Done) {
+            $sortBounds = FindSectionBounds $lines $fence $Section
+            if ($null -ne $sortBounds) {
+                $sortEnd = FindSectionEnd $lines $fence $sortBounds.Start `
+                    $sectionLevel
+                $sortBlocks = ParseBlocks $lines $fence $sortBounds.Start $sortEnd
+                $sorted = SortBlocks $sortBlocks $SortByDate.IsPresent `
+                    $Ascending.IsPresent
+                $lines.RemoveRange($sortBounds.Start,
+                    $sortEnd - $sortBounds.Start)
+                $lines.InsertRange($sortBounds.Start, (FlattenBlocks $sorted))
+                $fence = GetFenceMask $lines
             }
         }
 
-        # save changes atomically to prevent corruption
-        GenXdev\Write-TextFileAtomic -FilePath $readmePath -Data $readme
+        # persist only when the underlying content actually changed
+        if ($mutated) {
+            $output = $lines -join $lineEnding
+            if ($hasBom) { $output = [char]0xFEFF + $output }
+            GenXdev\Write-TextFileAtomic -FilePath $readmePath -Data $output
+        }
 
         # open in vscode if requested
         if ($Code) {
@@ -696,85 +754,34 @@ function Add-LineToREADME {
 
         # show modified section if requested
         if ($Show) {
-            $sectionLines = [System.Collections.Generic.List[string]]::new()
 
-            $inSection = $false
-            foreach ($readmeLine in [IO.File]::ReadAllLines($readmePath)) {
-                if ($readmeLine.StartsWith($Section)) {
-                    $inSection = $true
-                    continue
-                }
-                if ($inSection) {
-                    $sectionLevel = ($Section -replace '^([#]+).*$', '$1').Length
-                    if ($readmeLine.StartsWith('#')) {
-                        $lineLevel = ($readmeLine -replace '^([#]+).*$', '$1').Length
-                        if ($lineLevel -le $sectionLevel) {
-                            break
-                        }
-                    }
-                    $trimmed = $readmeLine.Trim("`r`n`t ")
-                    if ($trimmed) {
-                        $null = $sectionLines.Add($trimmed)
-                    }
-                }
+            $showBounds = FindSectionBounds $lines $fence $Section
+            $displayBlocks = if ($null -ne $showBounds) {
+                $showEnd = FindSectionEnd $lines $fence $showBounds.Start `
+                    $sectionLevel
+                ParseBlocks $lines $fence $showBounds.Start $showEnd
             }
+            else { @() }
 
             # Filter by completion status if requested
             if ($OnlyCompleted) {
-                $sectionLines = [System.Collections.Generic.List[string]](
-                    @($sectionLines | Microsoft.PowerShell.Core\Where-Object { $_ -match '^\s*-\s*☒' })
-                )
+                $displayBlocks = @($displayBlocks | Microsoft.PowerShell.Core\Where-Object {
+                        (IsItemHeader $_.Lines[0]) -and ($_.Lines[0] -match '☒')
+                    })
             }
             elseif ($ExcludeCompleted) {
-                $sectionLines = [System.Collections.Generic.List[string]](
-                    @($sectionLines | Microsoft.PowerShell.Core\Where-Object { $_ -match '^\s*-\s*☐' })
-                )
+                $displayBlocks = @($displayBlocks | Microsoft.PowerShell.Core\Where-Object {
+                        -not ((IsItemHeader $_.Lines[0]) -and
+                            ($_.Lines[0] -match '☒'))
+                    })
             }
 
-            # Sort the collected lines
-            if ($SortByDate) {
-                $sectionLines = [System.Collections.Generic.List[string]](
-                    [System.Linq.Enumerable]::ToList(
-                        [System.Linq.Enumerable]::OrderBy(
-                            $sectionLines,
-                            [System.Func[string,string]] {
-                                param($ln)
-                                if ($ln -match '(\d{8})\s*-->') {
-                                    $matches[1]
-                                } else {
-                                    if ($Ascending) { '00000000' } else { '99999999' }
-                                }
-                            }
-                        )
-                    )
-                )
-                if (-not $Ascending) {
-                    $sectionLines.Reverse()
-                }
-            } else {
-                $sectionLines = [System.Collections.Generic.List[string]](
-                    [System.Linq.Enumerable]::ToList(
-                        [System.Linq.Enumerable]::OrderBy(
-                            $sectionLines,
-                            [System.Func[string,int]] {
-                                param($ln)
-                                if ($ln -match '\[P(-?\d+)\]') {
-                                    [int]$matches[1]
-                                } else { 0 }
-                            }
-                        )
-                    )
-                )
-                if (-not $Ascending) {
-                    $sectionLines.Reverse()
-                }
-            }
+            $displayBlocks = SortBlocks $displayBlocks `
+                $SortByDate.IsPresent $Ascending.IsPresent
 
-            # Apply -First limit (only to output, not file)
-            if ($First -gt 0 -and $sectionLines.Count -gt $First) {
-                $sectionLines = [System.Collections.Generic.List[string]](
-                    $sectionLines.GetRange(0, $First)
-                )
+            # Apply -First limit (only to output, not to the file)
+            if ($First -gt 0 -and $displayBlocks.Count -gt $First) {
+                $displayBlocks = @($displayBlocks[0..($First - 1)])
             }
 
             $ansiColorStart = [char]27 + '['
@@ -782,9 +789,13 @@ function Add-LineToREADME {
             $ansiBackgroundColorBlue = "${ansiColorStart}44m"
             $ansiColorReset = "${ansiColorStart}0m"
 
+            $renderedBlocks = foreach ($block in $displayBlocks) {
+                $block.Lines -join "`r`n"
+            }
+
             $sectionHeader = $Section.Trim("`r`n`t ")
             "$ansiBackgroundColorBlue${ansiColorYellow}${sectionHeader}${ansiColorReset}`r`n`r`n" +
-                ($sectionLines -join "`r`n`r`n") + "`r`n`r`n"
+            ($renderedBlocks -join "`r`n`r`n") + "`r`n`r`n"
         }
     }
 }

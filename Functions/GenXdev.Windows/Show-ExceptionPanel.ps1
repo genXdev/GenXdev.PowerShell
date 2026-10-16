@@ -42,7 +42,34 @@ function Show-ExceptionPanel {
     $AnsiConsole = [Spectre.Console.AnsiConsole]
     $ExceptionFormats = [Spectre.Console.ExceptionFormats]
 
-    # Write the exception using Spectre's built-in formatting
+
+    $esc = [char]27
+
+    try {
+        if ([System.Console]::WindowHeight) {
+            [System.Console]::Out.Flush()
+            [System.Console]::WriteLine()
+
+            # Primary positioning via System.Console
+            $lastRow = [System.Console]::WindowHeight
+            [System.Console]::SetCursorPosition(0, $lastRow)
+        }
+        else {
+            # ANSI fallback for SSH sessions, non-raw, or redirected stdout
+            # `\n` pushes down past current border line
+            # `$esc[999B` moves cursor down to the physical viewport boundary
+            # `$esc[1G` sets cursor column to position 1 (left-aligned)
+            [System.Console]::Out.Write("`n$esc[999B$esc[1G")
+            [System.Console]::Out.Flush()
+        }
+    }
+    catch {
+        # Catch-all ANSI fallback if System.Console calls throw under SSH/PTY drivers
+        [System.Console]::Out.Write("`n$esc[999B$esc[1G")
+        [System.Console]::Out.Flush()
+    }
+
+    # Write the exception using Spectre
     $AnsiConsole::WriteException(
         $Exception,
         $ExceptionFormats::ShortenEverything -bor $ExceptionFormats::ShowLinks

@@ -1,6 +1,6 @@
 # GenXdev — Cmdlet Reference
 
-Auto-generated cmdlet reference documentation. Last updated: 2026-08-26.
+Auto-generated cmdlet reference documentation. Last updated: 2026-10-16.
 
 ## GenXdev
 
@@ -16,6 +16,7 @@ Auto-generated cmdlet reference documentation. Last updated: 2026-08-26.
 | Command | Aliases | Description |
 |:---|:---|:---|
 | [Get-AILLMSettings](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-AILLMSettings.md) | &nbsp; | Gets the LLM settings for AI operations in GenXdev.AI. |
+| [Get-GenXdevMCPToken](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-GenXdevMCPToken.md) | &nbsp; | Resolves the GenXdev MCP server authentication token. |
 | [Get-SpeechToText](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SpeechToText.md) | &nbsp; | Converts audio files to text using OpenAI's Whisper speech recognition model. |
 | [Get-TextTranslation](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-TextTranslation.md) | translate | Translates text to another language using AI. |
 | [Get-VectorSimilarity](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-VectorSimilarity.md) | &nbsp; | Calculates the cosine similarity between two vectors. |
@@ -235,6 +236,7 @@ Auto-generated cmdlet reference documentation. Last updated: 2026-08-26.
 
 | Command | Aliases | Description |
 |:---|:---|:---|
+| [Get-SQLServerConnection](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerConnection.md) | getsqlconnection, newsqlconnection | Opens a SQL Server connection that the caller owns. |
 | [Get-SQLServerSchema](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerSchema.md) | &nbsp; | Retrieves the complete schema information from a SQL Server database. |
 | [Get-SQLServerTableColumnData](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerTableColumnData.md) | &nbsp; | Retrieves data from a specific column in a SQL database table. |
 | [Get-SQLServerTableData](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerTableData.md) | &nbsp; | Retrieves data from a SQL database table with optional record limiting. |
@@ -246,6 +248,7 @@ Auto-generated cmdlet reference documentation. Last updated: 2026-08-26.
 | [Get-SQLServerViews](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerViews.md) | &nbsp; | Retrieves a list of views from a SQL Server database. |
 | [Get-SQLServerViewSchema](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLServerViewSchema.md) | &nbsp; | Retrieves the SQL schema definition for a SQL Server view. |
 | [Invoke-SQLServerQuery](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLServerQuery.md) | &nbsp; | Executes one or more SQL queries against a SQL Server database with transaction support. |
+| [Invoke-SQLServerScriptFile](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLServerScriptFile.md) | &nbsp; | Executes SQL script files against a SQL Server database, batch by batch. |
 | [Invoke-SSMS](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SSMS.md) | ssms, sqlservermanagementstudio | Executes SQL Server database queries with support for parameters and transactions. |
 | [New-SQLServerDatabase](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/New-SQLServerDatabase.md) | nsqldb | Creates a new SQL Server database. |
 
@@ -469,6 +472,7 @@ Auto-generated cmdlet reference documentation. Last updated: 2026-08-26.
 | [EnsureDockerDesktop](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/EnsureDockerDesktop.md) | &nbsp; | Ensures Docker Desktop is installed and available for containerization operations. |
 | [EnsureFFMPEG](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/EnsureFFMPEG.md) | &nbsp; | Ensures FFmpeg is installed and available on the PATH. |
 | [EnsureGithubCLI](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/EnsureGithubCLI.md) | &nbsp; | Ensures GitHub CLI is properly installed and configured on the system. |
+| [EnsureNuGetCli](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/EnsureNuGetCli.md) | &nbsp; | Ensures the NuGet CLI is installed and available. |
 | [EnsurePaintNet](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/EnsurePaintNet.md) | &nbsp; | Ensures Paint.NET is properly installed and accessible on the system. |
 | [EnsurePester](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/EnsurePester.md) | &nbsp; | Ensures Pester testing framework is available for use. |
 | [EnsurePlaywright](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/EnsurePlaywright.md) | &nbsp; | Ensures the Playwright .NET assembly and browser binaries are available. |
@@ -516,7 +520,6 @@ Auto-generated cmdlet reference documentation. Last updated: 2026-08-26.
 | [Set-BrowserVideoFullscreen](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Set-BrowserVideoFullscreen.md) | fsvideo | Maximizes the first video element found in the current browser tab. |
 | [Set-WebbrowserTabLocation](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Set-WebbrowserTabLocation.md) | lt, Nav | Navigates the current webbrowser tab to a specified URL. |
 | [Stop-WebbrowserVideos](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Stop-WebbrowserVideos.md) | wbsst, ssst, wbvideostop | Pauses video playback in all active browser sessions. |
-| [Unprotect-WebbrowserTab](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Unprotect-WebbrowserTab.md) | wbctrl | Takes control of a selected web browser tab for interactive manipulation. |
 
 ---
 

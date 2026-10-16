@@ -8,6 +8,14 @@ This function processes tool calls by validating arguments, filtering parameters
 and executing callbacks with proper confirmation handling. It supports both script
 block and command info callbacks.
 
+Every exposed cmdlet advertises the output stream switch that
+ConvertTo-LLMOpenAIApiFunctionDefinition adds to its schema. That switch is
+consumed here and is never passed on to the callback. With it, the verbose,
+information and warning streams travel back next to the output; without it, only
+errors do, which are always returned. Json output is wrapped so every stream has
+its own named property, text output has the streams appended as labelled
+sections.
+
 .LICENSE
 Copyright (C) 2026 René Vaessen / GenXdev
 
@@ -112,6 +120,133 @@ function Invoke-CommandFromToolCall {
         $result.FilteredArguments = [hashtable] @{}
         $result.ExposedCmdLet = $null
         $result.Error = $null
+
+        # convert captured stream records into plain message strings
+        function convertRecordMessages {
+            param([System.Collections.Generic.List[object]] $Records)
+
+            return , @($Records | Microsoft.PowerShell.Core\ForEach-Object {
+
+                    if ($PSItem -is [System.Management.Automation.InformationRecord]) {
+                        "$($PSItem.MessageData)"
+                    }
+                    elseif ($PSItem -is [System.Management.Automation.ErrorRecord]) {
+                        $PSItem.Exception.Message
+                    }
+                    else {
+                        $PSItem.Message
+                    }
+                })
+        }
+
+        # invoke a callback, keeping its output clean and capturing what it writes
+        function invokeToolCallCallback {
+            param(
+                [object] $Callback,
+                [hashtable] $Arguments,
+                [bool] $IncludeAllOutputStreams = $false
+            )
+
+            $informationRecords = [System.Collections.Generic.List[object]]::new()
+            $warningRecords = [System.Collections.Generic.List[object]]::new()
+            $verboseRecords = [System.Collections.Generic.List[object]]::new()
+            $errorRecords = [System.Collections.Generic.List[object]]::new()
+
+            # sort each record the callback writes into its own stream list
+            $classifyStreamRecord = {
+
+                if ($PSItem -is [System.Management.Automation.InformationRecord]) {
+                    $informationRecords.Add($PSItem)
+                }
+                elseif ($PSItem -is [System.Management.Automation.WarningRecord]) {
+                    $warningRecords.Add($PSItem)
+                }
+                elseif ($PSItem -is [System.Management.Automation.VerboseRecord]) {
+                    $verboseRecords.Add($PSItem)
+                }
+                elseif ($PSItem -is [System.Management.Automation.ErrorRecord]) {
+                    $errorRecords.Add($PSItem)
+                }
+                else {
+                    $PSItem
+                }
+            }
+
+            $oldVerbosePreference = $VerbosePreference
+            $oldWarningPreference = $WarningPreference
+            $oldInformationPreference = $InformationPreference
+            $oldErrorActionPreference = $ErrorActionPreference
+            $VerbosePreference = 'Continue'
+            $WarningPreference = 'Continue'
+            $InformationPreference = 'Continue'
+
+            # the errors a callback writes have to reach the caller, so only Stop and
+            # Continue may govern it. SilentlyContinue, Inquire or Break would hide
+            # them, block on them, or interrupt the run, so they are coerced.
+            $ErrorActionPreference = if ($oldErrorActionPreference -in 'Stop', 'Continue') {
+                $oldErrorActionPreference
+            }
+            else {
+                'Continue'
+            }
+
+            $callbackOutput = $null
+
+            # a forced ErrorAction may only be Stop or Continue, since anything else
+            # would hide the errors this contract exists to return
+            if ($Arguments.ContainsKey('ErrorAction')) {
+
+                $requestedErrorAction = "$($Arguments['ErrorAction'])"
+
+                if ($requestedErrorAction -notin 'Stop', 'Continue') {
+
+                    Microsoft.PowerShell.Utility\Write-Verbose (
+                        "Coercing ErrorAction '${requestedErrorAction}' to Continue " +
+                        'for the callback.')
+
+                    $Arguments['ErrorAction'] = 'Continue'
+                }
+            }
+
+            try {
+                if ($IncludeAllOutputStreams) {
+
+                    # the caller asked for the diagnostics, so keep every stream
+                    $callbackOutput = &$Callback @Arguments 2>&1 3>&1 4>&1 6>&1 |
+                        Microsoft.PowerShell.Core\ForEach-Object $classifyStreamRecord
+                }
+                else {
+
+                    # only errors travel back, the other streams stay where they belong
+                    $callbackOutput = &$Callback @Arguments 2>&1 |
+                        Microsoft.PowerShell.Core\ForEach-Object $classifyStreamRecord
+                }
+            }
+            catch {
+                $errorRecords.Add([System.Management.Automation.ErrorRecord]::new(
+                        $PSItem.Exception,
+                        'ToolCallExecutionError',
+                        [System.Management.Automation.ErrorCategory]::OperationStopped,
+                        $null))
+            }
+            finally {
+                $VerbosePreference = $oldVerbosePreference
+                $WarningPreference = $oldWarningPreference
+                $InformationPreference = $oldInformationPreference
+                $ErrorActionPreference = $oldErrorActionPreference
+            }
+
+            # errors always travel back, the diagnostic streams only on request
+            $result.Errors = convertRecordMessages $errorRecords
+
+            if ($IncludeAllOutputStreams) {
+                $result.Information = convertRecordMessages $informationRecords
+                $result.Warnings = convertRecordMessages $warningRecords
+                $result.Verbose = convertRecordMessages $verboseRecords
+            }
+
+            $callbackOutput
+        }
     }
 
 
@@ -239,6 +374,22 @@ function Invoke-CommandFromToolCall {
                 $result.FilteredArguments."$unfilteredArgumentName" = $unfilteredArgument.Value
             }
 
+            # the output stream switch is consumed here and never reaches the callback
+            $includeAllOutputStreams = $false
+            $outputStreamsParameter = [GenXdev.Helpers.ExposedCmdletDefinition]::OutputStreamsParameterName
+
+            if ($result.FilteredArguments.ContainsKey($outputStreamsParameter)) {
+
+                $outputStreamsValue = $result.FilteredArguments[$outputStreamsParameter]
+
+                # a sloppy caller can send the switch as text, and [bool]'false' is true
+                $includeAllOutputStreams =
+                    ($outputStreamsValue -is [bool] -and $outputStreamsValue) -or
+                    ("$outputStreamsValue" -ieq 'true')
+
+                $null = $result.FilteredArguments.Remove($outputStreamsParameter)
+            }
+
             # check if there are any forced parameters
             $foundCmdlets = @(
                 $ExposedCmdLets |
@@ -318,7 +469,7 @@ function Invoke-CommandFromToolCall {
                     ($result.ExposedCmdLet -and (-not $result.ExposedCmdLet.Confirm))) {
 
                     $filteredArguments = $result.FilteredArguments;
-                    $tmpResult = &$cb @filteredArguments
+                    $tmpResult = invokeToolCallCallback -Callback $cb -Arguments $filteredArguments -IncludeAllOutputStreams $includeAllOutputStreams
                 }
                 else {
 
@@ -356,6 +507,11 @@ function Invoke-CommandFromToolCall {
                     }
 
                     # Add confirmation prompt for tool functions that require it
+                    # queued keystrokes must not approve a tool call on your behalf
+                    if (-not [Console]::IsInputRedirected) {
+                        while ([Console]::KeyAvailable) { $null = [Console]::ReadKey() }
+                    }
+
                     switch ($host.ui.PromptForChoice(
                             'Confirm',
                             "Are you sure you want to ALLOW the LLM to execute: `r`nPS $location> $functionName $parametersLine",
@@ -363,70 +519,7 @@ function Invoke-CommandFromToolCall {
                                 '&Allow',
                                 '&Disallow, reject'), 0)) {
                         0 {
-                            # Create a string builder to capture verbose output (warnings)
-                            $verboseOutput = [System.Text.StringBuilder]::new()
-                            $errorOutput = [System.Text.StringBuilder]::new()
-                            $warningOutput = [System.Text.StringBuilder]::new()
-
-                            # Create a scriptblocks
-                            $verboseScriptBlock = {
-                                param($Message)
-                                $null = $verboseOutput.AppendLine($Message)
-                            }
-                            $errorScriptBlock = {
-                                param($Message)
-                                $null = $errorOutput.AppendLine($Message)
-                            }
-                            $warningScriptBlock = {
-                                param($Message)
-                                $null = $warningOutput.AppendLine($Message)
-                            }
-
-                            # Save the current VerbosePreference and register the temporary handler
-                            $oldVerbosePreference = $VerbosePreference
-                            $oldErrorActionPreference = $ErrorActionPreference
-                            $oldWarningPreference = $WarningPreference
-                            $VerbosePreference = 'Continue'
-                            $null = Microsoft.PowerShell.Utility\Register-EngineEvent -SourceIdentifier 'Verbose' -Action $verboseScriptBlock
-                            $null = Microsoft.PowerShell.Utility\Register-EngineEvent -SourceIdentifier 'Error' -Action $errorScriptBlock
-                            $null = Microsoft.PowerShell.Utility\Register-EngineEvent -SourceIdentifier 'Warning' -Action $warningScriptBlock
-
-                            try {
-                                $tmpResult = &$cb @filteredArguments
-                            }
-                            catch {
-                                $result.ExecutionErrors = $_.Exception.Message
-                                $tmpResult = $null
-                            }
-                            finally {
-                                $null = Microsoft.PowerShell.Utility\Unregister-Event -SourceIdentifier 'Verbose' -ErrorAction SilentlyContinue
-                                $null = Microsoft.PowerShell.Utility\Unregister-Event -SourceIdentifier 'Error' -ErrorAction SilentlyContinue
-                                $null = Microsoft.PowerShell.Utility\Unregister-Event -SourceIdentifier 'Warning' -ErrorAction SilentlyContinue
-                                $VerbosePreference = $oldVerbosePreference
-                                $ErrorActionPreference = $oldErrorActionPreference
-                                $WarningPreference = $oldWarningPreference
-                            }
-
-                            if ($verboseOutput.Length -gt 0) {
-
-                                $warnings = $verboseOutput.ToString().Trim().Split("`n")
-                                $result.Warnings = $warnings
-                            }
-
-                            if (!!$result.ExecutionErrors) {
-
-                                $errorOutput.Append($result.ExecutionErrors)
-                            }
-
-                            if ($errorOutput.Length -gt 0) {
-                                $errors = $errorOutput.ToString().Trim().Split("`n")
-                                $result.Errors = $errors
-                            }
-
-                            if ($warningOutput.Length -gt 0) {
-                                $warnings = $warningOutput.ToString().Trim().Split("`n")
-                                $result.Warnings = $warnings
-                            }
+                            $tmpResult = invokeToolCallCallback -Callback $cb -Arguments $filteredArguments -IncludeAllOutputStreams $includeAllOutputStreams
 
                             break;
                         }
@@ -438,22 +531,59 @@ function Invoke-CommandFromToolCall {
                     }
                 }
 
-                if ($null -eq $tmpResult) {
+                if ($null -eq $tmpResult -and $result.Errors.Count -eq 0) {
+                    $tmpResult = 'null # No output (success, void return)'
+                }
 
-                    if ($result.Errors -and $result.Errors.Count -gt 0) {
+                # whether the callers present this output as text
+                $asText = $ForceAsText -or
+                    ($result.ExposedCmdLet -and
+                    ($result.ExposedCmdLet.OutputText -eq $true))
 
-                        $tmpResult = @{
-                            success  = $false
-                            errors   = $result.Errors
-                            warnings = $result.Warnings
-                            verbose  = $result.Verbose
+                # streams travel with the output, structured for json and appended for text
+                $streamsEnveloped = $false
+
+                if (($result.Errors.Count + $result.Warnings.Count +
+                        $result.Information.Count + $result.Verbose.Count) -gt 0) {
+
+                    if ($asText) {
+
+                        $sections = @()
+
+                        foreach ($stream in @(
+                                @{ Name = 'ERRORS'; Messages = $result.Errors },
+                                @{ Name = 'WARNINGS'; Messages = $result.Warnings },
+                                @{ Name = 'INFORMATION'; Messages = $result.Information },
+                                @{ Name = 'VERBOSE'; Messages = $result.Verbose })) {
+
+                            if ($stream.Messages.Count -gt 0) {
+
+                                $sections += "--- $($stream.Name) ---"
+                                $sections += $stream.Messages
+                            }
                         }
+
+                        $tmpResult = @(@($tmpResult |
+                                    Microsoft.PowerShell.Core\Where-Object {
+                                        $null -ne $PSItem
+                                    }) + $sections)
                     }
                     else {
-                        $tmpResult = 'null # No output (success, void return)'
+
+                        $tmpResult = @{
+                            output      = $tmpResult
+                            errors      = $result.Errors
+                            warnings    = $result.Warnings
+                            information = $result.Information
+                            verbose     = $result.Verbose
+                        }
+
+                        # the envelope itself costs one level of json depth
+                        $streamsEnveloped = $true
                     }
                 }
-                else {
+
+                if ($null -ne $tmpResult) {
 
                     # check if the tmpResult is already a valid JSON string
                     # this can happen if the callback already converts to JSON
@@ -491,9 +621,7 @@ function Invoke-CommandFromToolCall {
 
                                 $jsonDepth = $result.ExposedCmdLet.JsonDepth;
                             }
-                            $asText = $ForceAsText -or
-                                ($result.ExposedCmdLet -and
-                                ($result.ExposedCmdLet.OutputText -eq $true));
+                            if ($streamsEnveloped) { $jsonDepth++ }
                             if ($asText) {
 
                                 $tmpResult = (@($tmpResult) |

@@ -12,7 +12,7 @@ Performs comprehensive checks and setup for Paint.NET:
 - Verifies if Paint.NET is installed and accessible in PATH
 - Installs Paint.NET via WinGet if not present
 - Configures system PATH environment variable
-- Ensures paintdotnet.exe is available for command-line usage
+- Ensures paintDotNet.exe is available for command-line usage
 The function handles all prerequisites and ensures a working Paint.NET installation.
 
 
@@ -94,6 +94,7 @@ This will verify and setup Paint.NET if needed.
 - [EnsureDockerDesktop](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/EnsureDockerDesktop.md)
 - [EnsureFFMPEG](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/EnsureFFMPEG.md)
 - [EnsureGithubCLI](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/EnsureGithubCLI.md)
+- [EnsureNuGetCli](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/EnsureNuGetCli.md)
 - [EnsurePester](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/EnsurePester.md)
 - [EnsurePlaywright](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/EnsurePlaywright.md)
 - [EnsurePSTools](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/EnsurePSTools.md)

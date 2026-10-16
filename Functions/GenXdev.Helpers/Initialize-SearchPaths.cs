@@ -95,7 +95,7 @@ Initializes search paths using a specific workspace folder.
                 ExpandPath(Path.Combine(programFiles, "Google\\Chrome\\Application")),
                 ExpandPath(Path.Combine(programFiles, "Microsoft VS Code\\bin")),
                 ExpandPath(Path.Combine(localAppData, "Programs\\Microsoft VS Code Insiders")),
-                ExpandPath(Path.Combine(programFiles, "dotnet"))
+                ExpandPath(Path.Combine(programFiles, "DotNet"))
             };
 
             foreach (var path in defaultPaths)
@@ -127,7 +127,7 @@ Initializes search paths using a specific workspace folder.
             // Process existing PATH entries
             WriteVerbose("Processing existing PATH environment entries");
             var existingPath = System.Environment.GetEnvironmentVariable("Path") ?? "";
-            var existingPaths = existingPath.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+            var existingPaths = existingPath.Split([';'], StringSplitOptions.RemoveEmptyEntries);
 
             foreach (var path in existingPaths)
             {

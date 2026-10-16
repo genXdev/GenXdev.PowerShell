@@ -25,8 +25,8 @@ namespace GenXdev.Helpers
         public const int SWP_NOMOVE = 0x0002;
         public const int SWP_NOSIZE = 0x0001;
         public const int SWP_NOZORDER = 0x0004;
-        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
-        private static readonly IntPtr HWND_NOTOPMOST = new IntPtr(-2);
+        private static readonly IntPtr HWND_TOPMOST = new(-1);
+        private static readonly IntPtr HWND_NOTOPMOST = new(-2);
         [DllImport("gdi32.dll")]
         public static extern int GetDeviceCaps(IntPtr hdc, int nIndex);
 
@@ -83,8 +83,8 @@ namespace GenXdev.Helpers
         /// </summary>
         private const int SWP_NOMOVE = 0x0002;
         private const int SWP_NOSIZE = 0x0001;
-        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
-        private static readonly IntPtr HWND_NOTOPMOST = new IntPtr(-2);
+        private static readonly IntPtr HWND_TOPMOST = new(-1);
+        private static readonly IntPtr HWND_NOTOPMOST = new(-2);
 
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool SetWindowPos(
@@ -159,14 +159,14 @@ namespace GenXdev.Helpers
             Title = title;
 
             // Initialize string builder for window class name retrieval
-            StringBuilder stringBuilder = new StringBuilder(256);
+            StringBuilder stringBuilder = new(256);
             GetClassName(handle, stringBuilder, stringBuilder.Capacity);
             WindowType = GetWindowClass(stringBuilder.ToString());
             WindowClassName = stringBuilder.ToString();
 
             // Initialize children collection and enumerate child windows
-            Children = new List<WindowObj>();
-            ArrayList handles = new ArrayList();
+            Children = [];
+            ArrayList handles = [];
             EnumedWindow childProc = GetWindowHandle;
 
             EnumChildWindows(handle, childProc, handles);
@@ -175,17 +175,19 @@ namespace GenXdev.Helpers
                 // Get capacity for child window text
                 int capacityChild = GetWindowTextLength(handle) * 2;
 
-                StringBuilder stringBuilderChild = new StringBuilder(capacityChild);
+                StringBuilder stringBuilderChild = new(capacityChild);
                 GetWindowText(handle, stringBuilder, stringBuilderChild.Capacity);
 
                 // Get class name for child window
-                StringBuilder stringBuilderChild2 = new StringBuilder(256);
+                StringBuilder stringBuilderChild2 = new(256);
                 GetClassName(handle, stringBuilderChild2, stringBuilderChild2.Capacity);
 
                 // Create child window object
-                WindowObj win = new WindowObj(item, stringBuilder.ToString());
-                win.WindowClassName = stringBuilderChild2.ToString();
-                win.WindowType = GetWindowClass(stringBuilderChild2.ToString());
+                WindowObj win = new(item, stringBuilder.ToString())
+                {
+                    WindowClassName = stringBuilderChild2.ToString(),
+                    WindowType = GetWindowClass(stringBuilderChild2.ToString())
+                };
                 Children.Add(win);
             }
         }
@@ -325,7 +327,7 @@ namespace GenXdev.Helpers
         public static WindowObj GetFocusedWindow()
         {
             // Get handle of foreground window
-            var sb = new StringBuilder();
+            _ = new StringBuilder();
             var handle = GetForegroundWindow();
 
             // Return window object with title
@@ -344,7 +346,7 @@ namespace GenXdev.Helpers
         {
             // Get current processes
             IEnumerable<Process> currentProcesses = Process.GetProcesses();
-            ICollection<WindowObj> windows = new List<WindowObj>();
+            ICollection<WindowObj> windows = [];
             int counter = 0;
 
             // Try multiple times if needed
@@ -378,8 +380,8 @@ namespace GenXdev.Helpers
         public static IEnumerable<WindowObj> GetMainWindow(Process p, int attempts = 1, int waitInterval = 1000)
         {
             // Get current processes
-            IEnumerable<Process> currentProcesses = Process.GetProcesses();
-            ICollection<WindowObj> windows = new List<WindowObj>();
+            _ = Process.GetProcesses();
+            ICollection<WindowObj> windows = [];
             int counter = 0;
 
             // Try multiple times if needed
@@ -406,7 +408,7 @@ namespace GenXdev.Helpers
 
                 // Wait and refresh process list
                 System.Threading.Thread.Sleep(waitInterval);
-                currentProcesses = Process.GetProcesses();
+                _ = Process.GetProcesses();
                 counter++;
             }
 
@@ -424,8 +426,8 @@ namespace GenXdev.Helpers
         public static IEnumerable<WindowObj> GetMainWindow(IntPtr windowHandle, int attempts = 1, int waitInterval = 1000)
         {
             // Get current processes
-            IEnumerable<Process> currentProcesses = Process.GetProcesses();
-            ICollection<WindowObj> windows = new List<WindowObj>();
+            _ = Process.GetProcesses();
+            ICollection<WindowObj> windows = [];
 
             // Create window object if handle is valid
             if (windowHandle != IntPtr.Zero)
@@ -482,7 +484,7 @@ namespace GenXdev.Helpers
         {
             // Get current processes
             IEnumerable<Process> currentProcesses = Process.GetProcesses();
-            ICollection<WindowObj> windows = new List<WindowObj>();
+            ICollection<WindowObj> windows = [];
             int counter = 0;
 
             // Try multiple times if needed
@@ -649,7 +651,7 @@ namespace GenXdev.Helpers
         /// <param name="Y">New Y coordinate of the current windows</param>
         public bool Move(int X, int Y)
         {
-            RectStruct rect = new RectStruct();
+            RectStruct rect = new();
             GetWindowRect(this.Handle, ref rect);
 
             rect.Width = rect.Right - rect.Left + Amount;
@@ -664,7 +666,7 @@ namespace GenXdev.Helpers
         /// <summary>Return the position of the windows as X, Y coordinates</summary>
         public Point Position()
         {
-            RectStruct rect = new RectStruct();
+            RectStruct rect = new();
             GetWindowRect(this.Handle, ref rect);
 
             return new Point(rect.Left, rect.Top);
@@ -727,7 +729,7 @@ namespace GenXdev.Helpers
         /// <summary>Return the Size of the windows as width, height coordinates</summary>
         public Size Size()
         {
-            RectStruct rect = new RectStruct();
+            RectStruct rect = new();
             GetWindowRect(this.Handle, ref rect);
 
             rect.Width = rect.Right - rect.Left + Amount;
@@ -844,60 +846,60 @@ namespace GenXdev.Helpers
             /// <summary>
             /// Activates the window and displays it as a maximized window.
             /// </summary>
-            ShowMaximized = 3,
+            ShowMaximized = 4,
             /// <summary>
             /// Displays a window in its most recent size and position. This value
             /// is similar to <see cref="Win32.ShowWindowCommand.Normal"/>, except
             /// the window is not activated.
             /// </summary>
-            ShowNoActivate = 4,
+            ShowNoActivate = 5,
             /// <summary>
             /// Activates the window and displays it in its current size and position.
             /// </summary>
-            Show = 5,
+            Show = 6,
             /// <summary>
             /// Minimizes the specified window and activates the next top-level
             /// window in the Z order.
             /// </summary>
-            Minimize = 6,
+            Minimize = 7,
             /// <summary>
             /// Displays the window as a minimized window. This value is similar to
             /// <see cref="Win32.ShowWindowCommand.ShowMinimized"/>, except the
             /// window is not activated.
             /// </summary>
-            ShowMinNoActive = 7,
+            ShowMinNoActive = 8,
             /// <summary>
             /// Displays the window in its current size and position. This value is
             /// similar to <see cref="Win32.ShowWindowCommand.Show"/>, except the
             /// window is not activated.
             /// </summary>
-            ShowNA = 8,
+            ShowNA = 9,
             /// <summary>
             /// Activates and displays the window. If the window is minimized or
             /// maximized, the system restores it to its original size and position.
             /// An application should specify this flag when restoring a minimized window.
             /// </summary>
-            Restore = 9,
+            Restore = 10,
             /// <summary>
             /// Sets the show state based on the SW_* value specified in the
             /// STARTUPINFO structure passed to the CreateProcess function by the
             /// program that started the application.
             /// </summary>
-            ShowDefault = 10,
+            ShowDefault = 11,
             /// <summary>
             ///  <b>Windows 2000/XP:</b> Minimizes a window, even if the thread
             /// that owns the window is not responding. This flag should only be
             /// used when minimizing windows from a different thread.
             /// </summary>
-            ForceMinimize = 11
+            ForceMinimize = 12
         }
-        private string GetWindowClass(string windowClass)
+        private static string GetWindowClass(string windowClass)
         {
-            List<string> values = new List<string>(){
+            List<string> values = [
                 "ComboLBox","DDEMLEvent","Message","#32768",
                 "#32769","#32770","#32771","#32772","Button","Edit","ListBox","MDIClient",
                 "ScrollBar","Static",""
-            };
+            ];
 
             if (windowClass == "#32768")
                 return "Menu";
@@ -967,7 +969,7 @@ namespace GenXdev.Helpers
         /// <returns>A WindowState object containing the window's current state</returns>
         public WindowState CaptureState()
         {
-            RectStruct rect = new RectStruct();
+            RectStruct rect = new();
             GetWindowRect(Handle, ref rect);
 
             return new WindowState
@@ -1101,11 +1103,13 @@ namespace GenXdev.Helpers
             Move(x, y);
         }
 
-        private WpfScreenHelper.Screen ScreenFromPoint(Point point)
+        private static WpfScreenHelper.Screen ScreenFromPoint(Point point)
         {
-            var p = new System.Windows.Point();
-            p.X = point.X;
-            p.Y = point.Y;  
+            var p = new System.Windows.Point
+            {
+                X = point.X,
+                Y = point.Y
+            };
 
             return WpfScreenHelper.Screen.FromPoint(p);
         }
@@ -1313,7 +1317,7 @@ namespace GenXdev.Helpers
             return MoveWindow(Handle, x, y, width, height, true);
         }
 
-        private WpfScreenHelper.Screen ScreenFromHandle(IntPtr handle)
+        private static WpfScreenHelper.Screen ScreenFromHandle(IntPtr handle)
         {
             return WpfScreenHelper.Screen.FromHandle(handle);
         }
@@ -1352,7 +1356,7 @@ namespace GenXdev.Helpers
 
             // Get all available screens
             var allScreens = WpfScreenHelper.Screen.AllScreens.ToList();
-            WpfScreenHelper.Screen targetScreen = null;
+            WpfScreenHelper.Screen targetScreen;
 
             // Determine target monitor
             if (monitorIndex == 0)
@@ -1480,8 +1484,7 @@ namespace GenXdev.Helpers
             // Try to get process name as additional check
             try
             {
-                uint processId = 0;
-                GetWindowThreadProcessId(Handle, out processId);
+                GetWindowThreadProcessId(Handle, out uint processId);
                 if (processId != 0)
                 {
                     var process = System.Diagnostics.Process.GetProcessById((int)processId);
@@ -1895,8 +1898,7 @@ namespace GenXdev.Helpers
             {
                 try
                 {
-                    uint processId = 0;
-                    GetWindowThreadProcessId(Handle, out processId);
+                    GetWindowThreadProcessId(Handle, out uint processId);
                     return Process.GetProcessById((int)processId);
                 }
                 catch
@@ -1980,15 +1982,11 @@ namespace GenXdev.Helpers
         {
             try
             {
-                using (var searcher = new System.Management.ManagementObjectSearcher(
-                    $"SELECT ParentProcessId FROM Win32_Process WHERE ProcessId = {processId}"))
-                {
-                    using (var results = searcher.Get())
-                    {
-                        var result = results.Cast<System.Management.ManagementObject>().FirstOrDefault();
-                        return result != null ? Convert.ToInt32(result["ParentProcessId"]) : 0;
-                    }
-                }
+                using var searcher = new System.Management.ManagementObjectSearcher(
+                    $"SELECT ParentProcessId FROM Win32_Process WHERE ProcessId = {processId}");
+                using var results = searcher.Get();
+                var result = results.Cast<System.Management.ManagementObject>().FirstOrDefault();
+                return result != null ? Convert.ToInt32(result["ParentProcessId"]) : 0;
             }
             catch
             {

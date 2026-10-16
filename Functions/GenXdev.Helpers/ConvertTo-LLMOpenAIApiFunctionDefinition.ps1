@@ -209,6 +209,13 @@ function ConvertTo-LLMOpenAIApiFunctionDefinition {
                     $propertiesTable[$param.Name] = $propDef
                 }
 
+                # every exposed cmdlet advertises the stream switch, so the caller
+                # decides per tool call whether the diagnostic streams come back
+                $propertiesTable[[GenXdev.Helpers.ExposedCmdletDefinition]::OutputStreamsParameterName] = @{
+                    type        = 'boolean'
+                    description = [GenXdev.Helpers.ExposedCmdletDefinition]::OutputStreamsParameterDescription
+                }
+
                 # Function-level description: prefer the explicit
                 # Description from ExposedCmdletDefinition, then fall
                 # back to Get-CmdletMetaData's Description/Synopsis.

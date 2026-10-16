@@ -752,8 +752,27 @@ $($exc.InvocationInfo.ScriptStackTrace)
         # execute the tests using pester with configured settings
         Microsoft.PowerShell.Utility\Write-Verbose 'Executing Pester tests'
 
-        # run pester tests and capture results for processing
-        $testResults = Pester\Invoke-Pester -Configuration $config
+        # flag the run so every GenXdev cmdlet can isolate its data stores.
+        # Both a global variable (visible inside the Pester runspace) and an
+        # environment variable (visible process wide, also to other runspaces)
+        # are set, because this replaces inspecting the Pester call stack.
+        Microsoft.PowerShell.Utility\Set-Variable -Name 'GenXdevIsUnderTest' -Value $true `
+            -Scope Global -Force
+        [System.Environment]::SetEnvironmentVariable('GENXDEV_UNDER_TEST', 'true')
+
+        try {
+
+            # run pester tests and capture results for processing
+            $testResults = Pester\Invoke-Pester -Configuration $config
+        }
+        finally {
+
+            # always clear the marker, also when the run is interrupted, so
+            # a later interactive session is never mistaken for a test run
+            Microsoft.PowerShell.Utility\Set-Variable -Name 'GenXdevIsUnderTest' -Value $false `
+                -Scope Global -Force
+            [System.Environment]::SetEnvironmentVariable('GENXDEV_UNDER_TEST', $null)
+        }
 
         # handle failed tests with debugging and AI resolution if requested
         if ($testResults.FailedCount -gt 0) {

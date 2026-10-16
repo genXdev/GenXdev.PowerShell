@@ -60,13 +60,13 @@ information.
             WriteVerbose("Starting child process detection...");
 
             // store current powershell process id for parent chain comparison
-            currentProcessId = Process.GetCurrentProcess().Id;
+            currentProcessId = Environment.ProcessId;
             WriteVerbose($"Current process ID: {currentProcessId}");
 
             // build parent process map for efficient lookups
-            parentMap = new Dictionary<int, int>();
-            ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT ProcessId, ParentProcessId FROM Win32_Process");
-            foreach (ManagementObject obj in searcher.Get())
+            parentMap = [];
+            ManagementObjectSearcher searcher = new("SELECT ProcessId, ParentProcessId FROM Win32_Process");
+            foreach (ManagementObject obj in searcher.Get().Cast<ManagementObject>())
             {
                 int pid = Convert.ToInt32(obj["ProcessId"]);
                 int parentId = Convert.ToInt32(obj["ParentProcessId"]);
