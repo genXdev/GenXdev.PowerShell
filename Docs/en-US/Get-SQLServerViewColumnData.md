@@ -1,6 +1,6 @@
 # Get-SQLServerViewColumnData
 
-> **SubModule:** GenXdev.Data.SqlServer | **Type:** Function | **Aliases:** —
+> **SubModule:** GenXdev.Data.SqlServer | **Type:** Cmdlet | **Aliases:** —
 
 ## Synopsis
 
@@ -8,9 +8,11 @@
 
 ## Description
 
-Executes a SELECT query against a specified SQL view to retrieve data from a
-single column. Supports connecting via either a connection string or database file
-path. Allows limiting the number of returned records or retrieving all records.
+Executes a SELECT query against a specified SQL Server view to retrieve data
+from a single column. Supports connecting via either a connection string or a
+database name with server. Allows limiting the number of returned records or
+retrieving all records. Every row is returned as a hashtable keyed by column
+name.
 
 
 ## Syntax
@@ -38,19 +40,20 @@ Get-SQLServerViewColumnData -ViewName <String> -ColumnName <String> [[-Count] <I
 ## Examples
 
 
-
 ```powershell
-Get-SQLServerViewColumnData -DatabaseFilePath "C:\MyDB.sqlite" `
-    -ViewName "CustomersView" `
-    -ColumnName "Email" `
-    -Count 50
+Get-SQLServerViewColumnData -DatabaseName "tempdb" `
+    -ViewName "CustomersView" -ColumnName "Email" -Count 50
 ```
 
+Returns the Email value of at most 50 rows in the view.
 
 
 ```powershell
-Get-SQLServerViewColumnData "C:\MyDB.sqlite" "CustomersView" "Email"
+Get-SQLServerViewColumnData -DatabaseName "tempdb" `
+    -ViewName "CustomersView" -ColumnName "Email" -Count -1
 ```
+
+Returns the Email value of every row in the view.
 
 ## Parameter Details
 
@@ -94,7 +97,7 @@ Get-SQLServerViewColumnData "C:\MyDB.sqlite" "CustomersView" "Email"
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 1 |
-| **Default value** | `'localhost'` |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |
@@ -140,7 +143,7 @@ Get-SQLServerViewColumnData "C:\MyDB.sqlite" "CustomersView" "Email"
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 4 |
-| **Default value** | `100` |
+| **Default value** | `0` |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |

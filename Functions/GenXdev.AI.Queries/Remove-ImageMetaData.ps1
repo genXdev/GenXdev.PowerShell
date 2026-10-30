@@ -361,8 +361,6 @@ function Remove-ImageMetaData {
     )
 
     begin {
-
-
         # copy identical parameter values for language retrieval
         $params = GenXdev\Copy-IdenticalParamValues `
             -BoundParameters $PSBoundParameters `

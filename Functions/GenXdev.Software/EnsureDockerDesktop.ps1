@@ -374,8 +374,6 @@ function EnsureDockerDesktop {
         # verify if docker desktop executable is available in current session
         if (@(Microsoft.PowerShell.Core\Get-Command 'docker.exe' `
                     -ErrorAction SilentlyContinue).Length -eq 0) {
-
-
             # define common docker installation paths for system and user
             # installs
             $dockerPaths = @(
@@ -430,8 +428,6 @@ function EnsureDockerDesktop {
                         ('Install Docker Desktop and required features, ' +
                         'might need multiple reboots, just repeat your ' +
                         'last command until fully installed.'))) {
-
-
                     # verify administrative privileges are available
                     if (-not (GenXdev\CurrentUserHasElevatedRights)) {
 

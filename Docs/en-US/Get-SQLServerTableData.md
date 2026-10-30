@@ -1,6 +1,6 @@
 # Get-SQLServerTableData
 
-> **SubModule:** GenXdev.Data.SqlServer | **Type:** Function | **Aliases:** —
+> **SubModule:** GenXdev.Data.SqlServer | **Type:** Cmdlet | **Aliases:** —
 
 ## Synopsis
 
@@ -8,9 +8,10 @@
 
 ## Description
 
-This function queries data from a SQL database table using either a connection
-string or database file path. It provides flexibility in connecting to the
-database and controlling the amount of data retrieved through the Count parameter.
+This command queries data from a SQL Server table using either a connection
+string or a database name with server. It provides flexibility in connecting to
+the database and controlling the amount of data retrieved through the Count
+parameter. Every row is returned as a hashtable keyed by column name.
 
 
 ## Syntax
@@ -37,16 +38,19 @@ Get-SQLServerTableData -TableName <String> [[-Count] <Int32>] [<CommonParameters
 ## Examples
 
 
-
 ```powershell
-Get-SQLServerTableData -DatabaseFilePath "C:\data\users.db" -TableName "Employees" -Count 50
+Get-SQLServerTableData -DatabaseName "tempdb" -Server "localhost" `
+    -TableName "Employees" -Count 50
 ```
 
+Returns at most 50 rows from the Employees table.
 
 
 ```powershell
-Get-SQLServerTableData "C:\data\users.db" "Employees"
+Get-SQLServerTableData -DatabaseName "tempdb" -TableName "Employees" -Count -1
 ```
+
+Returns every row from the Employees table.
 
 ## Parameter Details
 
@@ -90,7 +94,7 @@ Get-SQLServerTableData "C:\data\users.db" "Employees"
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 1 |
-| **Default value** | `'localhost'` |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |
@@ -121,7 +125,7 @@ Get-SQLServerTableData "C:\data\users.db" "Employees"
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 3 |
-| **Default value** | `100` |
+| **Default value** | `0` |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |

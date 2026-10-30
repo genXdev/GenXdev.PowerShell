@@ -63,8 +63,6 @@ ResolveInputObjectFileNames -Input "C:\Temp" -File
 #>
 ###############################################################################
 function ResolveInputObjectFileNames  {
-
-
     [CmdletBinding(DefaultParameterSetName = 'Default')]
 
 

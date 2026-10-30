@@ -6,8 +6,6 @@ Pester\Describe 'Remove-DoubleEmptyLines' {
         $inputStr = @"
 
         protected static DataTable CreatePermissionGroupMembershipsAdminSyncOutDataTable() {
-
-
             DataTable dt = new();
 
 

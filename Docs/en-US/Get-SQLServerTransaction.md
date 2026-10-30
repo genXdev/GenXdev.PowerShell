@@ -1,6 +1,6 @@
 # Get-SQLServerTransaction
 
-> **SubModule:** GenXdev.Data.SqlServer | **Type:** Function | **Aliases:** `getsqltx`, `newsqltx`
+> **SubModule:** GenXdev.Data.SqlServer | **Type:** Cmdlet | **Aliases:** `getsqltx`, `newsqltx`
 
 ## Synopsis
 
@@ -20,37 +20,35 @@ Server).
 
 
 ```powershell
-Get-SQLServerTransaction -Connection <Object> [<CommonParameters>]
+Get-SQLServerTransaction -Connection <Microsoft.Data.SqlClient.SqlConnection> [<CommonParameters>]
 
 Get-SQLServerTransaction -ConnectionString <String> [<CommonParameters>]
 
 Get-SQLServerTransaction -DatabaseName <String> [[-Server] <String>] [<CommonParameters>]
 
-Get-SQLServerTransaction [-AutoConsent] [-AutoConsentAllPackages] [-IsolationLevel <String>] [-SessionOnly] [<CommonParameters>]
+Get-SQLServerTransaction [-IsolationLevel <String>] [<CommonParameters>]
 ```
 
 ## Parameters
 
 | Name | Type | Required | Description |
 |:---|:---|:---:|:---|
-| `-Connection` | Object | ✅ | An existing open SqlConnection to begin the<br>transaction on. |
-| `-ConnectionString` | String | ✅ | The connection string to the SQL Server<br>database. |
+| `-Connection` | Microsoft.Data.SqlClient.SqlConnection | ✅ | An existing open SqlConnection to begin the<br>transaction on. |
+| `-ConnectionString` | String | ✅ | The connection string to the SQL database. |
 | `-DatabaseName` | String | ✅ | The name of the SQL Server database. |
 | `-Server` | String | ☐ | The SQL Server instance name. |
 | `-IsolationLevel` | String | ☐ | Transaction isolation level. |
-| `-AutoConsent` | SwitchParameter | ☐ | Automatically consent to this installation<br>type and set persistent flag.. |
-| `-AutoConsentAllPackages` | SwitchParameter | ☐ | Automatically consent to ALL third-party<br>software installations and set persistent<br>flag for SQL Server package. |
-| `-SessionOnly` | SwitchParameter | ☐ | Use alternative settings stored in session<br>for  preferences |
 
 ## Examples
 
 
-
 ```powershell
-$transaction = Get-SQLServerTransaction -Server "localhost" -DatabaseName "MyDatabase"
+$transaction = Get-SQLServerTransaction -Server "localhost" `
+    -DatabaseName "MyDatabase"
 try {
-    Invoke-SQLServerQuery -Transaction $transaction -Queries "INSERT INTO Users..."
-    Invoke-SQLServerQuery -Transaction $transaction -Queries "UPDATE Users..."
+    Invoke-SQLServerQuery -Transaction $transaction `
+        -Queries "INSERT INTO Users VALUES (@name)" `
+        -SqlParameters @{"name"="John"}
     $transaction.Commit()
 } catch {
     $transaction.Rollback()
@@ -60,21 +58,11 @@ try {
 }
 ```
 
-
-
-```powershell
-$transaction = Get-SQLServerTransaction -ConnectionString "Server=localhost;Database=MyDB;Integrated Security=true"
-```
-
-
-
-```powershell
-$transaction = Get-SQLServerTransaction -Server "localhost" -DatabaseName "MyDatabase" -AutoConsentAllPackages
-```
+Runs statements inside a transaction the caller commits or rolls back.
 
 ## Parameter Details
 
-### `-Connection <Object>`
+### `-Connection <Microsoft.Data.SqlClient.SqlConnection>`
 
 > An existing open SqlConnection to begin the transaction on.
 
@@ -92,7 +80,7 @@ $transaction = Get-SQLServerTransaction -Server "localhost" -DatabaseName "MyDat
 
 ### `-ConnectionString <String>`
 
-> The connection string to the SQL Server database.
+> The connection string to the SQL database.
 
 | Property | Value |
 |:---|:---|
@@ -130,7 +118,7 @@ $transaction = Get-SQLServerTransaction -Server "localhost" -DatabaseName "MyDat
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 1 |
-| **Default value** | `'.'` |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |
@@ -141,51 +129,6 @@ $transaction = Get-SQLServerTransaction -Server "localhost" -DatabaseName "MyDat
 ### `-IsolationLevel <String>`
 
 > Transaction isolation level.
-
-| Property | Value |
-|:---|:---|
-| **Required?** | No |
-| **Position?** | Named |
-| **Default value** | `"ReadCommitted"` |
-| **Accept pipeline input?** | False |
-| **Aliases** | *(none)* |
-| **Accept wildcard characters?** | No |
-
-<hr/>
-
-### `-AutoConsent`
-
-> Automatically consent to this installation type and set persistent flag..
-
-| Property | Value |
-|:---|:---|
-| **Required?** | No |
-| **Position?** | Named |
-| **Default value** | *(none)* |
-| **Accept pipeline input?** | False |
-| **Aliases** | *(none)* |
-| **Accept wildcard characters?** | No |
-
-<hr/>
-
-### `-AutoConsentAllPackages`
-
-> Automatically consent to ALL third-party software installations and set persistent flag for SQL Server package.
-
-| Property | Value |
-|:---|:---|
-| **Required?** | No |
-| **Position?** | Named |
-| **Default value** | *(none)* |
-| **Accept pipeline input?** | False |
-| **Aliases** | *(none)* |
-| **Accept wildcard characters?** | No |
-
-<hr/>
-
-### `-SessionOnly`
-
-> Use alternative settings stored in session for  preferences
 
 | Property | Value |
 |:---|:---|

@@ -1,6 +1,6 @@
 # Get-SQLServerTableSchema
 
-> **SubModule:** GenXdev.Data.SqlServer | **Type:** Function | **Aliases:** —
+> **SubModule:** GenXdev.Data.SqlServer | **Type:** Cmdlet | **Aliases:** —
 
 ## Synopsis
 
@@ -8,9 +8,10 @@
 
 ## Description
 
-This function queries the SQL Server database to get detailed schema information for
-a specified table. It uses the SQL Server INFORMATION_SCHEMA.COLUMNS view to return
-column definitions including names, types, nullable status, and default values.
+This command queries the SQL Server database to get detailed schema information
+for a specified table. It uses the SQL Server INFORMATION_SCHEMA.COLUMNS view to
+return column definitions including names, types, nullable status, and default
+values. Every column is returned as a hashtable.
 
 
 ## Syntax
@@ -36,18 +37,21 @@ Get-SQLServerTableSchema -TableName <String> [<CommonParameters>]
 ## Examples
 
 
-
 ```powershell
 Get-SQLServerTableSchema -DatabaseName "mydb" -Server "localhost" `
     -TableName "Users"
 ```
 
+Returns the column definitions of the Users table.
 
 
 ```powershell
-Get-SQLServerTableSchema -ConnectionString "Server=localhost;Database=mydb;Integrated Security=true" `
+Get-SQLServerTableSchema `
+    -ConnectionString "Server=localhost;Database=mydb;Integrated Security=true" `
     -TableName "Products"
 ```
+
+Returns the column definitions using a custom connection string.
 
 ## Parameter Details
 
@@ -91,7 +95,7 @@ Get-SQLServerTableSchema -ConnectionString "Server=localhost;Database=mydb;Integ
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 1 |
-| **Default value** | `'.'` |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |

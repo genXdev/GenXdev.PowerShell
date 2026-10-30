@@ -1,6 +1,6 @@
 # Get-SQLiteTableSchema
 
-> **SubModule:** GenXdev.Data.SQLite | **Type:** Function | **Aliases:** —
+> **SubModule:** GenXdev.Data.SQLite | **Type:** Cmdlet | **Aliases:** —
 
 ## Synopsis
 
@@ -8,9 +8,10 @@
 
 ## Description
 
-This function queries the SQLite database to get detailed schema information for
+This command queries the SQLite database to get detailed schema information for
 a specified table. It uses the SQLite PRAGMA table_info command to return column
-definitions including names, types, nullable status, and default values.
+definitions including names, types, nullable status, and default values. Every
+column is returned as a hashtable.
 
 
 ## Syntax
@@ -35,18 +36,21 @@ Get-SQLiteTableSchema -TableName <String> [<CommonParameters>]
 ## Examples
 
 
-
 ```powershell
 Get-SQLiteTableSchema -DatabaseFilePath "C:\Databases\mydb.sqlite" `
     -TableName "Users"
 ```
 
+Returns the column definitions of the Users table.
 
 
 ```powershell
-Get-SQLiteTableSchema -ConnectionString "Data Source=C:\Databases\mydb.sqlite" `
+Get-SQLiteTableSchema `
+    -ConnectionString "Data Source=C:\Databases\mydb.sqlite" `
     -TableName "Products"
 ```
+
+Returns the column definitions using a custom connection string.
 
 ## Parameter Details
 
@@ -99,6 +103,7 @@ Get-SQLiteTableSchema -ConnectionString "Data Source=C:\Databases\mydb.sqlite" `
 
 ## Related Links
 
+- [Get-SQLiteConnection](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteConnection.md)
 - [Get-SQLiteSchema](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteSchema.md)
 - [Get-SQLiteTableColumnData](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteTableColumnData.md)
 - [Get-SQLiteTableData](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteTableData.md)
@@ -109,5 +114,6 @@ Get-SQLiteTableSchema -ConnectionString "Data Source=C:\Databases\mydb.sqlite" `
 - [Get-SQLiteViews](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteViews.md)
 - [Get-SQLiteViewSchema](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteViewSchema.md)
 - [Invoke-SQLiteQuery](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLiteQuery.md)
+- [Invoke-SQLiteScriptFile](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLiteScriptFile.md)
 - [Invoke-SQLiteStudio](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLiteStudio.md)
 - [New-SQLiteDatabase](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/New-SQLiteDatabase.md)

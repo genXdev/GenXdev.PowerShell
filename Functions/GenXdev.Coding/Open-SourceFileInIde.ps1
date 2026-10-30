@@ -417,8 +417,6 @@ function Open-SourceFileInIde {
                 Microsoft.PowerShell.Core\Wait-Job
         }
         else {
-
-
             # output verbose message about opening file in IDE
             Microsoft.PowerShell.Utility\Write-Verbose (
                 "Opening file in IDE: $Path"

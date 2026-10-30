@@ -1,6 +1,6 @@
 # Get-SQLServerViewData
 
-> **SubModule:** GenXdev.Data.SqlServer | **Type:** Function | **Aliases:** —
+> **SubModule:** GenXdev.Data.SqlServer | **Type:** Cmdlet | **Aliases:** —
 
 ## Synopsis
 
@@ -8,9 +8,10 @@
 
 ## Description
 
-Queries a SQL database view using either a connection string or database file
-path. The function supports limiting the number of returned records and provides
-verbose output for tracking query execution.
+Queries a SQL Server view using either a connection string or a database name
+with server. The command supports limiting the number of returned records and
+provides verbose output for tracking query execution. Every row is returned as
+a hashtable keyed by column name.
 
 
 ## Syntax
@@ -37,18 +38,20 @@ Get-SQLServerViewData -ViewName <String> [[-Count] <Int32>] [<CommonParameters>]
 ## Examples
 
 
-
 ```powershell
-Get-SQLServerViewData -DatabaseFilePath "C:\MyDb.sqlite" `
-    -ViewName "CustomerView" `
-    -Count 50
+Get-SQLServerViewData -DatabaseName "tempdb" `
+    -ViewName "CustomerView" -Count 50
 ```
 
+Returns at most 50 rows from the view.
 
 
 ```powershell
-Get-SQLServerViewData "C:\MyDb.sqlite" "CustomerView"
+Get-SQLServerViewData -DatabaseName "tempdb" `
+    -ViewName "CustomerView" -Count -1
 ```
+
+Returns every row from the view.
 
 ## Parameter Details
 
@@ -92,7 +95,7 @@ Get-SQLServerViewData "C:\MyDb.sqlite" "CustomerView"
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 1 |
-| **Default value** | `'localhost'` |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |
@@ -123,7 +126,7 @@ Get-SQLServerViewData "C:\MyDb.sqlite" "CustomerView"
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 3 |
-| **Default value** | `100` |
+| **Default value** | `0` |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |

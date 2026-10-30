@@ -1,6 +1,6 @@
 # Get-SQLServerSchema
 
-> **SubModule:** GenXdev.Data.SqlServer | **Type:** Function | **Aliases:** —
+> **SubModule:** GenXdev.Data.SqlServer | **Type:** Cmdlet | **Aliases:** —
 
 ## Synopsis
 
@@ -8,10 +8,11 @@
 
 ## Description
 
-This function queries SQL Server system tables and information schema to obtain
-the complete schema definition of a SQL Server database, including tables, views,
-indexes, stored procedures and other database objects. It accepts either a
-connection string or database name with server parameters.
+This command queries SQL Server system tables to obtain the complete schema
+definition of a SQL Server database, including tables, views, stored procedures
+and functions. It accepts either a connection string or database name with
+server parameters. Every object is returned as a hashtable with object_type,
+name, schema_id and object_id.
 
 
 ## Syntax
@@ -34,16 +35,19 @@ Get-SQLServerSchema -DatabaseName <String> [[-Server] <String>] [<CommonParamete
 ## Examples
 
 
-
 ```powershell
 Get-SQLServerSchema -DatabaseName "inventory" -Server "localhost"
 ```
 
+Lists every table, view, procedure and function in the database.
 
 
 ```powershell
-Get-SQLServerSchema -ConnectionString "Server=localhost;Database=inventory;Integrated Security=true;"
+Get-SQLServerSchema `
+    -ConnectionString "Server=localhost;Database=inventory;Integrated Security=true;"
 ```
+
+Lists the schema objects using a custom connection string.
 
 ## Parameter Details
 
@@ -87,7 +91,7 @@ Get-SQLServerSchema -ConnectionString "Server=localhost;Database=inventory;Integ
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 1 |
-| **Default value** | `'localhost'` |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |

@@ -86,8 +86,6 @@ is required.
 ###############################################################################>
 function Get-WireGuardPeers {
 
-
-
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '')]
 

@@ -89,8 +89,6 @@ function EnsurePaintNet {
 
             # Check again after updating PATH
             if (@(Microsoft.PowerShell.Core\Get-Command 'paintDotNet.exe' -ErrorAction SilentlyContinue).Length -eq 0) {
-
-
                 # verify administrative privileges are available
                 if (-not (GenXdev\CurrentUserHasElevatedRights)) {
 

@@ -1,6 +1,6 @@
 # Get-SQLServerTableColumnData
 
-> **SubModule:** GenXdev.Data.SqlServer | **Type:** Function | **Aliases:** —
+> **SubModule:** GenXdev.Data.SqlServer | **Type:** Cmdlet | **Aliases:** —
 
 ## Synopsis
 
@@ -8,11 +8,10 @@
 
 ## Description
 
-This function provides a convenient way to extract data from a single column in a
-SQL database table. It supports two connection methods: direct database file
-path or connection string. The function includes options to limit the number of
-returned records and uses proper SQL query construction for optimal
-performance.
+This command provides a convenient way to extract data from a single column in
+a SQL Server table using either a connection string or a database name with
+server. The command includes options to limit the number of returned records.
+Every row is returned as a hashtable keyed by column name.
 
 
 ## Syntax
@@ -40,19 +39,20 @@ Get-SQLServerTableColumnData -TableName <String> -ColumnName <String> [[-Count] 
 ## Examples
 
 
-
 ```powershell
-Get-SQLServerTableColumnData -DatabaseFilePath "C:\MyDb.sqlite" `
-    -TableName "Employees" `
-    -ColumnName "Email" `
-    -Count 10
+Get-SQLServerTableColumnData -DatabaseName "tempdb" `
+    -TableName "Employees" -ColumnName "Email" -Count 10
 ```
 
+Returns the Email value of at most 10 employees.
 
 
 ```powershell
-Get-SQLServerTableColumnData "C:\MyDb.sqlite" "Employees" "Email"
+Get-SQLServerTableColumnData -DatabaseName "tempdb" `
+    -TableName "Employees" -ColumnName "Email" -Count -1
 ```
+
+Returns the Email value of every employee.
 
 ## Parameter Details
 
@@ -96,7 +96,7 @@ Get-SQLServerTableColumnData "C:\MyDb.sqlite" "Employees" "Email"
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 1 |
-| **Default value** | `'localhost'` |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |
@@ -142,7 +142,7 @@ Get-SQLServerTableColumnData "C:\MyDb.sqlite" "Employees" "Email"
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 4 |
-| **Default value** | `100` |
+| **Default value** | `0` |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |

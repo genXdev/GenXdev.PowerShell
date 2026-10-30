@@ -1,19 +1,51 @@
 Pester\Describe 'Get-SQLServerTransaction' {
 
+    Pester\BeforeDiscovery {
+
+        # -Skip is evaluated during discovery, so the flags it gates on
+        # must be computed here rather than in BeforeAll
+        . "$PSScriptRoot\SqlServerTestHelpers.ps1"
+
+        $script:TestConfiguration = Get-SqlServerTestConfiguration
+        $script:TestServer = $script:TestConfiguration.Server
+        $script:TestConnectionString = $script:TestConfiguration.ConnectionString
+        $script:CanUseServerParameter = $script:TestConfiguration.CanUseServerParameter
+
+        $script:SqlServerAvailable = $false
+        try {
+            $null = GenXdev\Invoke-SQLServerQuery `
+                -ConnectionString $script:TestConnectionString -Queries 'SELECT 1'
+            $script:SqlServerAvailable = $true
+        }
+        catch {
+            Microsoft.PowerShell.Utility\Write-Warning (
+                'SQL Server not available - skipping database tests: ' +
+                $_.Exception.Message)
+        }
+    }
+
     Pester\BeforeAll {
         Microsoft.PowerShell.Utility\Write-Verbose 'Setting up test environment'
         $script:TestTableName = 'TransactionTest_' + (Microsoft.PowerShell.Utility\Get-Random)
-        $script:TestServer = '.'
-        $script:TestConnectionString = "Server=$script:TestServer;Database=tempdb;Integrated Security=true;TrustServerCertificate=true"
+        . "$PSScriptRoot\SqlServerTestHelpers.ps1"
+
+        # run against $env:GENXDEV_SQL_TEST_CONNECTIONSTRING, or the local default
+        $script:TestConfiguration = Get-SqlServerTestConfiguration
+        $script:TestServer = $script:TestConfiguration.Server
+        $script:TestConnectionString = $script:TestConfiguration.ConnectionString
+        $script:CanUseServerParameter = $script:TestConfiguration.CanUseServerParameter
 
         # Check if SQL Server is available
         $script:SqlServerAvailable = $false
         try {
-            GenXdev\Invoke-SQLServerQuery -DatabaseName 'tempdb' -Server $script:TestServer -Queries "SELECT 1"
+            GenXdev\Invoke-SQLServerQuery `
+                -ConnectionString $script:TestConnectionString -Queries "SELECT 1"
             $script:SqlServerAvailable = $true
         }
         catch {
-            Microsoft.PowerShell.Utility\Write-Verbose "SQL Server not available - skipping tests"
+            Microsoft.PowerShell.Utility\Write-Warning (
+                'SQL Server not available - skipping database tests: ' +
+                $_.Exception.Message)
         }
 
         if ($script:SqlServerAvailable) {
@@ -24,7 +56,8 @@ CREATE TABLE tempdb.dbo.${script:TestTableName} (
     Value nvarchar(50)
 )
 "@
-            GenXdev\Invoke-SQLServerQuery -DatabaseName 'tempdb' -Server $script:TestServer -Queries $createTableQuery
+            GenXdev\Invoke-SQLServerQuery `
+                -ConnectionString $script:TestConnectionString -Queries $createTableQuery
         }
     }
 
@@ -33,7 +66,8 @@ CREATE TABLE tempdb.dbo.${script:TestTableName} (
         if ($script:SqlServerAvailable) {
             try {
                 $dropQuery = "IF OBJECT_ID('tempdb.dbo.${script:TestTableName}') IS NOT NULL DROP TABLE tempdb.dbo.${script:TestTableName}"
-                GenXdev\Invoke-SQLServerQuery -DatabaseName 'tempdb' -Server $script:TestServer -Queries $dropQuery
+                GenXdev\Invoke-SQLServerQuery `
+                    -ConnectionString $script:TestConnectionString -Queries $dropQuery
             }
             catch {
                 Microsoft.PowerShell.Utility\Write-Warning "Could not clean up test table: $_"
@@ -41,7 +75,7 @@ CREATE TABLE tempdb.dbo.${script:TestTableName} (
         }
     }
 
-    Pester\It 'Should create transaction using DatabaseName parameter' -Skip:(-not $script:SqlServerAvailable) {
+    Pester\It 'Should create transaction using DatabaseName parameter' -Skip:(-not $script:SqlServerAvailable -or -not $script:CanUseServerParameter) {
         $transaction = GenXdev\Get-SQLServerTransaction -DatabaseName 'tempdb' -Server $script:TestServer
         try {
             $transaction | Pester\Should -Not -BeNullOrEmpty
@@ -49,9 +83,10 @@ CREATE TABLE tempdb.dbo.${script:TestTableName} (
             $transaction.GetType().Name | Pester\Should -Match 'SqlTransaction'
         }
         finally {
-            if ($transaction -and $transaction.Connection.State -eq 'Open') {
-                $transaction.Rollback()
-                $transaction.Connection.Close()
+            $transactionConnection = $transaction.Connection
+            if ($null -ne $transactionConnection) {
+                if ($transactionConnection.State -eq 'Open') { $transaction.Rollback() }
+                $transactionConnection.Close()
             }
         }
     }
@@ -63,14 +98,15 @@ CREATE TABLE tempdb.dbo.${script:TestTableName} (
             $transaction.Connection.State | Pester\Should -Be 'Open'
         }
         finally {
-            if ($transaction -and $transaction.Connection.State -eq 'Open') {
-                $transaction.Rollback()
-                $transaction.Connection.Close()
+            $transactionConnection = $transaction.Connection
+            if ($null -ne $transactionConnection) {
+                if ($transactionConnection.State -eq 'Open') { $transaction.Rollback() }
+                $transactionConnection.Close()
             }
         }
     }
 
-    Pester\It 'Should allow committing transactions' -Skip:(-not $script:SqlServerAvailable) {
+    Pester\It 'Should allow committing transactions' -Skip:(-not $script:SqlServerAvailable -or -not $script:CanUseServerParameter) {
         $transaction = GenXdev\Get-SQLServerTransaction -DatabaseName 'tempdb' -Server $script:TestServer
         try {
             # Insert data within transaction
@@ -84,9 +120,8 @@ CREATE TABLE tempdb.dbo.${script:TestTableName} (
             $result.Count | Pester\Should -Be 1
         }
         finally {
-            if ($transaction -and $transaction.Connection.State -eq 'Open') {
-                $transaction.Connection.Close()
-            }
+            $transactionConnection = $transaction.Connection
+            if ($null -ne $transactionConnection) { $transactionConnection.Close() }
         }
     }
 }

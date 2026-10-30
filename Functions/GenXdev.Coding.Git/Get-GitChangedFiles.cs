@@ -29,7 +29,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/gpl-3.0.txt>.
 Get-GitChangedFiles
 ```
 
-Returns relative paths like .\Modules\GenXdev.AI\3.36.0\README.md
+Returns relative paths like .\Modules\GenXdev.AI\3.37.0\README.md
 
 .EXAMPLE
 ```powershell

@@ -1,6 +1,6 @@
 # New-SQLServerDatabase
 
-> **SubModule:** GenXdev.Data.SqlServer | **Type:** Function | **Aliases:** `nsqldb`
+> **SubModule:** GenXdev.Data.SqlServer | **Type:** Cmdlet | **Aliases:** `nsqldb`
 
 ## Synopsis
 
@@ -10,8 +10,13 @@
 
 Creates a new SQL Server database with the specified name on the specified
 server. Requires appropriate permissions to create databases on the target SQL
-Server instance. If the database already exists, the operation will be skipped.
+Server instance. If the database already exists, the operation is skipped.
 Supports file-based database creation with explicit .mdf/.ldf paths.
+
+A new database gets the same settings the deployment scripts use: compatibility
+level 160, SIMPLE recovery, checksum page verification, simple parameterization,
+a 60 second target recovery time, and the matching database scoped
+configuration.
 
 
 ## Syntax
@@ -21,8 +26,6 @@ Supports file-based database creation with explicit .mdf/.ldf paths.
 New-SQLServerDatabase -DatabaseName <String> [[-Server] <String>] [-DataFilePath <String>] [-DetachAfterCreation] [-LogFilePath <String>] [<CommonParameters>]
 
 New-SQLServerDatabase -ConnectionString <String> [<CommonParameters>]
-
-New-SQLServerDatabase [-AutoConsent] [-AutoConsentAllPackages] [-SessionOnly] [<CommonParameters>]
 ```
 
 ## Parameters
@@ -35,41 +38,23 @@ New-SQLServerDatabase [-AutoConsent] [-AutoConsentAllPackages] [-SessionOnly] [<
 | `-DataFilePath` | String | ☐ | Optional data file path (.mdf) for file-based<br>database creation. |
 | `-LogFilePath` | String | ☐ | Optional log file path (.ldf) for file-based<br>database creation. |
 | `-DetachAfterCreation` | SwitchParameter | ☐ | Detach database after creation (for<br>file-based databases). |
-| `-AutoConsent` | SwitchParameter | ☐ | Automatically consent to this installation<br>type and set persistent flag.. |
-| `-AutoConsentAllPackages` | SwitchParameter | ☐ | Automatically consent to third-party software<br>installation and set persistent flag for SQL<br>Server package. |
-| `-SessionOnly` | SwitchParameter | ☐ | Use alternative settings stored in session<br>for  preferences |
 
 ## Examples
-
 
 
 ```powershell
 New-SQLServerDatabase -DatabaseName "MyNewDatabase" -Server "localhost"
 ```
 
+Creates MyNewDatabase on the local instance.
 
 
 ```powershell
-New-SQLServerDatabase "MyNewDatabase"
+New-SQLServerDatabase -DatabaseName "ImageIndex" `
+    -DataFilePath "C:\Data\ImageIndex.mdf" -DetachAfterCreation
 ```
 
-
-
-```powershell
-New-SQLServerDatabase -DatabaseName "MyDB" -ConnectionString "Server=.;..."
-```
-
-
-
-```powershell
-New-SQLServerDatabase -DatabaseName "ImageIndex" -DataFilePath "C:\Data\ImageIndex.mdf" -DetachAfterCreation
-```
-
-
-
-```powershell
-New-SQLServerDatabase -DatabaseName "MyDB" -Server "." -AutoConsentAllPackages
-```
+Creates a portable file-based database and detaches it again.
 
 ## Parameter Details
 
@@ -97,7 +82,7 @@ New-SQLServerDatabase -DatabaseName "MyDB" -Server "." -AutoConsentAllPackages
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 1 |
-| **Default value** | `'.'` |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |
@@ -161,56 +146,11 @@ New-SQLServerDatabase -DatabaseName "MyDB" -Server "." -AutoConsentAllPackages
 |:---|:---|
 | **Required?** | No |
 | **Position?** | Named |
-| **Default value** | *(none)* |
+| **Default value** | `False` |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |
 | **Parameter set** | DatabaseName |
-
-<hr/>
-
-### `-AutoConsent`
-
-> Automatically consent to this installation type and set persistent flag..
-
-| Property | Value |
-|:---|:---|
-| **Required?** | No |
-| **Position?** | Named |
-| **Default value** | *(none)* |
-| **Accept pipeline input?** | False |
-| **Aliases** | *(none)* |
-| **Accept wildcard characters?** | No |
-
-<hr/>
-
-### `-AutoConsentAllPackages`
-
-> Automatically consent to third-party software  installation and set persistent flag for SQL Server package.
-
-| Property | Value |
-|:---|:---|
-| **Required?** | No |
-| **Position?** | Named |
-| **Default value** | *(none)* |
-| **Accept pipeline input?** | False |
-| **Aliases** | *(none)* |
-| **Accept wildcard characters?** | No |
-
-<hr/>
-
-### `-SessionOnly`
-
-> Use alternative settings stored in session for  preferences
-
-| Property | Value |
-|:---|:---|
-| **Required?** | No |
-| **Position?** | Named |
-| **Default value** | *(none)* |
-| **Accept pipeline input?** | False |
-| **Aliases** | *(none)* |
-| **Accept wildcard characters?** | No |
 
 <hr/>
 

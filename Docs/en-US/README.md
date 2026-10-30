@@ -1,6 +1,6 @@
 # GenXdev — Cmdlet Reference
 
-Auto-generated cmdlet reference documentation. Last updated: 2026-10-16.
+Auto-generated cmdlet reference documentation. Last updated: 2026-10-30.
 
 ## GenXdev
 
@@ -216,6 +216,7 @@ Auto-generated cmdlet reference documentation. Last updated: 2026-10-16.
 
 | Command | Aliases | Description |
 |:---|:---|:---|
+| [Get-SQLiteConnection](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteConnection.md) | &nbsp; | Opens a SQLite connection that the caller owns. |
 | [Get-SQLiteSchema](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteSchema.md) | &nbsp; | Retrieves the complete schema information from a SQLite database. |
 | [Get-SQLiteTableColumnData](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteTableColumnData.md) | &nbsp; | Retrieves data from a specific column in a SQLite database table. |
 | [Get-SQLiteTableData](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteTableData.md) | &nbsp; | Retrieves data from a SQLite database table with optional record limiting. |
@@ -227,6 +228,7 @@ Auto-generated cmdlet reference documentation. Last updated: 2026-10-16.
 | [Get-SQLiteViews](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteViews.md) | &nbsp; | Retrieves a list of views from a SQLite database. |
 | [Get-SQLiteViewSchema](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteViewSchema.md) | &nbsp; | Retrieves the SQL schema definition for a SQLite view. |
 | [Invoke-SQLiteQuery](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLiteQuery.md) | &nbsp; | Executes one or more SQL queries against a SQLite database with transaction support. |
+| [Invoke-SQLiteScriptFile](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLiteScriptFile.md) | &nbsp; | Executes SQL script files against a SQLite database, batch by batch. |
 | [Invoke-SQLiteStudio](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLiteStudio.md) | &nbsp; | Executes SQLite database queries with support for parameters and transactions. |
 | [New-SQLiteDatabase](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/New-SQLiteDatabase.md) | nsqldb | Creates a new SQLite database file. |
 

@@ -1,6 +1,6 @@
 # Get-SQLServerViews
 
-> **SubModule:** GenXdev.Data.SqlServer | **Type:** Function | **Aliases:** —
+> **SubModule:** GenXdev.Data.SqlServer | **Type:** Cmdlet | **Aliases:** —
 
 ## Synopsis
 
@@ -8,10 +8,10 @@
 
 ## Description
 
-Gets all view names from the specified SQL Server database. Returns an array
-of view names that can be used for further database operations. The function
-supports two parameter sets for flexibility: providing either a connection string
-or a database name with server.
+Gets all view names from the specified SQL Server database. Every view is
+returned as a hashtable with a name property, sorted by name. The command
+supports two parameter sets for flexibility: providing either a connection
+string or a database name with server.
 
 
 ## Syntax
@@ -34,16 +34,19 @@ Get-SQLServerViews -DatabaseName <String> [[-Server] <String>] [<CommonParameter
 ## Examples
 
 
-
 ```powershell
 Get-SQLServerViews -DatabaseName "MyDatabase" -Server "localhost"
 ```
 
+Returns every view name in the database.
 
 
 ```powershell
-Get-SQLServerViews -ConnectionString "Server=localhost;Database=MyDatabase;Integrated Security=true;"
+Get-SQLServerViews `
+    -ConnectionString "Server=localhost;Database=MyDatabase;Integrated Security=true;"
 ```
+
+Returns every view name using a custom connection string.
 
 ## Parameter Details
 
@@ -87,7 +90,7 @@ Get-SQLServerViews -ConnectionString "Server=localhost;Database=MyDatabase;Integ
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 1 |
-| **Default value** | `'.'` |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |

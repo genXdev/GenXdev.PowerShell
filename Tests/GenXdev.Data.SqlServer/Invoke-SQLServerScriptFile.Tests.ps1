@@ -1,18 +1,50 @@
 Pester\Describe 'Invoke-SQLServerScriptFile' {
 
+    Pester\BeforeDiscovery {
+
+        # -Skip is evaluated during discovery, so the flags it gates on
+        # must be computed here rather than in BeforeAll
+        . "$PSScriptRoot\SqlServerTestHelpers.ps1"
+
+        $script:TestConfiguration = Get-SqlServerTestConfiguration
+        $script:TestServer = $script:TestConfiguration.Server
+        $script:TestConnectionString = $script:TestConfiguration.ConnectionString
+        $script:CanUseServerParameter = $script:TestConfiguration.CanUseServerParameter
+
+        $script:SqlServerAvailable = $false
+        try {
+            $null = GenXdev\Invoke-SQLServerQuery `
+                -ConnectionString $script:TestConnectionString -Queries 'SELECT 1'
+            $script:SqlServerAvailable = $true
+        }
+        catch {
+            Microsoft.PowerShell.Utility\Write-Warning (
+                'SQL Server not available - skipping database tests: ' +
+                $_.Exception.Message)
+        }
+    }
+
     Pester\BeforeAll {
         $script:testRoot = GenXdev\Expand-Path "$env:TEMP\GenXdev.Data.SqlServer.Tests\" -CreateDirectory
-        $script:TestServer = '.'
+        . "$PSScriptRoot\SqlServerTestHelpers.ps1"
+
+        # run against $env:GENXDEV_SQL_TEST_CONNECTIONSTRING, or the local default
+        $script:TestConfiguration = Get-SqlServerTestConfiguration
+        $script:TestServer = $script:TestConfiguration.Server
+        $script:TestConnectionString = $script:TestConfiguration.ConnectionString
+        $script:CanUseServerParameter = $script:TestConfiguration.CanUseServerParameter
 
         # Check if SQL Server is available
         $script:SqlServerAvailable = $false
         try {
-            $null = GenXdev\Invoke-SQLServerQuery -DatabaseName 'tempdb' `
-                -Server $script:TestServer -Queries 'SELECT 1'
+            $null = GenXdev\Invoke-SQLServerQuery `
+                -ConnectionString $script:TestConnectionString -Queries 'SELECT 1'
             $script:SqlServerAvailable = $true
         }
         catch {
-            Microsoft.PowerShell.Utility\Write-Verbose 'SQL Server not available - skipping database tests'
+            Microsoft.PowerShell.Utility\Write-Warning (
+                'SQL Server not available - skipping database tests: ' +
+                $_.Exception.Message)
         }
     }
 
@@ -113,17 +145,15 @@ INSERT INTO tempdb.dbo.$($script:tableName) (Id) VALUES (2)
 
         try {
             GenXdev\Invoke-SQLServerScriptFile -Name $scriptFile `
-                -DatabaseName 'tempdb' -Server $script:TestServer
+                -ConnectionString $script:TestConnectionString
 
-            $result = GenXdev\Invoke-SQLServerQuery -DatabaseName 'tempdb' `
-                -Server $script:TestServer `
-                -Queries "SELECT COUNT(*) as RowCount FROM tempdb.dbo.$($script:tableName)"
+            $result = GenXdev\Invoke-SQLServerQuery -ConnectionString $script:TestConnectionString `
+                -Queries "SELECT COUNT(*) as [RowCount] FROM tempdb.dbo.$($script:tableName)"
 
             $result.RowCount | Pester\Should -Be 2
         }
         finally {
-            GenXdev\Invoke-SQLServerQuery -DatabaseName 'tempdb' `
-                -Server $script:TestServer `
+            GenXdev\Invoke-SQLServerQuery -ConnectionString $script:TestConnectionString `
                 -Queries ("IF OBJECT_ID('tempdb.dbo.$($script:tableName)') IS NOT NULL " +
                 "DROP TABLE tempdb.dbo.$($script:tableName)")
         }
@@ -144,17 +174,15 @@ GO 3
 
         try {
             GenXdev\Invoke-SQLServerScriptFile -Name $scriptFile `
-                -DatabaseName 'tempdb' -Server $script:TestServer
+                -ConnectionString $script:TestConnectionString
 
-            $result = GenXdev\Invoke-SQLServerQuery -DatabaseName 'tempdb' `
-                -Server $script:TestServer `
-                -Queries "SELECT COUNT(*) as RowCount FROM tempdb.dbo.$($script:tableName)"
+            $result = GenXdev\Invoke-SQLServerQuery -ConnectionString $script:TestConnectionString `
+                -Queries "SELECT COUNT(*) as [RowCount] FROM tempdb.dbo.$($script:tableName)"
 
             $result.RowCount | Pester\Should -Be 3
         }
         finally {
-            GenXdev\Invoke-SQLServerQuery -DatabaseName 'tempdb' `
-                -Server $script:TestServer `
+            GenXdev\Invoke-SQLServerQuery -ConnectionString $script:TestConnectionString `
                 -Queries ("IF OBJECT_ID('tempdb.dbo.$($script:tableName)') IS NOT NULL " +
                 "DROP TABLE tempdb.dbo.$($script:tableName)")
         }
@@ -176,20 +204,18 @@ INSERT INTO tempdb.dbo.$($script:tableName) (Id) VALUES (7)
 
         try {
             GenXdev\Invoke-SQLServerScriptFile -Name $scriptFile `
-                -DatabaseName 'tempdb' -Server $script:TestServer `
+                -ConnectionString $script:TestConnectionString `
                 -ErrorAction SilentlyContinue -ErrorVariable scriptErrors
 
             $scriptErrors.Count | Pester\Should -BeGreaterOrEqual 1
 
-            $result = GenXdev\Invoke-SQLServerQuery -DatabaseName 'tempdb' `
-                -Server $script:TestServer `
-                -Queries "SELECT COUNT(*) as RowCount FROM tempdb.dbo.$($script:tableName)"
+            $result = GenXdev\Invoke-SQLServerQuery -ConnectionString $script:TestConnectionString `
+                -Queries "SELECT COUNT(*) as [RowCount] FROM tempdb.dbo.$($script:tableName)"
 
             $result.RowCount | Pester\Should -Be 1
         }
         finally {
-            GenXdev\Invoke-SQLServerQuery -DatabaseName 'tempdb' `
-                -Server $script:TestServer `
+            GenXdev\Invoke-SQLServerQuery -ConnectionString $script:TestConnectionString `
                 -Queries ("IF OBJECT_ID('tempdb.dbo.$($script:tableName)') IS NOT NULL " +
                 "DROP TABLE tempdb.dbo.$($script:tableName)")
         }
@@ -211,26 +237,55 @@ INSERT INTO tempdb.dbo.$($script:tableName) (Id) VALUES (7)
             [System.Text.UTF8Encoding]::new($false))
 
         try {
-            GenXdev\Invoke-SQLServerQuery -DatabaseName 'tempdb' `
-                -Server $script:TestServer `
+            GenXdev\Invoke-SQLServerQuery -ConnectionString $script:TestConnectionString `
                 -Queries ("CREATE TABLE tempdb.dbo.$($script:tableName) " +
                 '(Id int IDENTITY(1,1), Name nvarchar(50))')
 
             GenXdev\Invoke-SQLServerScriptFile -Name $secondFile, $firstFile `
-                -DatabaseName 'tempdb' -Server $script:TestServer
+                -ConnectionString $script:TestConnectionString
 
-            $result = GenXdev\Invoke-SQLServerQuery -DatabaseName 'tempdb' `
-                -Server $script:TestServer `
+            $result = GenXdev\Invoke-SQLServerQuery -ConnectionString $script:TestConnectionString `
                 -Queries "SELECT Name FROM tempdb.dbo.$($script:tableName) ORDER BY Id"
 
             $result[0].Name | Pester\Should -Be 'second'
             $result[1].Name | Pester\Should -Be 'first'
         }
         finally {
-            GenXdev\Invoke-SQLServerQuery -DatabaseName 'tempdb' `
-                -Server $script:TestServer `
+            GenXdev\Invoke-SQLServerQuery -ConnectionString $script:TestConnectionString `
                 -Queries ("IF OBJECT_ID('tempdb.dbo.$($script:tableName)') IS NOT NULL " +
                 "DROP TABLE tempdb.dbo.$($script:tableName)")
+        }
+    }
+
+    Pester\It 'Reports progress for a parent activity' -Skip:(-not $script:SqlServerAvailable) {
+        $tableName = "Progress_$([System.Guid]::NewGuid().ToString('N'))"
+        $scriptFile = "$script:testRoot\progress_$([System.Guid]::NewGuid()).sql"
+
+        $content = @"
+CREATE TABLE tempdb.dbo.$tableName (Id int)
+GO
+INSERT INTO tempdb.dbo.$tableName (Id) VALUES (1)
+GO
+INSERT INTO tempdb.dbo.$tableName (Id) VALUES (2)
+"@
+        [System.IO.File]::WriteAllText(
+            $scriptFile, $content, [System.Text.UTF8Encoding]::new($false))
+
+        try {
+            { GenXdev\Invoke-SQLServerScriptFile -Name $scriptFile `
+                -ConnectionString $script:TestConnectionString `
+                -ParentProgressId 1 } | Pester\Should -Not -Throw
+
+            $result = GenXdev\Invoke-SQLServerQuery `
+                -ConnectionString $script:TestConnectionString `
+                -Queries "SELECT COUNT(*) as [RowCount] FROM tempdb.dbo.$tableName"
+
+            $result.RowCount | Pester\Should -Be 2
+        }
+        finally {
+            $null = GenXdev\Invoke-SQLServerQuery `
+                -ConnectionString $script:TestConnectionString `
+                -Queries "IF OBJECT_ID('tempdb.dbo.$tableName') IS NOT NULL DROP TABLE tempdb.dbo.$tableName"
         }
     }
 }

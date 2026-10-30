@@ -2,7 +2,7 @@
 # Part of PowerShell module : GenXdev.AI
 # Original cmdlet filename  : Invoke-AILLMSettingsPrompt.Tests.ps1
 # Original author           : René Vaessen / GenXdev
-# Version                   : 3.36.0
+# Version                   : 3.37.0
 ###############################################################################
 
 ###############################################################################
@@ -101,7 +101,7 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
         }
 
         # reusable test provider for ConfigureViaProviderPick tests
-        $script:testProvider = @{
+        $global:GenXdevTestProvider = @{
             DisplayName             = 'TestCorp LLM v1'
             Provider                = 'TestCorp'
             Model                   = 'test-model-v1'
@@ -116,6 +116,14 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
         # Clear the session Global variable set by Set-GenXdevPreferencesDatabasePath
         # in BeforeEach so it cannot leak into the real preference store.
         GenXdev\Set-GenXdevPreferencesDatabasePath -ClearSession
+
+        foreach ($globalName in @(
+                'GenXdevTestPromptQueue', 'GenXdevTestAskQueue',
+                'GenXdevTestProvider', 'GenXdevTestHintProvider')) {
+
+            Microsoft.PowerShell.Utility\Remove-Variable `
+                -Name $globalName -Scope Global -ErrorAction SilentlyContinue
+        }
 
         GenXdev\Remove-AllItems -Confirm:$False $script:testRoot `
             -DeleteFolder -ErrorAction SilentlyContinue
@@ -186,10 +194,13 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
         Pester\It 'P2: Pick single type then cancel at mode returns without error' {
             $q = [System.Collections.Generic.Queue[string]]::new()
             'SimpleIntelligence', '.. Cancel' | Microsoft.PowerShell.Core\ForEach-Object { $q.Enqueue($_) }
+            $global:GenXdevTestPromptQueue = $q
 
-            Pester\Mock Invoke-SpectrePrompt -ModuleName GenXdev -MockWith { $q.Dequeue() }
-            Pester\Mock Invoke-SpectreAsk -ModuleName GenXdev -MockWith { '' }
-            Pester\Mock Invoke-SpectreConfirm -ModuleName GenXdev -MockWith { $true }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Invoke-SpectrePrompt -MockWith { $global:GenXdevTestPromptQueue.Dequeue() }
+                Pester\Mock Invoke-SpectreAsk -MockWith { '' }
+                Pester\Mock Invoke-SpectreConfirm -MockWith { $true }
+            }
 
             try {
                 GenXdev\Invoke-AILLMSettingsPrompt -ErrorAction Stop
@@ -217,8 +228,11 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
         Pester\It 'P3: Cancel at ALL sub-menu returns without error' {
             $q = [System.Collections.Generic.Queue[string]]::new()
             'ALL', '.. Cancel' | Microsoft.PowerShell.Core\ForEach-Object { $q.Enqueue($_) }
+            $global:GenXdevTestPromptQueue = $q
 
-            Pester\Mock Invoke-SpectrePrompt -ModuleName GenXdev -MockWith { $q.Dequeue() }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Invoke-SpectrePrompt -MockWith { $global:GenXdevTestPromptQueue.Dequeue() }
+            }
 
             {
                 GenXdev\Invoke-AILLMSettingsPrompt -ErrorAction Stop
@@ -229,8 +243,11 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
         Pester\It 'P4: Back from ALL sub-menu then cancel at type menu' {
             $q = [System.Collections.Generic.Queue[string]]::new()
             'ALL', '.. Back', '.. Cancel' | Microsoft.PowerShell.Core\ForEach-Object { $q.Enqueue($_) }
+            $global:GenXdevTestPromptQueue = $q
 
-            Pester\Mock Invoke-SpectrePrompt -ModuleName GenXdev -MockWith { $q.Dequeue() }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Invoke-SpectrePrompt -MockWith { $global:GenXdevTestPromptQueue.Dequeue() }
+            }
 
             {
                 GenXdev\Invoke-AILLMSettingsPrompt -ErrorAction Stop
@@ -258,8 +275,11 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
             $responses += @('.. Skip this type (keep current settings)') * 6
             $q = [System.Collections.Generic.Queue[string]]::new()
             $responses | Microsoft.PowerShell.Core\ForEach-Object { $q.Enqueue($_) }
+            $global:GenXdevTestPromptQueue = $q
 
-            Pester\Mock Invoke-SpectrePrompt -ModuleName GenXdev -MockWith { $q.Dequeue() }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Invoke-SpectrePrompt -MockWith { $global:GenXdevTestPromptQueue.Dequeue() }
+            }
 
             {
                 GenXdev\Invoke-AILLMSettingsPrompt -ErrorAction Stop
@@ -273,11 +293,14 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
     Pester\Context 'ConfigureViaProviderPick - no saved keys' {
 
         Pester\BeforeEach {
-            Pester\Mock Write-SpectreLine -ModuleName GenXdev -MockWith {}
-            Pester\Mock Write-SpectreMarkupLine -ModuleName GenXdev -MockWith {}
-            Pester\Mock Get-AIDefaultLLMSettings -ModuleName GenXdev `
-                -MockWith { , @($script:testProvider) }
-            Pester\Mock Get-GenXdevPreferenceNames -ModuleName GenXdev -MockWith { @() }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Write-SpectreLine -MockWith {}
+                Pester\Mock Write-SpectreMarkupLine -MockWith {}
+                Pester\Mock Get-AIDefaultLLMSettings -MockWith {
+                    , @($global:GenXdevTestProvider)
+                }
+                Pester\Mock Get-GenXdevPreferenceNames -MockWith { @() }
+            }
         }
 
         # P9+P18: Pick provider -> no saved keys -> enter name + key -> save
@@ -288,9 +311,13 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
             $aq = [System.Collections.Generic.Queue[string]]::new()
             'TestKey', 'sk-test-provider-key' |
                 Microsoft.PowerShell.Core\ForEach-Object { $aq.Enqueue($_) }
+            $global:GenXdevTestPromptQueue = $q
+            $global:GenXdevTestAskQueue = $aq
 
-            Pester\Mock Invoke-SpectrePrompt -ModuleName GenXdev -MockWith { $q.Dequeue() }
-            Pester\Mock Invoke-SpectreAsk -ModuleName GenXdev -MockWith { $aq.Dequeue() }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Invoke-SpectrePrompt -MockWith { $global:GenXdevTestPromptQueue.Dequeue() }
+                Pester\Mock Invoke-SpectreAsk -MockWith { $global:GenXdevTestAskQueue.Dequeue() }
+            }
 
             {
                 GenXdev\Invoke-AILLMSettingsPrompt `
@@ -306,16 +333,19 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
     Pester\Context 'ConfigureViaManualEntry - no saved keys' {
 
         Pester\BeforeEach {
-            $script:hintProvider = @{
+            $global:GenXdevTestHintProvider = @{
                 DisplayName = 'HintProvider'
                 Provider    = 'CustomCorp'
                 Model       = 'hint-model'
                 ApiEndpoint = 'https://custom.example.com/v1'
             }
-            Pester\Mock Write-SpectreLine -ModuleName GenXdev -MockWith {}
-            Pester\Mock Write-SpectreMarkupLine -ModuleName GenXdev -MockWith {}
-            Pester\Mock Get-AIDefaultLLMSettings -ModuleName GenXdev `
-                -MockWith { , @($script:hintProvider) }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Write-SpectreLine -MockWith {}
+                Pester\Mock Write-SpectreMarkupLine -MockWith {}
+                Pester\Mock Get-AIDefaultLLMSettings -MockWith {
+                    , @($global:GenXdevTestHintProvider)
+                }
+            }
         }
 
         # P10+P23: Manual entry -> no saved keys -> enter all fields -> save
@@ -326,10 +356,14 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
             'my-custom-model', 'https://my-api.example.com/v1',
             'WorkKey', 'sk-manual-entry-key' |
                 Microsoft.PowerShell.Core\ForEach-Object { $aq.Enqueue($_) }
+            $global:GenXdevTestPromptQueue = $q
+            $global:GenXdevTestAskQueue = $aq
 
-            Pester\Mock Invoke-SpectrePrompt -ModuleName GenXdev -MockWith { $q.Dequeue() }
-            Pester\Mock Invoke-SpectreAsk -ModuleName GenXdev -MockWith { $aq.Dequeue() }
-            Pester\Mock Invoke-SpectreConfirm -ModuleName GenXdev -MockWith { $true }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Invoke-SpectrePrompt -MockWith { $global:GenXdevTestPromptQueue.Dequeue() }
+                Pester\Mock Invoke-SpectreAsk -MockWith { $global:GenXdevTestAskQueue.Dequeue() }
+                Pester\Mock Invoke-SpectreConfirm -MockWith { $true }
+            }
 
             {
                 GenXdev\Invoke-AILLMSettingsPrompt `
@@ -346,11 +380,15 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
             'basic-model', 'https://basic.example.com/v1',
             'BasicKey', 'sk-basic' |
                 Microsoft.PowerShell.Core\ForEach-Object { $aq.Enqueue($_) }
+            $global:GenXdevTestPromptQueue = $q
+            $global:GenXdevTestAskQueue = $aq
 
-            Pester\Mock Invoke-SpectrePrompt -ModuleName GenXdev -MockWith { $q.Dequeue() }
-            Pester\Mock Invoke-SpectreAsk -ModuleName GenXdev -MockWith { $aq.Dequeue() }
-            Pester\Mock Invoke-SpectreConfirm -ModuleName GenXdev -MockWith { $false }
-            Pester\Mock Get-GenXdevPreferenceNames -ModuleName GenXdev -MockWith { @() }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Invoke-SpectrePrompt -MockWith { $global:GenXdevTestPromptQueue.Dequeue() }
+                Pester\Mock Invoke-SpectreAsk -MockWith { $global:GenXdevTestAskQueue.Dequeue() }
+                Pester\Mock Invoke-SpectreConfirm -MockWith { $false }
+                Pester\Mock Get-GenXdevPreferenceNames -MockWith { @() }
+            }
 
             {
                 GenXdev\Invoke-AILLMSettingsPrompt `
@@ -366,9 +404,13 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
     Pester\Context 'ConfigureViaProviderPick - with saved keys' {
 
         Pester\BeforeEach {
-            Pester\Mock Write-SpectreLine -ModuleName GenXdev -MockWith {}
-            Pester\Mock Write-SpectreMarkupLine -ModuleName GenXdev -MockWith {}
-            Pester\Mock Get-AIDefaultLLMSettings -ModuleName GenXdev -MockWith { , @($script:testProvider) }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Write-SpectreLine -MockWith {}
+                Pester\Mock Write-SpectreMarkupLine -MockWith {}
+                Pester\Mock Get-AIDefaultLLMSettings -MockWith {
+                    , @($global:GenXdevTestProvider)
+                }
+            }
         }
 
         # P16: Pick provider -> choose saved key
@@ -377,12 +419,15 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
             'Pick a default provider (API key only)',
             'TestCorp LLM v1', 'Use saved key: Work' |
                 Microsoft.PowerShell.Core\ForEach-Object { $q.Enqueue($_) }
+            $global:GenXdevTestPromptQueue = $q
 
-            Pester\Mock Get-GenXdevPreferenceNames -ModuleName GenXdev `
-                -MockWith { @('AILLMProviderApiKey_TestCorp_Work') }
-            Pester\Mock Get-GenXdevPreference -ModuleName GenXdev `
-                -MockWith { 'sk-saved-testcorp-key' }
-            Pester\Mock Invoke-SpectrePrompt -ModuleName GenXdev -MockWith { $q.Dequeue() }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Get-GenXdevPreferenceNames -MockWith {
+                    @('AILLMProviderApiKey_TestCorp_Work')
+                }
+                Pester\Mock Get-GenXdevPreference -MockWith { 'sk-saved-testcorp-key' }
+                Pester\Mock Invoke-SpectrePrompt -MockWith { $global:GenXdevTestPromptQueue.Dequeue() }
+            }
 
             {
                 GenXdev\Invoke-AILLMSettingsPrompt `
@@ -400,13 +445,17 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
             $aq = [System.Collections.Generic.Queue[string]]::new()
             'Home', 'sk-new-home-key' |
                 Microsoft.PowerShell.Core\ForEach-Object { $aq.Enqueue($_) }
+            $global:GenXdevTestPromptQueue = $q
+            $global:GenXdevTestAskQueue = $aq
 
-            Pester\Mock Get-GenXdevPreferenceNames -ModuleName GenXdev `
-                -MockWith { @('AILLMProviderApiKey_TestCorp_Work') }
-            Pester\Mock Get-GenXdevPreference -ModuleName GenXdev `
-                -MockWith { 'sk-saved-testcorp-key' }
-            Pester\Mock Invoke-SpectrePrompt -ModuleName GenXdev -MockWith { $q.Dequeue() }
-            Pester\Mock Invoke-SpectreAsk -ModuleName GenXdev -MockWith { $aq.Dequeue() }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Get-GenXdevPreferenceNames -MockWith {
+                    @('AILLMProviderApiKey_TestCorp_Work')
+                }
+                Pester\Mock Get-GenXdevPreference -MockWith { 'sk-saved-testcorp-key' }
+                Pester\Mock Invoke-SpectrePrompt -MockWith { $global:GenXdevTestPromptQueue.Dequeue() }
+                Pester\Mock Invoke-SpectreAsk -MockWith { $global:GenXdevTestAskQueue.Dequeue() }
+            }
 
             {
                 GenXdev\Invoke-AILLMSettingsPrompt `
@@ -435,10 +484,14 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
             $q = [System.Collections.Generic.Queue[string]]::new()
             'Pick a default provider (API key only)', '.. Cancel' |
                 Microsoft.PowerShell.Core\ForEach-Object { $q.Enqueue($_) }
+            $global:GenXdevTestPromptQueue = $q
 
-            Pester\Mock Get-AIDefaultLLMSettings -ModuleName GenXdev `
-                -MockWith { , @($script:testProvider) }
-            Pester\Mock Invoke-SpectrePrompt -ModuleName GenXdev -MockWith { $q.Dequeue() }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Get-AIDefaultLLMSettings -MockWith {
+                    , @($global:GenXdevTestProvider)
+                }
+                Pester\Mock Invoke-SpectrePrompt -MockWith { $global:GenXdevTestPromptQueue.Dequeue() }
+            }
 
             {
                 GenXdev\Invoke-AILLMSettingsPrompt `
@@ -453,13 +506,18 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
             'Pick a default provider (API key only)',
             'TestCorp LLM v1', '.. Cancel' |
                 Microsoft.PowerShell.Core\ForEach-Object { $q.Enqueue($_) }
+            $global:GenXdevTestPromptQueue = $q
 
-            Pester\Mock Get-AIDefaultLLMSettings -ModuleName GenXdev `
-                -MockWith { , @($script:testProvider) }
-            Pester\Mock Get-GenXdevPreferenceNames -ModuleName GenXdev `
-                -MockWith { @('AILLMProviderApiKey_TestCorp_Work') }
-            Pester\Mock Get-GenXdevPreference -ModuleName GenXdev -MockWith { 'sk-saved' }
-            Pester\Mock Invoke-SpectrePrompt -ModuleName GenXdev -MockWith { $q.Dequeue() }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Get-AIDefaultLLMSettings -MockWith {
+                    , @($global:GenXdevTestProvider)
+                }
+                Pester\Mock Get-GenXdevPreferenceNames -MockWith {
+                    @('AILLMProviderApiKey_TestCorp_Work')
+                }
+                Pester\Mock Get-GenXdevPreference -MockWith { 'sk-saved' }
+                Pester\Mock Invoke-SpectrePrompt -MockWith { $global:GenXdevTestPromptQueue.Dequeue() }
+            }
 
             {
                 GenXdev\Invoke-AILLMSettingsPrompt `
@@ -476,14 +534,20 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
             $aq = [System.Collections.Generic.Queue[string]]::new()
             'my-model', 'https://custom.example.com/v1' |
                 Microsoft.PowerShell.Core\ForEach-Object { $aq.Enqueue($_) }
+            $global:GenXdevTestPromptQueue = $q
+            $global:GenXdevTestAskQueue = $aq
 
-            Pester\Mock Get-AIDefaultLLMSettings -ModuleName GenXdev `
-                -MockWith { , @($script:testProvider) }
-            Pester\Mock Get-GenXdevPreferenceNames -ModuleName GenXdev `
-                -MockWith { @('AILLMProviderApiKey_Custom_Work') }
-            Pester\Mock Get-GenXdevPreference -ModuleName GenXdev -MockWith { 'sk-saved' }
-            Pester\Mock Invoke-SpectrePrompt -ModuleName GenXdev -MockWith { $q.Dequeue() }
-            Pester\Mock Invoke-SpectreAsk -ModuleName GenXdev -MockWith { $aq.Dequeue() }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Get-AIDefaultLLMSettings -MockWith {
+                    , @($global:GenXdevTestProvider)
+                }
+                Pester\Mock Get-GenXdevPreferenceNames -MockWith {
+                    @('AILLMProviderApiKey_Custom_Work')
+                }
+                Pester\Mock Get-GenXdevPreference -MockWith { 'sk-saved' }
+                Pester\Mock Invoke-SpectrePrompt -MockWith { $global:GenXdevTestPromptQueue.Dequeue() }
+                Pester\Mock Invoke-SpectreAsk -MockWith { $global:GenXdevTestAskQueue.Dequeue() }
+            }
 
             {
                 GenXdev\Invoke-AILLMSettingsPrompt `
@@ -508,25 +572,30 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
                 Microsoft.PowerShell.Core\ForEach-Object { $q.Enqueue($_) }
             'Key1', 'sk-first-type-key' |
                 Microsoft.PowerShell.Core\ForEach-Object { $aq.Enqueue($_) }
+            $global:GenXdevTestPromptQueue = $q
+            $global:GenXdevTestAskQueue = $aq
 
-            Pester\Mock Write-SpectreLine -ModuleName GenXdev -MockWith {}
-            Pester\Mock Write-SpectreMarkupLine -ModuleName GenXdev -MockWith {}
-            Pester\Mock Get-AIDefaultLLMSettings -ModuleName GenXdev `
-                -MockWith { , @($script:testProvider) }
-            Pester\Mock Get-GenXdevPreferenceNames -ModuleName GenXdev -MockWith { @() }
-            Pester\Mock Invoke-SpectrePrompt -ModuleName GenXdev -MockWith { $q.Dequeue() }
-            Pester\Mock Invoke-SpectreAsk -ModuleName GenXdev -MockWith { $aq.Dequeue() }
-            Pester\Mock Get-AILLMSettings -ModuleName GenXdev -MockWith {
-                return @{
-                    Model                   = 'gpt-4o'
-                    ApiEndpoint             = 'https://api.openai.com/v1'
-                    ApiKey                  = 'sk-shortcut-test'
-                    NoSupportForJsonSchema  = $false
-                    NoSupportForImageUpload = $false
-                    NoSupportForToolCalls   = $false
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Write-SpectreLine -MockWith {}
+                Pester\Mock Write-SpectreMarkupLine -MockWith {}
+                Pester\Mock Get-AIDefaultLLMSettings -MockWith {
+                    , @($global:GenXdevTestProvider)
                 }
+                Pester\Mock Get-GenXdevPreferenceNames -MockWith { @() }
+                Pester\Mock Invoke-SpectrePrompt -MockWith { $global:GenXdevTestPromptQueue.Dequeue() }
+                Pester\Mock Invoke-SpectreAsk -MockWith { $global:GenXdevTestAskQueue.Dequeue() }
+                Pester\Mock Get-AILLMSettings -MockWith {
+                    return @{
+                        Model                   = 'gpt-4o'
+                        ApiEndpoint             = 'https://api.openai.com/v1'
+                        ApiKey                  = 'sk-shortcut-test'
+                        NoSupportForJsonSchema  = $false
+                        NoSupportForImageUpload = $false
+                        NoSupportForToolCalls   = $false
+                    }
+                }
+                Pester\Mock Set-AILLMSettings -MockWith {}
             }
-            Pester\Mock Set-AILLMSettings -ModuleName GenXdev -MockWith {}
 
             {
                 GenXdev\Invoke-AILLMSettingsPrompt -ErrorAction Stop
@@ -543,25 +612,30 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
                 Microsoft.PowerShell.Core\ForEach-Object { $q.Enqueue($_) }
             'Key1', 'sk-partial-key' |
                 Microsoft.PowerShell.Core\ForEach-Object { $aq.Enqueue($_) }
+            $global:GenXdevTestPromptQueue = $q
+            $global:GenXdevTestAskQueue = $aq
 
-            Pester\Mock Write-SpectreLine -ModuleName GenXdev -MockWith {}
-            Pester\Mock Write-SpectreMarkupLine -ModuleName GenXdev -MockWith {}
-            Pester\Mock Get-AIDefaultLLMSettings -ModuleName GenXdev `
-                -MockWith { , @($script:testProvider) }
-            Pester\Mock Get-GenXdevPreferenceNames -ModuleName GenXdev -MockWith { @() }
-            Pester\Mock Invoke-SpectrePrompt -ModuleName GenXdev -MockWith { $q.Dequeue() }
-            Pester\Mock Invoke-SpectreAsk -ModuleName GenXdev -MockWith { $aq.Dequeue() }
-            Pester\Mock Get-AILLMSettings -ModuleName GenXdev -MockWith {
-                return @{
-                    Model                   = 'gpt-4o'
-                    ApiEndpoint             = 'https://api.openai.com/v1'
-                    ApiKey                  = 'sk-shortcut-test'
-                    NoSupportForJsonSchema  = $false
-                    NoSupportForImageUpload = $false
-                    NoSupportForToolCalls   = $false
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Write-SpectreLine -MockWith {}
+                Pester\Mock Write-SpectreMarkupLine -MockWith {}
+                Pester\Mock Get-AIDefaultLLMSettings -MockWith {
+                    , @($global:GenXdevTestProvider)
                 }
+                Pester\Mock Get-GenXdevPreferenceNames -MockWith { @() }
+                Pester\Mock Invoke-SpectrePrompt -MockWith { $global:GenXdevTestPromptQueue.Dequeue() }
+                Pester\Mock Invoke-SpectreAsk -MockWith { $global:GenXdevTestAskQueue.Dequeue() }
+                Pester\Mock Get-AILLMSettings -MockWith {
+                    return @{
+                        Model                   = 'gpt-4o'
+                        ApiEndpoint             = 'https://api.openai.com/v1'
+                        ApiKey                  = 'sk-shortcut-test'
+                        NoSupportForJsonSchema  = $false
+                        NoSupportForImageUpload = $false
+                        NoSupportForToolCalls   = $false
+                    }
+                }
+                Pester\Mock Set-AILLMSettings -MockWith {}
             }
-            Pester\Mock Set-AILLMSettings -ModuleName GenXdev -MockWith {}
 
             {
                 GenXdev\Invoke-AILLMSettingsPrompt -ErrorAction Stop
@@ -590,14 +664,20 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
                 Microsoft.PowerShell.Core\ForEach-Object { $q.Enqueue($_) }
             'my-model', 'https://custom.example.com/v1' |
                 Microsoft.PowerShell.Core\ForEach-Object { $aq.Enqueue($_) }
+            $global:GenXdevTestPromptQueue = $q
+            $global:GenXdevTestAskQueue = $aq
 
-            Pester\Mock Get-AIDefaultLLMSettings -ModuleName GenXdev `
-                -MockWith { , @($script:testProvider) }
-            Pester\Mock Get-GenXdevPreferenceNames -ModuleName GenXdev `
-                -MockWith { @('AILLMProviderApiKey_Custom_Work') }
-            Pester\Mock Get-GenXdevPreference -ModuleName GenXdev -MockWith { 'sk-custom-saved' }
-            Pester\Mock Invoke-SpectrePrompt -ModuleName GenXdev -MockWith { $q.Dequeue() }
-            Pester\Mock Invoke-SpectreAsk -ModuleName GenXdev -MockWith { $aq.Dequeue() }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Get-AIDefaultLLMSettings -MockWith {
+                    , @($global:GenXdevTestProvider)
+                }
+                Pester\Mock Get-GenXdevPreferenceNames -MockWith {
+                    @('AILLMProviderApiKey_Custom_Work')
+                }
+                Pester\Mock Get-GenXdevPreference -MockWith { 'sk-custom-saved' }
+                Pester\Mock Invoke-SpectrePrompt -MockWith { $global:GenXdevTestPromptQueue.Dequeue() }
+                Pester\Mock Invoke-SpectreAsk -MockWith { $global:GenXdevTestAskQueue.Dequeue() }
+            }
 
             {
                 GenXdev\Invoke-AILLMSettingsPrompt `
@@ -615,14 +695,20 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
             'v2-model', 'https://custom.example.com/v2',
             'NewKey', 'sk-new-custom' |
                 Microsoft.PowerShell.Core\ForEach-Object { $aq.Enqueue($_) }
+            $global:GenXdevTestPromptQueue = $q
+            $global:GenXdevTestAskQueue = $aq
 
-            Pester\Mock Get-AIDefaultLLMSettings -ModuleName GenXdev `
-                -MockWith { , @($script:testProvider) }
-            Pester\Mock Get-GenXdevPreferenceNames -ModuleName GenXdev `
-                -MockWith { @('AILLMProviderApiKey_Custom_Old') }
-            Pester\Mock Get-GenXdevPreference -ModuleName GenXdev -MockWith { 'sk-old' }
-            Pester\Mock Invoke-SpectrePrompt -ModuleName GenXdev -MockWith { $q.Dequeue() }
-            Pester\Mock Invoke-SpectreAsk -ModuleName GenXdev -MockWith { $aq.Dequeue() }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Get-AIDefaultLLMSettings -MockWith {
+                    , @($global:GenXdevTestProvider)
+                }
+                Pester\Mock Get-GenXdevPreferenceNames -MockWith {
+                    @('AILLMProviderApiKey_Custom_Old')
+                }
+                Pester\Mock Get-GenXdevPreference -MockWith { 'sk-old' }
+                Pester\Mock Invoke-SpectrePrompt -MockWith { $global:GenXdevTestPromptQueue.Dequeue() }
+                Pester\Mock Invoke-SpectreAsk -MockWith { $global:GenXdevTestAskQueue.Dequeue() }
+            }
 
             {
                 GenXdev\Invoke-AILLMSettingsPrompt `
@@ -651,10 +737,14 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
             'Pick a default provider (API key only)',
             '.. Back', '.. Cancel' |
                 Microsoft.PowerShell.Core\ForEach-Object { $q.Enqueue($_) }
+            $global:GenXdevTestPromptQueue = $q
 
-            Pester\Mock Get-AIDefaultLLMSettings -ModuleName GenXdev `
-                -MockWith { , @($script:testProvider) }
-            Pester\Mock Invoke-SpectrePrompt -ModuleName GenXdev -MockWith { $q.Dequeue() }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Get-AIDefaultLLMSettings -MockWith {
+                    , @($global:GenXdevTestProvider)
+                }
+                Pester\Mock Invoke-SpectrePrompt -MockWith { $global:GenXdevTestPromptQueue.Dequeue() }
+            }
 
             {
                 GenXdev\Invoke-AILLMSettingsPrompt `
@@ -669,13 +759,18 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
             'Pick a default provider (API key only)',
             'TestCorp LLM v1', '.. Back', '.. Cancel' |
                 Microsoft.PowerShell.Core\ForEach-Object { $q.Enqueue($_) }
+            $global:GenXdevTestPromptQueue = $q
 
-            Pester\Mock Get-AIDefaultLLMSettings -ModuleName GenXdev `
-                -MockWith { , @($script:testProvider) }
-            Pester\Mock Get-GenXdevPreferenceNames -ModuleName GenXdev `
-                -MockWith { @('AILLMProviderApiKey_TestCorp_Work') }
-            Pester\Mock Get-GenXdevPreference -ModuleName GenXdev -MockWith { 'sk-saved' }
-            Pester\Mock Invoke-SpectrePrompt -ModuleName GenXdev -MockWith { $q.Dequeue() }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Get-AIDefaultLLMSettings -MockWith {
+                    , @($global:GenXdevTestProvider)
+                }
+                Pester\Mock Get-GenXdevPreferenceNames -MockWith {
+                    @('AILLMProviderApiKey_TestCorp_Work')
+                }
+                Pester\Mock Get-GenXdevPreference -MockWith { 'sk-saved' }
+                Pester\Mock Invoke-SpectrePrompt -MockWith { $global:GenXdevTestPromptQueue.Dequeue() }
+            }
 
             {
                 GenXdev\Invoke-AILLMSettingsPrompt `
@@ -693,14 +788,20 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
             'model1', 'https://custom.example.com/v1',
             'model1', 'https://custom.example.com/v1' |
                 Microsoft.PowerShell.Core\ForEach-Object { $aq.Enqueue($_) }
+            $global:GenXdevTestPromptQueue = $q
+            $global:GenXdevTestAskQueue = $aq
 
-            Pester\Mock Get-AIDefaultLLMSettings -ModuleName GenXdev `
-                -MockWith { , @($script:testProvider) }
-            Pester\Mock Get-GenXdevPreferenceNames -ModuleName GenXdev `
-                -MockWith { @('AILLMProviderApiKey_Custom_Work') }
-            Pester\Mock Get-GenXdevPreference -ModuleName GenXdev -MockWith { 'sk-saved' }
-            Pester\Mock Invoke-SpectrePrompt -ModuleName GenXdev -MockWith { $q.Dequeue() }
-            Pester\Mock Invoke-SpectreAsk -ModuleName GenXdev -MockWith { $aq.Dequeue() }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Get-AIDefaultLLMSettings -MockWith {
+                    , @($global:GenXdevTestProvider)
+                }
+                Pester\Mock Get-GenXdevPreferenceNames -MockWith {
+                    @('AILLMProviderApiKey_Custom_Work')
+                }
+                Pester\Mock Get-GenXdevPreference -MockWith { 'sk-saved' }
+                Pester\Mock Invoke-SpectrePrompt -MockWith { $global:GenXdevTestPromptQueue.Dequeue() }
+                Pester\Mock Invoke-SpectreAsk -MockWith { $global:GenXdevTestAskQueue.Dequeue() }
+            }
 
             {
                 GenXdev\Invoke-AILLMSettingsPrompt `
@@ -716,11 +817,14 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
     Pester\Context 'ALL - Apply one provider to all types' {
 
         Pester\BeforeEach {
-            Pester\Mock Write-SpectreLine -ModuleName GenXdev -MockWith {}
-            Pester\Mock Write-SpectreMarkupLine -ModuleName GenXdev -MockWith {}
-            Pester\Mock Get-AIDefaultLLMSettings -ModuleName GenXdev `
-                -MockWith { , @($script:testProvider) }
-            Pester\Mock Invoke-SpectreConfirm -ModuleName GenXdev -MockWith { $true }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Write-SpectreLine -MockWith {}
+                Pester\Mock Write-SpectreMarkupLine -MockWith {}
+                Pester\Mock Get-AIDefaultLLMSettings -MockWith {
+                    , @($global:GenXdevTestProvider)
+                }
+                Pester\Mock Invoke-SpectreConfirm -MockWith { $true }
+            }
         }
 
         # P5: ALL -> Apply one provider -> configure -> all 6 types saved
@@ -732,10 +836,14 @@ Pester\Describe 'Invoke-AILLMSettingsPrompt' {
                 Microsoft.PowerShell.Core\ForEach-Object { $q.Enqueue($_) }
             'AllKey', 'sk-all-types' |
                 Microsoft.PowerShell.Core\ForEach-Object { $aq.Enqueue($_) }
+            $global:GenXdevTestPromptQueue = $q
+            $global:GenXdevTestAskQueue = $aq
 
-            Pester\Mock Get-GenXdevPreferenceNames -ModuleName GenXdev -MockWith { @() }
-            Pester\Mock Invoke-SpectrePrompt -ModuleName GenXdev -MockWith { $q.Dequeue() }
-            Pester\Mock Invoke-SpectreAsk -ModuleName GenXdev -MockWith { $aq.Dequeue() }
+            Pester\InModuleScope 'GenXdev' {
+                Pester\Mock Get-GenXdevPreferenceNames -MockWith { @() }
+                Pester\Mock Invoke-SpectrePrompt -MockWith { $global:GenXdevTestPromptQueue.Dequeue() }
+                Pester\Mock Invoke-SpectreAsk -MockWith { $global:GenXdevTestAskQueue.Dequeue() }
+            }
 
             {
                 GenXdev\Invoke-AILLMSettingsPrompt -ErrorAction Stop

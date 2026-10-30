@@ -1,6 +1,6 @@
 # New-SQLiteDatabase
 
-> **SubModule:** GenXdev.Data.SQLite | **Type:** Function | **Aliases:** `nsqldb`
+> **SubModule:** GenXdev.Data.SQLite | **Type:** Cmdlet | **Aliases:** `nsqldb`
 
 ## Synopsis
 
@@ -9,7 +9,7 @@
 ## Description
 
 Creates a new SQLite database file at the specified path if it does not already
-exist. The function ensures the target directory exists and creates a valid
+exist. The command ensures the target directory exists and creates a valid
 SQLite database by establishing and closing a connection.
 
 
@@ -17,7 +17,7 @@ SQLite database by establishing and closing a connection.
 
 
 ```powershell
-New-SQLiteDatabase -DatabaseFilePath <String> [-AutoConsent] [-AutoConsentAllPackages] [-SessionOnly] [<CommonParameters>]
+New-SQLiteDatabase -DatabaseFilePath <String> [<CommonParameters>]
 ```
 
 ## Parameters
@@ -25,29 +25,15 @@ New-SQLiteDatabase -DatabaseFilePath <String> [-AutoConsent] [-AutoConsentAllPac
 | Name | Type | Required | Description |
 |:---|:---|:---:|:---|
 | `-DatabaseFilePath` | String | ✅ | The path to the SQLite database file |
-| `-AutoConsent` | SwitchParameter | ☐ | Automatically consent to this installation<br>type and set persistent flag.. |
-| `-AutoConsentAllPackages` | SwitchParameter | ☐ | Automatically consent to ALL third-party<br>software installations and set persistent<br>flag for SQLite package. |
-| `-SessionOnly` | SwitchParameter | ☐ | Use alternative settings stored in session<br>for  preferences |
 
 ## Examples
-
 
 
 ```powershell
 New-SQLiteDatabase -DatabaseFilePath "C:\Databases\MyNewDb.sqlite"
 ```
 
-
-
-```powershell
-nsqldb "C:\Databases\MyNewDb.sqlite"
-```
-
-
-
-```powershell
-New-SQLiteDatabase -DatabaseFilePath "C:\Databases\MyNewDb.sqlite" -AutoConsentAllPackages
-```
+Creates a new empty database file, and its directory when needed.
 
 ## Parameter Details
 
@@ -66,53 +52,9 @@ New-SQLiteDatabase -DatabaseFilePath "C:\Databases\MyNewDb.sqlite" -AutoConsentA
 
 <hr/>
 
-### `-AutoConsent`
-
-> Automatically consent to this installation type and set persistent flag..
-
-| Property | Value |
-|:---|:---|
-| **Required?** | No |
-| **Position?** | Named |
-| **Default value** | *(none)* |
-| **Accept pipeline input?** | False |
-| **Aliases** | *(none)* |
-| **Accept wildcard characters?** | No |
-
-<hr/>
-
-### `-AutoConsentAllPackages`
-
-> Automatically consent to ALL third-party software installations and set persistent flag for SQLite package.
-
-| Property | Value |
-|:---|:---|
-| **Required?** | No |
-| **Position?** | Named |
-| **Default value** | *(none)* |
-| **Accept pipeline input?** | False |
-| **Aliases** | *(none)* |
-| **Accept wildcard characters?** | No |
-
-<hr/>
-
-### `-SessionOnly`
-
-> Use alternative settings stored in session for  preferences
-
-| Property | Value |
-|:---|:---|
-| **Required?** | No |
-| **Position?** | Named |
-| **Default value** | *(none)* |
-| **Accept pipeline input?** | False |
-| **Aliases** | *(none)* |
-| **Accept wildcard characters?** | No |
-
-<hr/>
-
 ## Related Links
 
+- [Get-SQLiteConnection](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteConnection.md)
 - [Get-SQLiteSchema](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteSchema.md)
 - [Get-SQLiteTableColumnData](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteTableColumnData.md)
 - [Get-SQLiteTableData](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteTableData.md)
@@ -124,4 +66,5 @@ New-SQLiteDatabase -DatabaseFilePath "C:\Databases\MyNewDb.sqlite" -AutoConsentA
 - [Get-SQLiteViews](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteViews.md)
 - [Get-SQLiteViewSchema](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteViewSchema.md)
 - [Invoke-SQLiteQuery](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLiteQuery.md)
+- [Invoke-SQLiteScriptFile](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLiteScriptFile.md)
 - [Invoke-SQLiteStudio](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLiteStudio.md)

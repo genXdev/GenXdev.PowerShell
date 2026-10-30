@@ -1,18 +1,51 @@
 Pester\Describe 'Get-SQLServerTables' {
 
+    Pester\BeforeDiscovery {
+
+        # -Skip is evaluated during discovery, so the flags it gates on
+        # must be computed here rather than in BeforeAll
+        . "$PSScriptRoot\SqlServerTestHelpers.ps1"
+
+        $script:TestConfiguration = Get-SqlServerTestConfiguration
+        $script:TestServer = $script:TestConfiguration.Server
+        $script:TestConnectionString = $script:TestConfiguration.ConnectionString
+        $script:CanUseServerParameter = $script:TestConfiguration.CanUseServerParameter
+
+        $script:SqlServerAvailable = $false
+        try {
+            $null = GenXdev\Invoke-SQLServerQuery `
+                -ConnectionString $script:TestConnectionString -Queries 'SELECT 1'
+            $script:SqlServerAvailable = $true
+        }
+        catch {
+            Microsoft.PowerShell.Utility\Write-Warning (
+                'SQL Server not available - skipping database tests: ' +
+                $_.Exception.Message)
+        }
+    }
+
     Pester\BeforeAll {
         Microsoft.PowerShell.Utility\Write-Verbose 'Setting up test environment'
         $script:TestTablePrefix = 'TestTable_' + (Microsoft.PowerShell.Utility\Get-Random) + '_'
-        $script:TestServer = '.'
+        . "$PSScriptRoot\SqlServerTestHelpers.ps1"
+
+        # run against $env:GENXDEV_SQL_TEST_CONNECTIONSTRING, or the local default
+        $script:TestConfiguration = Get-SqlServerTestConfiguration
+        $script:TestServer = $script:TestConfiguration.Server
+        $script:TestConnectionString = $script:TestConfiguration.ConnectionString
+        $script:CanUseServerParameter = $script:TestConfiguration.CanUseServerParameter
 
         # Check if SQL Server is available
         $script:SqlServerAvailable = $false
         try {
-            GenXdev\Invoke-SQLServerQuery -DatabaseName 'tempdb' -Server $script:TestServer -Queries "SELECT 1"
+            GenXdev\Invoke-SQLServerQuery `
+                -ConnectionString $script:TestConnectionString -Queries "SELECT 1"
             $script:SqlServerAvailable = $true
         }
         catch {
-            Microsoft.PowerShell.Utility\Write-Verbose "SQL Server not available - skipping tests"
+            Microsoft.PowerShell.Utility\Write-Warning (
+                'SQL Server not available - skipping database tests: ' +
+                $_.Exception.Message)
         }
 
         if ($script:SqlServerAvailable) {
@@ -28,7 +61,7 @@ Pester\Describe 'Get-SQLServerTables' {
             )
 
             foreach ($query in $createQueries) {
-                GenXdev\Invoke-SQLServerQuery -DatabaseName 'tempdb' -Server $script:TestServer -Queries $query
+                GenXdev\Invoke-SQLServerQuery -ConnectionString $script:TestConnectionString -Queries $query
             }
         }
     }
@@ -43,7 +76,7 @@ Pester\Describe 'Get-SQLServerTables' {
                     "IF OBJECT_ID('tempdb.dbo.${script:AnotherTableName}') IS NOT NULL DROP TABLE tempdb.dbo.${script:AnotherTableName}"
                 )
                 foreach ($query in $dropQueries) {
-                    GenXdev\Invoke-SQLServerQuery -DatabaseName 'tempdb' -Server $script:TestServer -Queries $query
+                    GenXdev\Invoke-SQLServerQuery -ConnectionString $script:TestConnectionString -Queries $query
                 }
             }
             catch {
@@ -53,8 +86,8 @@ Pester\Describe 'Get-SQLServerTables' {
     }
 
     Pester\It 'Should list all tables using connection string' -Skip:(-not $script:SqlServerAvailable) {
-        $connString = "Server=$script:TestServer;Database=tempdb;Integrated Security=true;TrustServerCertificate=true"
-        $tables = GenXdev\Get-SQLServerTables -ConnectionString $connString
+        $tables = GenXdev\Get-SQLServerTables `
+            -ConnectionString $script:TestConnectionString
         $tables | Pester\Should -Not -BeNullOrEmpty
         $tableNames = $tables | Microsoft.PowerShell.Core\ForEach-Object { $_.name }
         $tableNames | Pester\Should -Contain $script:TestTable1Name
@@ -62,7 +95,7 @@ Pester\Describe 'Get-SQLServerTables' {
         $tableNames | Pester\Should -Contain $script:AnotherTableName
     }
 
-    Pester\It 'Should list all tables using DatabaseName parameter' -Skip:(-not $script:SqlServerAvailable) {
+    Pester\It 'Should list all tables using DatabaseName parameter' -Skip:(-not $script:SqlServerAvailable -or -not $script:CanUseServerParameter) {
         $tables = GenXdev\Get-SQLServerTables -DatabaseName 'tempdb' -Server $script:TestServer
         $tables | Pester\Should -Not -BeNullOrEmpty
         $tableNames = $tables | Microsoft.PowerShell.Core\ForEach-Object { $_.name }
@@ -71,7 +104,7 @@ Pester\Describe 'Get-SQLServerTables' {
         $tableNames | Pester\Should -Contain $script:AnotherTableName
     }
 
-    Pester\It 'Should return tables in sorted order' -Skip:(-not $script:SqlServerAvailable) {
+    Pester\It 'Should return tables in sorted order' -Skip:(-not $script:SqlServerAvailable -or -not $script:CanUseServerParameter) {
         $tables = GenXdev\Get-SQLServerTables -DatabaseName 'tempdb' -Server $script:TestServer
         $tableNames = $tables | Microsoft.PowerShell.Core\ForEach-Object { $_.name }
         $sortedNames = $tableNames | Microsoft.PowerShell.Utility\Sort-Object

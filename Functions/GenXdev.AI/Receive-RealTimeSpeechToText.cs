@@ -277,8 +277,8 @@ With silence detection.
         private int _bufferQueueCount = 0;
 
         // The format the capture device actually settled on. Not necessarily what
-        // was requested: WasapiLoopbackCapture dictates its own, and some mics
-        // reject 16kHz mono. The buffered bytes are converted from this.
+        // was requested: some mics reject 16kHz mono. The buffered bytes are
+        // converted from this.
         private NAudio.Wave.WaveFormat _captureFormat;
         private bool hadAudio;
         private bool everHadAudio;
@@ -439,7 +439,7 @@ With silence detection.
             try
             {
                 // Create desktop audio capture
-                _primaryWaveIn = new WasapiLoopbackCapture();
+                _primaryWaveIn = new WasapiLoopbackWaveIn();
                 WriteVerbose("Desktop audio capture initialized");
                 // Create recording device input
                 _secondaryWaveIn = CreateRecordingDeviceInput();
@@ -766,8 +766,8 @@ With silence detection.
         {
             using (waveIn)
             {
-                // WasapiLoopbackCapture ignores or rejects this - always read back
-                // what the device actually settled on rather than assuming
+                // Some microphones reject 16kHz mono - always read back what the
+                // device actually settled on rather than assuming
                 try
                 {
                     waveIn.WaveFormat = new WaveFormat(16000, 1);
@@ -896,7 +896,7 @@ With silence detection.
                         WriteWarning("No standard input device was found and switching to desktop audio.");
                         waveIn.Dispose();
                         _isFallback = true;
-                        var desktopAudio = new WasapiLoopbackCapture();
+                        var desktopAudio = new WasapiLoopbackWaveIn();
                         ProcessSingleAudioInput(desktopAudio);
                         return;
                     }
@@ -1088,7 +1088,7 @@ With silence detection.
                     // For desktop audio capture, we use the default device but can log the attempt
                     WriteWarning($"Desktop audio device selection by name is not supported in this NAudio version. Using default desktop audio capture.");
                 }
-                return new WasapiLoopbackCapture();
+                return new WasapiLoopbackWaveIn();
             }
             else
             {
@@ -1599,6 +1599,78 @@ With silence detection.
                 _cts.Token).GetAwaiter().GetResult();
 
             return modelFileName;
+        }
+
+        /// <summary>
+        /// Presents NAudio's WasapiRecorder system loopback capture as an IWaveIn,
+        /// so desktop audio uses the same capture pipeline as microphones.
+        /// </summary>
+        private sealed class WasapiLoopbackWaveIn : IWaveIn
+        {
+            private WasapiRecorder _recorder;
+            private WaveFormat _waveFormat;
+
+            public event EventHandler<WaveInEventArgs> DataAvailable;
+            public event EventHandler<NAudio.Wave.StoppedEventArgs> RecordingStopped;
+
+            public WaveFormat WaveFormat
+            {
+                get
+                {
+                    return _recorder != null ? _recorder.WaveFormat : _waveFormat;
+                }
+                set
+                {
+                    _waveFormat = value;
+                }
+            }
+
+            public void StartRecording()
+            {
+                var builder = new WasapiRecorderBuilder().WithLoopbackCapture();
+
+                if (_waveFormat != null)
+                {
+                    builder = builder.WithFormat(_waveFormat);
+                }
+
+                _recorder = builder.Build();
+                _recorder.DataAvailable += Recorder_DataAvailable;
+                _recorder.RecordingStopped += Recorder_RecordingStopped;
+                _recorder.StartRecording();
+            }
+
+            public void StopRecording()
+            {
+                _recorder?.StopRecording();
+            }
+
+            public void Dispose()
+            {
+                if (_recorder == null)
+                {
+                    return;
+                }
+
+                _recorder.DataAvailable -= Recorder_DataAvailable;
+                _recorder.RecordingStopped -= Recorder_RecordingStopped;
+                _recorder.Dispose();
+                _recorder = null;
+            }
+
+            private void Recorder_DataAvailable(
+                ReadOnlySpan<byte> buffer,
+                NAudio.CoreAudioApi.AudioClientBufferFlags flags,
+                long devicePosition,
+                long qpcPosition)
+            {
+                DataAvailable?.Invoke(this, new WaveInEventArgs(buffer.ToArray(), buffer.Length));
+            }
+
+            private void Recorder_RecordingStopped(object sender, NAudio.Wave.StoppedEventArgs e)
+            {
+                RecordingStopped?.Invoke(this, e);
+            }
         }
     }
 }

@@ -1,18 +1,51 @@
 Pester\Describe 'Get-SQLServerTableData' {
 
+    Pester\BeforeDiscovery {
+
+        # -Skip is evaluated during discovery, so the flags it gates on
+        # must be computed here rather than in BeforeAll
+        . "$PSScriptRoot\SqlServerTestHelpers.ps1"
+
+        $script:TestConfiguration = Get-SqlServerTestConfiguration
+        $script:TestServer = $script:TestConfiguration.Server
+        $script:TestConnectionString = $script:TestConfiguration.ConnectionString
+        $script:CanUseServerParameter = $script:TestConfiguration.CanUseServerParameter
+
+        $script:SqlServerAvailable = $false
+        try {
+            $null = GenXdev\Invoke-SQLServerQuery `
+                -ConnectionString $script:TestConnectionString -Queries 'SELECT 1'
+            $script:SqlServerAvailable = $true
+        }
+        catch {
+            Microsoft.PowerShell.Utility\Write-Warning (
+                'SQL Server not available - skipping database tests: ' +
+                $_.Exception.Message)
+        }
+    }
+
     Pester\BeforeAll {
         Microsoft.PowerShell.Utility\Write-Verbose 'Setting up test environment'
         $script:TestTableName = 'TestDataTable_' + (Microsoft.PowerShell.Utility\Get-Random)
-        $script:TestServer = '.'
+        . "$PSScriptRoot\SqlServerTestHelpers.ps1"
+
+        # run against $env:GENXDEV_SQL_TEST_CONNECTIONSTRING, or the local default
+        $script:TestConfiguration = Get-SqlServerTestConfiguration
+        $script:TestServer = $script:TestConfiguration.Server
+        $script:TestConnectionString = $script:TestConfiguration.ConnectionString
+        $script:CanUseServerParameter = $script:TestConfiguration.CanUseServerParameter
 
         # Check if SQL Server is available
         $script:SqlServerAvailable = $false
         try {
-            GenXdev\Invoke-SQLServerQuery -DatabaseName 'tempdb' -Server $script:TestServer -Queries "SELECT 1"
+            GenXdev\Invoke-SQLServerQuery `
+                -ConnectionString $script:TestConnectionString -Queries "SELECT 1"
             $script:SqlServerAvailable = $true
         }
         catch {
-            Microsoft.PowerShell.Utility\Write-Verbose "SQL Server not available - skipping tests"
+            Microsoft.PowerShell.Utility\Write-Warning (
+                'SQL Server not available - skipping database tests: ' +
+                $_.Exception.Message)
         }
 
         if ($script:SqlServerAvailable) {
@@ -34,7 +67,7 @@ CREATE TABLE tempdb.dbo.${script:TestTableName} (
             )
 
             foreach ($query in $setupQueries) {
-                GenXdev\Invoke-SQLServerQuery -DatabaseName 'tempdb' -Server $script:TestServer -Queries $query
+                GenXdev\Invoke-SQLServerQuery -ConnectionString $script:TestConnectionString -Queries $query
             }
         }
     }
@@ -44,7 +77,7 @@ CREATE TABLE tempdb.dbo.${script:TestTableName} (
         if ($script:SqlServerAvailable) {
             try {
                 $dropQuery = "IF OBJECT_ID('tempdb.dbo.${script:TestTableName}') IS NOT NULL DROP TABLE tempdb.dbo.${script:TestTableName}"
-                GenXdev\Invoke-SQLServerQuery -DatabaseName 'tempdb' -Server $script:TestServer -Queries $dropQuery
+                GenXdev\Invoke-SQLServerQuery -ConnectionString $script:TestConnectionString -Queries $dropQuery
             }
             catch {
                 Microsoft.PowerShell.Utility\Write-Warning "Could not clean up test table: $_"
@@ -53,19 +86,19 @@ CREATE TABLE tempdb.dbo.${script:TestTableName} (
     }
 
     Pester\It 'Should retrieve table data using connection string' -Skip:(-not $script:SqlServerAvailable) {
-        $connString = "Server=$script:TestServer;Database=tempdb;Integrated Security=true;TrustServerCertificate=true"
-        $data = GenXdev\Get-SQLServerTableData -ConnectionString $connString -TableName $script:TestTableName
+        $data = GenXdev\Get-SQLServerTableData `
+            -ConnectionString $script:TestConnectionString -TableName $script:TestTableName
         $data | Pester\Should -Not -BeNullOrEmpty
         $data.Count | Pester\Should -Be 5
     }
 
-    Pester\It 'Should retrieve table data using DatabaseName parameter' -Skip:(-not $script:SqlServerAvailable) {
+    Pester\It 'Should retrieve table data using DatabaseName parameter' -Skip:(-not $script:SqlServerAvailable -or -not $script:CanUseServerParameter) {
         $data = GenXdev\Get-SQLServerTableData -DatabaseName 'tempdb' -Server $script:TestServer -TableName $script:TestTableName
         $data | Pester\Should -Not -BeNullOrEmpty
         $data.Count | Pester\Should -Be 5
     }
 
-    Pester\It 'Should limit results when Count parameter is specified' -Skip:(-not $script:SqlServerAvailable) {
+    Pester\It 'Should limit results when Count parameter is specified' -Skip:(-not $script:SqlServerAvailable -or -not $script:CanUseServerParameter) {
         $data = GenXdev\Get-SQLServerTableData -DatabaseName 'tempdb' -Server $script:TestServer -TableName $script:TestTableName -Count 3
         $data | Pester\Should -Not -BeNullOrEmpty
         $data.Count | Pester\Should -Be 3

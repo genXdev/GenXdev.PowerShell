@@ -1,6 +1,6 @@
 # Invoke-SQLServerQuery
 
-> **SubModule:** GenXdev.Data.SqlServer | **Type:** Function | **Aliases:** —
+> **SubModule:** GenXdev.Data.SqlServer | **Type:** Cmdlet | **Aliases:** —
 
 ## Synopsis
 
@@ -12,14 +12,21 @@ Executes SQL queries against a SQL Server database with parameter support and
 configurable transaction isolation. Can use an external transaction for batch
 operations or create its own internal transaction. When using an external
 transaction, the caller is responsible for committing/rolling back.
-Connection priority: Transaction > ConnectionString > DatabaseName (requires Server).
+Connection priority: Transaction > Connection > ConnectionString > DatabaseName
+(requires Server). An explicitly provided DatabaseName replaces the database of
+the ConnectionString.
+
+Every row of every result set is returned as a hashtable keyed by column name.
+
+When no connection parameter is bound, the command uses the values
+$PSDefaultParameterValues holds for it in the caller's scope.
 
 
 ## Syntax
 
 
 ```powershell
-Invoke-SQLServerQuery [[-Queries] <String[]>] [[-DatabaseName] <String>] [[-Server] <String>] [[-Transaction] <Object>] [[-ConnectionString] <String>] [[-SqlParameters] <Collections.Hashtable[]>] [-AutoConsent] [-AutoConsentAllPackages] [-Connection <Object>] [-IsolationLevel <String>] [-SessionOnly] [<CommonParameters>]
+Invoke-SQLServerQuery [[-Queries] <String[]>] [[-DatabaseName] <String>] [[-Server] <String>] [[-Transaction] <Microsoft.Data.SqlClient.SqlTransaction>] [[-ConnectionString] <String>] [[-SqlParameters] <Collections.Hashtable[]>] [-Connection <Microsoft.Data.SqlClient.SqlConnection>] [-IsolationLevel <String>] [-TimeoutSeconds <Int32>] [<CommonParameters>]
 ```
 
 ## Parameters
@@ -29,37 +36,30 @@ Invoke-SQLServerQuery [[-Queries] <String[]>] [[-DatabaseName] <String>] [[-Serv
 | `-Queries` | String[] | ☐ | The query or queries to execute. |
 | `-DatabaseName` | String | ☐ | The name of the SQL Server database. |
 | `-Server` | String | ☐ | The SQL Server instance name. |
-| `-Transaction` | Object | ☐ | An existing SQL Server transaction to use for<br>the queries. |
-| `-Connection` | Object | ☐ | An existing open SqlConnection to execute on. |
+| `-Transaction` | Microsoft.Data.SqlClient.SqlTransaction | ☐ | An existing SQL Server transaction to use for<br>the queries. |
+| `-Connection` | Microsoft.Data.SqlClient.SqlConnection | ☐ | An existing open SqlConnection to execute on. |
 | `-ConnectionString` | String | ☐ | The connection string to the SQL database. |
 | `-SqlParameters` | Collections.Hashtable[] | ☐ | Query parameters as hashtables. |
-| `-IsolationLevel` | String | ☐ | The isolation level to use. default is<br>ReadCommitted. |
-| `-AutoConsent` | SwitchParameter | ☐ | Automatically consent to this installation<br>type and set persistent flag.. |
-| `-AutoConsentAllPackages` | SwitchParameter | ☐ | Automatically consent to ALL third-party<br>software installations and set persistent<br>flag for SQL Server package. |
-| `-SessionOnly` | SwitchParameter | ☐ | Use alternative settings stored in session<br>for  preferences |
+| `-IsolationLevel` | String | ☐ | The isolation level to use, or NoTransaction<br>for autocommit mode. Default is<br>ReadCommitted. |
+| `-TimeoutSeconds` | Int32 | ☐ | Command timeout in seconds for every query.<br>Default is 30, 0 waits indefinitely. |
 
 ## Examples
 
 
-
 ```powershell
-Invoke-SQLServerQuery -Server "localhost" -DatabaseName "MyDB" -Queries "SELECT * FROM Users"
+Invoke-SQLServerQuery -Server "localhost" -DatabaseName "MyDB" `
+    -Queries "SELECT * FROM Users"
 ```
 
+Returns every user row as a hashtable.
 
 
 ```powershell
-"SELECT * FROM Users" | Invoke-SQLServerQuery -ConnectionString "Server=localhost;Database=MyDB;Integrated Security=true" -SqlParameters @{"UserId"=1}
-```
-
-
-
-```powershell
-Batch operations using external transaction
 $tx = Get-SQLServerTransaction -Server "localhost" -DatabaseName "MyDB"
 try {
-    Invoke-SQLServerQuery -Transaction $tx -Queries "INSERT INTO Users VALUES (@name)" -SqlParameters @{"name"="John"}
-    Invoke-SQLServerQuery -Transaction $tx -Queries "UPDATE Users SET active=1 WHERE name=@name" -SqlParameters @{"name"="John"}
+    Invoke-SQLServerQuery -Transaction $tx `
+        -Queries "INSERT INTO Users VALUES (@name)" `
+        -SqlParameters @{"name"="John"}
     $tx.Commit()
 } catch {
     $tx.Rollback()
@@ -69,11 +69,7 @@ try {
 }
 ```
 
-
-
-```powershell
-Invoke-SQLServerQuery -Server "localhost" -DatabaseName "MyDB" -Queries "SELECT * FROM Users" -AutoConsentAllPackages
-```
+Runs a statement inside a transaction the caller owns.
 
 ## Parameter Details
 
@@ -100,7 +96,7 @@ Invoke-SQLServerQuery -Server "localhost" -DatabaseName "MyDB" -Queries "SELECT 
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 1 |
-| **Default value** | `'master'` |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |
@@ -115,14 +111,14 @@ Invoke-SQLServerQuery -Server "localhost" -DatabaseName "MyDB" -Queries "SELECT 
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 2 |
-| **Default value** | `'.'` |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |
 
 <hr/>
 
-### `-Transaction <Object>`
+### `-Transaction <Microsoft.Data.SqlClient.SqlTransaction>`
 
 > An existing SQL Server transaction to use for the queries.
 
@@ -137,7 +133,7 @@ Invoke-SQLServerQuery -Server "localhost" -DatabaseName "MyDB" -Queries "SELECT 
 
 <hr/>
 
-### `-Connection <Object>`
+### `-Connection <Microsoft.Data.SqlClient.SqlConnection>`
 
 > An existing open SqlConnection to execute on.
 
@@ -175,7 +171,7 @@ Invoke-SQLServerQuery -Server "localhost" -DatabaseName "MyDB" -Queries "SELECT 
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 5 |
-| **Default value** | `@()` |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | True (ByValue, ByPropertyName) |
 | **Aliases** | `data`, `parameters`, `args` |
 | **Accept wildcard characters?** | No |
@@ -184,22 +180,7 @@ Invoke-SQLServerQuery -Server "localhost" -DatabaseName "MyDB" -Queries "SELECT 
 
 ### `-IsolationLevel <String>`
 
-> The isolation level to use. default is ReadCommitted.
-
-| Property | Value |
-|:---|:---|
-| **Required?** | No |
-| **Position?** | Named |
-| **Default value** | `"ReadCommitted"` |
-| **Accept pipeline input?** | False |
-| **Aliases** | *(none)* |
-| **Accept wildcard characters?** | No |
-
-<hr/>
-
-### `-AutoConsent`
-
-> Automatically consent to this installation type and set persistent flag..
+> The isolation level to use, or NoTransaction for autocommit mode. Default is ReadCommitted.
 
 | Property | Value |
 |:---|:---|
@@ -212,32 +193,17 @@ Invoke-SQLServerQuery -Server "localhost" -DatabaseName "MyDB" -Queries "SELECT 
 
 <hr/>
 
-### `-AutoConsentAllPackages`
+### `-TimeoutSeconds <Int32>`
 
-> Automatically consent to ALL third-party software installations and set persistent flag for SQL Server package.
-
-| Property | Value |
-|:---|:---|
-| **Required?** | No |
-| **Position?** | Named |
-| **Default value** | *(none)* |
-| **Accept pipeline input?** | False |
-| **Aliases** | *(none)* |
-| **Accept wildcard characters?** | No |
-
-<hr/>
-
-### `-SessionOnly`
-
-> Use alternative settings stored in session for  preferences
+> Command timeout in seconds for every query. Default is 30, 0 waits indefinitely.
 
 | Property | Value |
 |:---|:---|
 | **Required?** | No |
 | **Position?** | Named |
-| **Default value** | *(none)* |
+| **Default value** | `0` |
 | **Accept pipeline input?** | False |
-| **Aliases** | *(none)* |
+| **Aliases** | `timeout`, `maxseconds` |
 | **Accept wildcard characters?** | No |
 
 <hr/>

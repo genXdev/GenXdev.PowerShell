@@ -63,8 +63,6 @@ function EnsurePlaywright {
     }
 
     process {
-
-
         ########################################################################
         # Step 1: Ensure Microsoft.Playwright .NET assembly is loaded
         ########################################################################

@@ -2,7 +2,7 @@
 # Part of PowerShell module : GenXdev.Software
 # Original cmdlet filename  : EnsureWinMerge.Tests.ps1
 # Original author           : René Vaessen / GenXdev
-# Version                   : 3.36.0
+# Version                   : 3.37.0
 ###############################################################################
 
 Pester\BeforeAll {

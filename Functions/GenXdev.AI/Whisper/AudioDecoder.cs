@@ -123,8 +123,8 @@ namespace GenXdev.AI.Whisper
         /// Converts a block of captured audio to mono 16 kHz float samples,
         /// honouring whatever format the capture device actually produced.
         ///
-        /// Live capture cannot assume 16 kHz mono 16-bit: WasapiLoopbackCapture
-        /// dictates its own format (commonly 48 kHz stereo IEEE float) and some
+        /// Live capture cannot assume 16 kHz mono 16-bit: a capture device may
+        /// deliver its own format (commonly 48 kHz stereo IEEE float) and some
         /// microphones refuse a requested format. Reinterpreting those bytes as
         /// 16-bit mono PCM yields noise, which whisper then transcribes as nothing.
         /// </summary>

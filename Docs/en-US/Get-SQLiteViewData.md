@@ -1,6 +1,6 @@
 # Get-SQLiteViewData
 
-> **SubModule:** GenXdev.Data.SQLite | **Type:** Function | **Aliases:** —
+> **SubModule:** GenXdev.Data.SQLite | **Type:** Cmdlet | **Aliases:** —
 
 ## Synopsis
 
@@ -9,8 +9,9 @@
 ## Description
 
 Queries a SQLite database view using either a connection string or database file
-path. The function supports limiting the number of returned records and provides
-verbose output for tracking query execution.
+path. The command supports limiting the number of returned records and provides
+verbose output for tracking query execution. Every row is returned as a
+hashtable keyed by column name.
 
 
 ## Syntax
@@ -36,18 +37,20 @@ Get-SQLiteViewData -ViewName <String> [[-Count] <Int32>] [<CommonParameters>]
 ## Examples
 
 
+```powershell
+Get-SQLiteViewData -DatabaseFilePath "C:\MyDb.sqlite" `
+    -ViewName "CustomerView" -Count 50
+```
+
+Returns at most 50 rows from the view.
+
 
 ```powershell
 Get-SQLiteViewData -DatabaseFilePath "C:\MyDb.sqlite" `
-    -ViewName "CustomerView" `
-    -Count 50
+    -ViewName "CustomerView" -Count -1
 ```
 
-
-
-```powershell
-Get-SQLiteViewData "C:\MyDb.sqlite" "CustomerView"
-```
+Returns every row from the view.
 
 ## Parameter Details
 
@@ -106,7 +109,7 @@ Get-SQLiteViewData "C:\MyDb.sqlite" "CustomerView"
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 2 |
-| **Default value** | `100` |
+| **Default value** | `0` |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |
@@ -115,6 +118,7 @@ Get-SQLiteViewData "C:\MyDb.sqlite" "CustomerView"
 
 ## Related Links
 
+- [Get-SQLiteConnection](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteConnection.md)
 - [Get-SQLiteSchema](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteSchema.md)
 - [Get-SQLiteTableColumnData](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteTableColumnData.md)
 - [Get-SQLiteTableData](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteTableData.md)
@@ -125,5 +129,6 @@ Get-SQLiteViewData "C:\MyDb.sqlite" "CustomerView"
 - [Get-SQLiteViews](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteViews.md)
 - [Get-SQLiteViewSchema](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteViewSchema.md)
 - [Invoke-SQLiteQuery](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLiteQuery.md)
+- [Invoke-SQLiteScriptFile](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLiteScriptFile.md)
 - [Invoke-SQLiteStudio](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLiteStudio.md)
 - [New-SQLiteDatabase](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/New-SQLiteDatabase.md)

@@ -1,6 +1,6 @@
 # Get-SQLiteTableColumnData
 
-> **SubModule:** GenXdev.Data.SQLite | **Type:** Function | **Aliases:** —
+> **SubModule:** GenXdev.Data.SQLite | **Type:** Cmdlet | **Aliases:** —
 
 ## Synopsis
 
@@ -8,11 +8,10 @@
 
 ## Description
 
-This function provides a convenient way to extract data from a single column in a
+This command provides a convenient way to extract data from a single column in a
 SQLite database table. It supports two connection methods: direct database file
-path or connection string. The function includes options to limit the number of
-returned records and uses proper SQLite query construction for optimal
-performance.
+path or connection string. The command includes options to limit the number of
+returned records. Every row is returned as a hashtable keyed by column name.
 
 
 ## Syntax
@@ -39,19 +38,20 @@ Get-SQLiteTableColumnData -TableName <String> -ColumnName <String> [[-Count] <In
 ## Examples
 
 
+```powershell
+Get-SQLiteTableColumnData -DatabaseFilePath "C:\MyDb.sqlite" `
+    -TableName "Employees" -ColumnName "Email" -Count 10
+```
+
+Returns the Email value of at most 10 employees.
+
 
 ```powershell
 Get-SQLiteTableColumnData -DatabaseFilePath "C:\MyDb.sqlite" `
-    -TableName "Employees" `
-    -ColumnName "Email" `
-    -Count 10
+    -TableName "Employees" -ColumnName "Email" -Count -1
 ```
 
-
-
-```powershell
-Get-SQLiteTableColumnData "C:\MyDb.sqlite" "Employees" "Email"
-```
+Returns the Email value of every employee.
 
 ## Parameter Details
 
@@ -125,7 +125,7 @@ Get-SQLiteTableColumnData "C:\MyDb.sqlite" "Employees" "Email"
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 3 |
-| **Default value** | `100` |
+| **Default value** | `0` |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |
@@ -134,6 +134,7 @@ Get-SQLiteTableColumnData "C:\MyDb.sqlite" "Employees" "Email"
 
 ## Related Links
 
+- [Get-SQLiteConnection](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteConnection.md)
 - [Get-SQLiteSchema](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteSchema.md)
 - [Get-SQLiteTableData](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteTableData.md)
 - [Get-SQLiteTables](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteTables.md)
@@ -144,5 +145,6 @@ Get-SQLiteTableColumnData "C:\MyDb.sqlite" "Employees" "Email"
 - [Get-SQLiteViews](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteViews.md)
 - [Get-SQLiteViewSchema](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteViewSchema.md)
 - [Invoke-SQLiteQuery](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLiteQuery.md)
+- [Invoke-SQLiteScriptFile](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLiteScriptFile.md)
 - [Invoke-SQLiteStudio](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLiteStudio.md)
 - [New-SQLiteDatabase](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/New-SQLiteDatabase.md)

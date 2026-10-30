@@ -684,8 +684,6 @@ $($exc.InvocationInfo.ScriptStackTrace)
 
                 # process script analyzer results if issues were found
                 if ($scriptAnalyzerResults.Count -gt 0) {
-
-
                     # handle stopping action for script analyzer failures
                     switch ($TestFailedAction) {
 

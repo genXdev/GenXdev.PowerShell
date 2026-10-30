@@ -1,6 +1,6 @@
 # Get-SQLiteTables
 
-> **SubModule:** GenXdev.Data.SQLite | **Type:** Function | **Aliases:** —
+> **SubModule:** GenXdev.Data.SQLite | **Type:** Cmdlet | **Aliases:** —
 
 ## Synopsis
 
@@ -10,7 +10,8 @@
 
 Queries the sqlite_master system table to retrieve all user-defined table names
 from a SQLite database. Supports connecting via either a direct connection string
-or a database file path. Returns the table names as a collection of strings.
+or a database file path. Every table is returned as a hashtable with a name
+property.
 
 
 ## Syntax
@@ -32,18 +33,18 @@ Get-SQLiteTables -DatabaseFilePath <String> [<CommonParameters>]
 ## Examples
 
 
-
 ```powershell
 Get-SQLiteTables -DatabaseFilePath "C:\Databases\Inventory.sqlite"
-Returns all table names from the specified database file
 ```
 
+Returns all table names from the specified database file.
 
 
 ```powershell
 Get-SQLiteTables -ConnectionString "Data Source=C:\DB\Users.sqlite;Version=3;"
-Returns all table names using a custom connection string
 ```
+
+Returns all table names using a custom connection string.
 
 ## Parameter Details
 
@@ -81,6 +82,7 @@ Returns all table names using a custom connection string
 
 ## Related Links
 
+- [Get-SQLiteConnection](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteConnection.md)
 - [Get-SQLiteSchema](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteSchema.md)
 - [Get-SQLiteTableColumnData](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteTableColumnData.md)
 - [Get-SQLiteTableData](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteTableData.md)
@@ -91,5 +93,6 @@ Returns all table names using a custom connection string
 - [Get-SQLiteViews](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteViews.md)
 - [Get-SQLiteViewSchema](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteViewSchema.md)
 - [Invoke-SQLiteQuery](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLiteQuery.md)
+- [Invoke-SQLiteScriptFile](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLiteScriptFile.md)
 - [Invoke-SQLiteStudio](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLiteStudio.md)
 - [New-SQLiteDatabase](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/New-SQLiteDatabase.md)

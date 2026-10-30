@@ -1,6 +1,6 @@
 # Invoke-SQLiteQuery
 
-> **SubModule:** GenXdev.Data.SQLite | **Type:** Function | **Aliases:** —
+> **SubModule:** GenXdev.Data.SQLite | **Type:** Cmdlet | **Aliases:** —
 
 ## Synopsis
 
@@ -12,14 +12,20 @@ Executes SQL queries against a SQLite database with parameter support and
 configurable transaction isolation. Can use an external transaction for batch
 operations or create its own internal transaction. When using an external
 transaction, the caller is responsible for committing/rolling back.
-Connection priority: Transaction > ConnectionString > DatabaseFilePath.
+Connection priority: Transaction > Connection > ConnectionString >
+DatabaseFilePath.
+
+Every row of every result set is returned as a hashtable keyed by column name.
+
+When no connection parameter is bound, the command uses the values
+$PSDefaultParameterValues holds for it in the caller's scope.
 
 
 ## Syntax
 
 
 ```powershell
-Invoke-SQLiteQuery [[-ConnectionString] <String>] [[-DatabaseFilePath] <String>] [[-Transaction] <Object>] -Queries <String[]> [[-SqlParameters] <Collections.Hashtable[]>] [-AutoConsent] [-AutoConsentAllPackages] [-IsolationLevel <String>] [-SessionOnly] [<CommonParameters>]
+Invoke-SQLiteQuery [[-ConnectionString] <String>] [[-DatabaseFilePath] <String>] [[-Transaction] <Data.SQLite.SQLiteTransaction>] -Queries <String[]> [[-SqlParameters] <Collections.Hashtable[]>] [-Connection <Data.SQLite.SQLiteConnection>] [-IsolationLevel <String>] [-TimeoutSeconds <Int32>] [<CommonParameters>]
 ```
 
 ## Parameters
@@ -28,36 +34,30 @@ Invoke-SQLiteQuery [[-ConnectionString] <String>] [[-DatabaseFilePath] <String>]
 |:---|:---|:---:|:---|
 | `-ConnectionString` | String | ☐ | The connection string to the SQLite database. |
 | `-DatabaseFilePath` | String | ☐ | The path to the SQLite database file. |
-| `-Transaction` | Object | ☐ | An existing SQLite transaction to use for the<br>queries. |
+| `-Transaction` | Data.SQLite.SQLiteTransaction | ☐ | An existing SQLite transaction to use for the<br>queries. |
+| `-Connection` | Data.SQLite.SQLiteConnection | ☐ | An existing open SQLiteConnection to execute<br>on. |
 | `-Queries` | String[] | ✅ | The query or queries to execute. |
 | `-SqlParameters` | Collections.Hashtable[] | ☐ | Query parameters as hashtables. |
-| `-IsolationLevel` | String | ☐ | The isolation level to use. default is<br>ReadCommitted. |
-| `-AutoConsent` | SwitchParameter | ☐ | Automatically consent to this installation<br>type and set persistent flag.. |
-| `-AutoConsentAllPackages` | SwitchParameter | ☐ | Automatically consent to ALL third-party<br>software installations and set persistent<br>flag for SQLite package. |
-| `-SessionOnly` | SwitchParameter | ☐ | Use alternative settings stored in session<br>for  preferences |
+| `-TimeoutSeconds` | Int32 | ☐ | Command timeout in seconds for every query.<br>Default is 30, 0 waits indefinitely. |
+| `-IsolationLevel` | String | ☐ | The isolation level to use, or NoTransaction<br>for autocommit mode. Default is<br>ReadCommitted. |
 
 ## Examples
 
 
-
 ```powershell
-Invoke-SQLiteQuery -DatabaseFilePath "C:\data.db" -Queries "SELECT * FROM Users"
+Invoke-SQLiteQuery -DatabaseFilePath "C:\data.db" `
+    -Queries "SELECT * FROM Users"
 ```
 
+Returns every user row as a hashtable.
 
 
 ```powershell
-"SELECT * FROM Users" | isql "C:\data.db" @{"UserId"=1}
-```
-
-
-
-```powershell
-Batch operations using external transaction
 $tx = Get-SQLiteTransaction -DatabaseFilePath "C:\data.db"
 try {
-    Invoke-SQLiteQuery -Transaction $tx -Queries "INSERT INTO Users VALUES (@name)" -SqlParameters @{"name"="John"}
-    Invoke-SQLiteQuery -Transaction $tx -Queries "UPDATE Users SET active=1 WHERE name=@name" -SqlParameters @{"name"="John"}
+    Invoke-SQLiteQuery -Transaction $tx `
+        -Queries "INSERT INTO Users VALUES (@name)" `
+        -SqlParameters @{"name"="John"}
     $tx.Commit()
 } catch {
     $tx.Rollback()
@@ -67,11 +67,7 @@ try {
 }
 ```
 
-
-
-```powershell
-Invoke-SQLiteQuery -DatabaseFilePath "C:\data.db" -Queries "SELECT * FROM Users" -AutoConsentAllPackages
-```
+Runs a statement inside a transaction the caller owns.
 
 ## Parameter Details
 
@@ -105,7 +101,7 @@ Invoke-SQLiteQuery -DatabaseFilePath "C:\data.db" -Queries "SELECT * FROM Users"
 
 <hr/>
 
-### `-Transaction <Object>`
+### `-Transaction <Data.SQLite.SQLiteTransaction>`
 
 > An existing SQLite transaction to use for the queries.
 
@@ -113,6 +109,21 @@ Invoke-SQLiteQuery -DatabaseFilePath "C:\data.db" -Queries "SELECT * FROM Users"
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 2 |
+| **Default value** | *(none)* |
+| **Accept pipeline input?** | False |
+| **Aliases** | *(none)* |
+| **Accept wildcard characters?** | No |
+
+<hr/>
+
+### `-Connection <Data.SQLite.SQLiteConnection>`
+
+> An existing open SQLiteConnection to execute on.
+
+| Property | Value |
+|:---|:---|
+| **Required?** | No |
+| **Position?** | Named |
 | **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
@@ -145,7 +156,7 @@ Invoke-SQLiteQuery -DatabaseFilePath "C:\data.db" -Queries "SELECT * FROM Users"
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 4 |
-| **Default value** | `@()` |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | True (ByValue, ByPropertyName) |
 | **Aliases** | `data`, `parameters`, `args` |
 | **Accept wildcard characters?** | No |
@@ -154,54 +165,24 @@ Invoke-SQLiteQuery -DatabaseFilePath "C:\data.db" -Queries "SELECT * FROM Users"
 
 <hr/>
 
+### `-TimeoutSeconds <Int32>`
+
+> Command timeout in seconds for every query. Default is 30, 0 waits indefinitely.
+
+| Property | Value |
+|:---|:---|
+| **Required?** | No |
+| **Position?** | Named |
+| **Default value** | `0` |
+| **Accept pipeline input?** | False |
+| **Aliases** | `timeout`, `maxseconds` |
+| **Accept wildcard characters?** | No |
+
+<hr/>
+
 ### `-IsolationLevel <String>`
 
-> The isolation level to use. default is ReadCommitted.
-
-| Property | Value |
-|:---|:---|
-| **Required?** | No |
-| **Position?** | Named |
-| **Default value** | `"ReadCommitted"` |
-| **Accept pipeline input?** | False |
-| **Aliases** | *(none)* |
-| **Accept wildcard characters?** | No |
-
-<hr/>
-
-### `-AutoConsent`
-
-> Automatically consent to this installation type and set persistent flag..
-
-| Property | Value |
-|:---|:---|
-| **Required?** | No |
-| **Position?** | Named |
-| **Default value** | *(none)* |
-| **Accept pipeline input?** | False |
-| **Aliases** | *(none)* |
-| **Accept wildcard characters?** | No |
-
-<hr/>
-
-### `-AutoConsentAllPackages`
-
-> Automatically consent to ALL third-party software installations and set persistent flag for SQLite package.
-
-| Property | Value |
-|:---|:---|
-| **Required?** | No |
-| **Position?** | Named |
-| **Default value** | *(none)* |
-| **Accept pipeline input?** | False |
-| **Aliases** | *(none)* |
-| **Accept wildcard characters?** | No |
-
-<hr/>
-
-### `-SessionOnly`
-
-> Use alternative settings stored in session for  preferences
+> The isolation level to use, or NoTransaction for autocommit mode. Default is ReadCommitted.
 
 | Property | Value |
 |:---|:---|
@@ -216,6 +197,7 @@ Invoke-SQLiteQuery -DatabaseFilePath "C:\data.db" -Queries "SELECT * FROM Users"
 
 ## Related Links
 
+- [Get-SQLiteConnection](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteConnection.md)
 - [Get-SQLiteSchema](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteSchema.md)
 - [Get-SQLiteTableColumnData](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteTableColumnData.md)
 - [Get-SQLiteTableData](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteTableData.md)
@@ -226,5 +208,6 @@ Invoke-SQLiteQuery -DatabaseFilePath "C:\data.db" -Queries "SELECT * FROM Users"
 - [Get-SQLiteViewData](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteViewData.md)
 - [Get-SQLiteViews](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteViews.md)
 - [Get-SQLiteViewSchema](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Get-SQLiteViewSchema.md)
+- [Invoke-SQLiteScriptFile](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLiteScriptFile.md)
 - [Invoke-SQLiteStudio](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/Invoke-SQLiteStudio.md)
 - [New-SQLiteDatabase](https://github.com/genXdev/GenXdev.PowerShell/blob/main/Docs/en-US/New-SQLiteDatabase.md)

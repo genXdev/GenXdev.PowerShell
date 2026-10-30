@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Management.Automation;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 
@@ -164,6 +165,183 @@ GenXdev\ReadJsonWithRetry `
         }
 
         return results;
+    }
+
+    /// <summary>
+    /// Applies the values $PSDefaultParameterValues holds for one group of
+    /// alternative parameters of this command in the scope the command was
+    /// called from. Returns true when the group is settled, so the caller
+    /// should not try another group: either one of its parameters was bound,
+    /// or a default value was applied to one of them.
+    /// </summary>
+    /// <param name="ParameterNames">The alternative parameters of the group.</param>
+    /// <returns>True when the caller should stop and try no other group.</returns>
+    protected bool ApplyDefaultParameterValues(params string[] ParameterNames)
+    {
+        foreach (string parameterName in ParameterNames)
+        {
+            if (MyInvocation.BoundParameters.ContainsKey(parameterName))
+            {
+                return true;
+            }
+        }
+
+        List<string> applicableParameters = [];
+
+        foreach (string parameterName in ParameterNames)
+        {
+            if (!IsParameterInActiveSet(parameterName)) continue;
+            if (GetParameterProperty(parameterName) == null) continue;
+
+            applicableParameters.Add(parameterName);
+        }
+
+        if (applicableParameters.Count == 0) return false;
+
+        Hashtable defaults = GetDefaultParameterValues([.. applicableParameters]);
+
+        bool applied = false;
+
+        foreach (string parameterName in applicableParameters)
+        {
+            if (!defaults.ContainsKey(parameterName)) continue;
+
+            object value = defaults[parameterName];
+            if (value == null) continue;
+
+            PropertyInfo property = GetParameterProperty(parameterName);
+
+            property.SetValue(this,
+                LanguagePrimitives.ConvertTo(value, property.PropertyType));
+
+            applied = true;
+
+            WriteVerbose("Using the $PSDefaultParameterValues value for " +
+                $"parameter '{parameterName}'");
+        }
+
+        return applied;
+    }
+
+    /// <summary>
+    /// Gets the writable parameter property of this command with a name,
+    /// ignoring case.
+    /// </summary>
+    /// <param name="ParameterName">The name of the parameter.</param>
+    /// <returns>The property, or null when there is none.</returns>
+    private PropertyInfo GetParameterProperty(string ParameterName)
+    {
+        PropertyInfo property = GetType().GetProperty(
+            ParameterName,
+            BindingFlags.Public | BindingFlags.Instance |
+            BindingFlags.IgnoreCase);
+
+        return property != null &&
+            property.CanWrite &&
+            Attribute.IsDefined(property, typeof(ParameterAttribute)) ?
+            property :
+            null;
+    }
+
+    /// <summary>
+    /// Reports whether a parameter belongs to the parameter set this command
+    /// was called with.
+    /// </summary>
+    /// <param name="ParameterName">The name of the parameter.</param>
+    /// <returns>True when the parameter can be set for this invocation.</returns>
+    private bool IsParameterInActiveSet(string ParameterName)
+    {
+        string parameterSetName = ParameterSetName;
+
+        if (string.IsNullOrWhiteSpace(parameterSetName) ||
+            parameterSetName == "__AllParameterSets")
+        {
+            return true;
+        }
+
+        CommandInfo commandInfo =
+            GetCachedCommandInfo(MyInvocation.MyCommand.Name);
+
+        if (commandInfo?.ParameterSets == null) return true;
+
+        foreach (CommandParameterSetInfo parameterSet in commandInfo.ParameterSets)
+        {
+            if (!string.Equals(
+                parameterSet.Name,
+                parameterSetName,
+                StringComparison.OrdinalIgnoreCase)) continue;
+
+            foreach (CommandParameterInfo parameter in parameterSet.Parameters)
+            {
+                if (string.Equals(
+                    parameter.Name,
+                    ParameterName,
+                    StringComparison.OrdinalIgnoreCase)) return true;
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Gets the values $PSDefaultParameterValues holds for parameters of this
+    /// command in the scope the command was called from. The global table is
+    /// read, because a module session state carries its own empty copy of the
+    /// preference variable. An entry that names the command itself wins over
+    /// an entry with a wildcard command pattern.
+    /// </summary>
+    /// <param name="ParameterNames">The parameters to look up.</param>
+    /// <returns>The default values, keyed by parameter name.</returns>
+    private Hashtable GetDefaultParameterValues(params string[] ParameterNames)
+    {
+        return InvokeScript<Hashtable>(@"
+param($commandName, $parameterNames)
+
+$result = @{}
+
+$globalVariable = Get-Variable -Name PSDefaultParameterValues -Scope Global -ErrorAction SilentlyContinue
+$defaults = if ($null -ne $globalVariable) { $globalVariable.Value } else { $null }
+
+if ($null -eq $defaults -or $defaults.Count -eq 0) {
+    $defaults = $PSDefaultParameterValues
+}
+
+if ($null -eq $defaults) { return $result }
+
+foreach ($parameterName in $parameterNames) {
+
+    $exact = $null
+    $wildcard = $null
+
+    foreach ($key in $defaults.Keys) {
+
+        if ($key -isnot [string]) { continue }
+
+        $separator = $key.IndexOf(':')
+        if ($separator -lt 1) { continue }
+
+        $pattern = $key.Substring(0, $separator)
+        $name = $key.Substring($separator + 1)
+
+        if ($name -ne $parameterName -and $name -ne '*') { continue }
+        if ($commandName -notlike $pattern) { continue }
+
+        $value = $defaults[$key]
+        if ($value -is [scriptblock]) { $value = & $value }
+        if ($null -eq $value) { continue }
+
+        if ($pattern -ceq $commandName) { $exact = $value }
+        elseif ($null -eq $wildcard) { $wildcard = $value }
+    }
+
+    if ($null -ne $exact) { $result[$parameterName] = $exact }
+    elseif ($null -ne $wildcard) { $result[$parameterName] = $wildcard }
+}
+
+$result
+", [MyInvocation.MyCommand.Name, ParameterNames]);
     }
 
     /// <summary>

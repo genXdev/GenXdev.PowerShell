@@ -72,8 +72,6 @@ function Invoke-SSMS {
 
 
     process {
-
-
     }
 
     end {

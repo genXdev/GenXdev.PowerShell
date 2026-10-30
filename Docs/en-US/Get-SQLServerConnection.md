@@ -1,6 +1,6 @@
 # Get-SQLServerConnection
 
-> **SubModule:** GenXdev.Data.SqlServer | **Type:** Function | **Aliases:** `getsqlconnection`, `newsqlconnection`
+> **SubModule:** GenXdev.Data.SqlServer | **Type:** Cmdlet | **Aliases:** `getsqlconnection`, `newsqlconnection`
 
 ## Synopsis
 
@@ -13,14 +13,19 @@ closing it. No transaction is started, so the connection runs in autocommit mode
 and keeps one session across every command executed on it. Hand it to
 Invoke-SQLServerQuery or Invoke-SQLServerScriptFile with -Connection to keep
 session state such as USE, temp tables and SET options alive across calls.
-Connection priority: ConnectionString > DatabaseName (requires Server).
+
+Connection priority: ConnectionString > DatabaseName (requires Server). An
+explicitly provided DatabaseName replaces the database of the ConnectionString.
+
+When no connection parameter is bound, the command uses the values
+$PSDefaultParameterValues holds for it in the caller's scope.
 
 
 ## Syntax
 
 
 ```powershell
-Get-SQLServerConnection [[-DatabaseName] <String>] [[-Server] <String>] [[-ConnectionString] <String>] [-AutoConsent] [-AutoConsentAllPackages] [-SessionOnly] [<CommonParameters>]
+Get-SQLServerConnection [[-DatabaseName] <String>] [[-Server] <String>] [[-ConnectionString] <String>] [<CommonParameters>]
 ```
 
 ## Parameters
@@ -30,12 +35,8 @@ Get-SQLServerConnection [[-DatabaseName] <String>] [[-Server] <String>] [[-Conne
 | `-DatabaseName` | String | ☐ | The name of the SQL Server database. |
 | `-Server` | String | ☐ | The SQL Server instance name. |
 | `-ConnectionString` | String | ☐ | The connection string to the SQL database. |
-| `-AutoConsent` | SwitchParameter | ☐ | Force a consent prompt even if a preference<br>is already set. |
-| `-AutoConsentAllPackages` | SwitchParameter | ☐ | Automatically consent to ALL third-party<br>software installations and set persistent<br>flag for SQL Server package. |
-| `-SessionOnly` | SwitchParameter | ☐ | Use alternative settings stored in session<br>for preferences |
 
 ## Examples
-
 
 
 ```powershell
@@ -48,11 +49,15 @@ finally {
 }
 ```
 
+Keeps one session across every query executed on the connection.
 
 
 ```powershell
-Get-SQLServerConnection -ConnectionString "Server=localhost;Database=MyDB;Integrated Security=true"
+Get-SQLServerConnection `
+    -ConnectionString "Server=localhost;Database=MyDB;Integrated Security=true"
 ```
+
+Opens a connection from a connection string.
 
 ## Parameter Details
 
@@ -64,7 +69,7 @@ Get-SQLServerConnection -ConnectionString "Server=localhost;Database=MyDB;Integr
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 0 |
-| **Default value** | `'master'` |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |
@@ -79,7 +84,7 @@ Get-SQLServerConnection -ConnectionString "Server=localhost;Database=MyDB;Integr
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 1 |
-| **Default value** | `'.'` |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |
@@ -94,51 +99,6 @@ Get-SQLServerConnection -ConnectionString "Server=localhost;Database=MyDB;Integr
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 2 |
-| **Default value** | *(none)* |
-| **Accept pipeline input?** | False |
-| **Aliases** | *(none)* |
-| **Accept wildcard characters?** | No |
-
-<hr/>
-
-### `-AutoConsent`
-
-> Force a consent prompt even if a preference is already set.
-
-| Property | Value |
-|:---|:---|
-| **Required?** | No |
-| **Position?** | Named |
-| **Default value** | *(none)* |
-| **Accept pipeline input?** | False |
-| **Aliases** | *(none)* |
-| **Accept wildcard characters?** | No |
-
-<hr/>
-
-### `-AutoConsentAllPackages`
-
-> Automatically consent to ALL third-party software installations and set persistent flag for SQL Server package.
-
-| Property | Value |
-|:---|:---|
-| **Required?** | No |
-| **Position?** | Named |
-| **Default value** | *(none)* |
-| **Accept pipeline input?** | False |
-| **Aliases** | *(none)* |
-| **Accept wildcard characters?** | No |
-
-<hr/>
-
-### `-SessionOnly`
-
-> Use alternative settings stored in session for preferences
-
-| Property | Value |
-|:---|:---|
-| **Required?** | No |
-| **Position?** | Named |
 | **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |

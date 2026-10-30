@@ -1,6 +1,6 @@
 # Invoke-SQLServerScriptFile
 
-> **SubModule:** GenXdev.Data.SqlServer | **Type:** Function | **Aliases:** —
+> **SubModule:** GenXdev.Data.SqlServer | **Type:** Cmdlet | **Aliases:** —
 
 ## Synopsis
 
@@ -8,20 +8,28 @@
 
 ## Description
 
+<details>
+<summary><b>Expand description</b></summary>
+
 Reads one or more SQL script files and executes them in order, splitting every
 file into batches on the GO batch separator, the same way SQL Server Management
 Studio does. A GO line always terminates the current batch, and repeats it with
 an optional repeat count, as in 'GO 5'.
-Every batch of a file is executed by Invoke-SQLServerQuery on one shared
-connection that this cmdlet opens itself, so session state survives a GO exactly
-as it does in SQL Server Management Studio: USE, temp tables and SET options stay
-in effect for the rest of the file. Batches run in autocommit mode, unless a
-Transaction is provided by the caller.
+
+Every batch of a file is executed on one shared connection, so session state
+survives a GO exactly as it does in SQL Server Management Studio: USE, temp
+tables and SET options stay in effect for the rest of the file. Batches run in
+autocommit mode, unless a Transaction is provided by the caller.
+
 Failures are reported through the effective error action: an explicitly bound
 -ErrorAction wins, otherwise $ErrorActionPreference decides. When the effective
 action is not Stop, the failing batch is reported and the next batch is
 executed.
 
+When no connection parameter is bound, the command uses the values
+$PSDefaultParameterValues holds for it in the caller's scope.
+
+</details>
 
 ## Syntax
 
@@ -31,7 +39,7 @@ Invoke-SQLServerScriptFile [[-Name] <String[]>] [<CommonParameters>]
 
 Invoke-SQLServerScriptFile [-InputObject <Object>] [<CommonParameters>]
 
-Invoke-SQLServerScriptFile [[-DatabaseName] <String>] [[-Server] <String>] [[-Transaction] <Object>] [[-ConnectionString] <String>] [[-SqlParameters] <Collections.Hashtable[]>] [-AutoConsent] [-AutoConsentAllPackages] [-Connection <Object>] [-IsolationLevel <String>] [-SessionOnly] [<CommonParameters>]
+Invoke-SQLServerScriptFile [[-DatabaseName] <String>] [[-Server] <String>] [[-Transaction] <Microsoft.Data.SqlClient.SqlTransaction>] [[-ConnectionString] <String>] [[-SqlParameters] <Collections.Hashtable[]>] [-Connection <Microsoft.Data.SqlClient.SqlConnection>] [-ParentProgressId <Int32>] [-TimeoutSeconds <Int32>] [<CommonParameters>]
 ```
 
 ## Parameters
@@ -42,29 +50,31 @@ Invoke-SQLServerScriptFile [[-DatabaseName] <String>] [[-Server] <String>] [[-Tr
 | `-InputObject` | Object | ☐ | SQL script files to execute, as names or<br>FileInfo objects 🌐 wildcards |
 | `-DatabaseName` | String | ☐ | The name of the SQL Server database. |
 | `-Server` | String | ☐ | The SQL Server instance name. |
-| `-Transaction` | Object | ☐ | An existing SQL Server transaction to use for<br>the batches. |
-| `-Connection` | Object | ☐ | An existing open SqlConnection to execute all<br>batches on. |
+| `-Transaction` | Microsoft.Data.SqlClient.SqlTransaction | ☐ | An existing SQL Server transaction to use for<br>the batches. |
+| `-Connection` | Microsoft.Data.SqlClient.SqlConnection | ☐ | An existing open SqlConnection to execute all<br>batches on. |
 | `-ConnectionString` | String | ☐ | The connection string to the SQL database. |
 | `-SqlParameters` | Collections.Hashtable[] | ☐ | Query parameters as hashtables. |
-| `-IsolationLevel` | String | ☐ | The isolation level to use. default is<br>ReadCommitted. |
-| `-AutoConsent` | SwitchParameter | ☐ | Automatically consent to this installation<br>type and set persistent flag.. |
-| `-AutoConsentAllPackages` | SwitchParameter | ☐ | Automatically consent to ALL third-party<br>software installations and set persistent<br>flag for SQL Server package. |
-| `-SessionOnly` | SwitchParameter | ☐ | Use alternative settings stored in session<br>for preferences |
+| `-TimeoutSeconds` | Int32 | ☐ | Command timeout in seconds for every query.<br>Default is 30, 0 waits indefinitely. |
+| `-ParentProgressId` | Int32 | ☐ | The activity identifier of the parent<br>progress record. |
 
 ## Examples
 
 
-
 ```powershell
-Invoke-SQLServerScriptFile -Name '.\deploy.sql' -Server 'localhost' -DatabaseName 'MyDB'
+Invoke-SQLServerScriptFile -Name '.\deploy.sql' -Server 'localhost' `
+    -DatabaseName 'MyDB'
 ```
 
+Executes every batch of deploy.sql against MyDB on localhost.
 
 
 ```powershell
 Get-ChildItem -Path '.\migrations' -Filter '*.sql' |
     Invoke-SQLServerScriptFile -DatabaseName 'MyDB' -ErrorAction Continue
 ```
+
+Executes every migration script in name order, reporting failures and
+continuing with the next batch.
 
 ## Parameter Details
 
@@ -108,7 +118,7 @@ Get-ChildItem -Path '.\migrations' -Filter '*.sql' |
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 1 |
-| **Default value** | `'tempDb'` |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |
@@ -123,14 +133,14 @@ Get-ChildItem -Path '.\migrations' -Filter '*.sql' |
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 2 |
-| **Default value** | `'.'` |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |
 
 <hr/>
 
-### `-Transaction <Object>`
+### `-Transaction <Microsoft.Data.SqlClient.SqlTransaction>`
 
 > An existing SQL Server transaction to use for the batches.
 
@@ -145,7 +155,7 @@ Get-ChildItem -Path '.\migrations' -Filter '*.sql' |
 
 <hr/>
 
-### `-Connection <Object>`
+### `-Connection <Microsoft.Data.SqlClient.SqlConnection>`
 
 > An existing open SqlConnection to execute all batches on.
 
@@ -183,67 +193,37 @@ Get-ChildItem -Path '.\migrations' -Filter '*.sql' |
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 5 |
-| **Default value** | `@()` |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | `data`, `parameters`, `args` |
 | **Accept wildcard characters?** | No |
 
 <hr/>
 
-### `-IsolationLevel <String>`
+### `-TimeoutSeconds <Int32>`
 
-> The isolation level to use. default is ReadCommitted.
+> Command timeout in seconds for every query. Default is 30, 0 waits indefinitely.
 
 | Property | Value |
 |:---|:---|
 | **Required?** | No |
 | **Position?** | Named |
-| **Default value** | `'ReadCommitted'` |
+| **Default value** | `0` |
 | **Accept pipeline input?** | False |
-| **Aliases** | *(none)* |
+| **Aliases** | `timeout`, `maxseconds` |
 | **Accept wildcard characters?** | No |
 
 <hr/>
 
-### `-AutoConsent`
+### `-ParentProgressId <Int32>`
 
-> Automatically consent to this installation type and set persistent flag..
-
-| Property | Value |
-|:---|:---|
-| **Required?** | No |
-| **Position?** | Named |
-| **Default value** | *(none)* |
-| **Accept pipeline input?** | False |
-| **Aliases** | *(none)* |
-| **Accept wildcard characters?** | No |
-
-<hr/>
-
-### `-AutoConsentAllPackages`
-
-> Automatically consent to ALL third-party software installations and set persistent flag for SQL Server package.
+> The activity identifier of the parent progress record.
 
 | Property | Value |
 |:---|:---|
 | **Required?** | No |
 | **Position?** | Named |
-| **Default value** | *(none)* |
-| **Accept pipeline input?** | False |
-| **Aliases** | *(none)* |
-| **Accept wildcard characters?** | No |
-
-<hr/>
-
-### `-SessionOnly`
-
-> Use alternative settings stored in session for preferences
-
-| Property | Value |
-|:---|:---|
-| **Required?** | No |
-| **Position?** | Named |
-| **Default value** | *(none)* |
+| **Default value** | `0` |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |

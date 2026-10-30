@@ -230,8 +230,6 @@ function Show-GenXdevCmdlet {
                 if ($Online) {
 
                     if (@('GenXdev.Local', 'GenXdev.Scripts').IndexOf($cmdlet.BaseModule) -lt 0) {
-
-
                         $url = "https://github.com/genXdev/$($cmdletData.BaseModule)#$($cmdletData.Name)";
 
                         if ([string]::IsNullOrWhiteSpace($CmdletName)) {

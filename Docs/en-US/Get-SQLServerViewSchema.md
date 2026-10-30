@@ -1,6 +1,6 @@
 # Get-SQLServerViewSchema
 
-> **SubModule:** GenXdev.Data.SqlServer | **Type:** Function | **Aliases:** —
+> **SubModule:** GenXdev.Data.SqlServer | **Type:** Cmdlet | **Aliases:** —
 
 ## Synopsis
 
@@ -8,10 +8,10 @@
 
 ## Description
 
-This function queries the SQL Server database's system tables to extract the SQL
-definition of a specified view. It supports connecting via either a connection
-string or database name with server parameters and returns the complete SQL schema
-that defines the requested view.
+This command queries the SQL Server system tables to extract the SQL definition
+of a specified view. It supports connecting via either a connection string or a
+database name with server and returns the complete SQL schema that defines the
+requested view as a hashtable with a view_definition property.
 
 
 ## Syntax
@@ -37,11 +37,21 @@ Get-SQLServerViewSchema -ViewName <String> [<CommonParameters>]
 ## Examples
 
 
+```powershell
+Get-SQLServerViewSchema -DatabaseName "MyApp" -Server "localhost" `
+    -ViewName "CustomerOrders"
+```
+
+Returns the SQL definition of the CustomerOrders view.
+
 
 ```powershell
-Get-SQLServerViewSchema -DatabaseFilePath "C:\Databases\MyApp.sqlite" `
-                    -ViewName "CustomerOrders"
+Get-SQLServerViewSchema `
+    -ConnectionString "Server=localhost;Database=MyApp;Integrated Security=true" `
+    -ViewName "CustomerOrders"
 ```
+
+Returns the definition using a custom connection string.
 
 ## Parameter Details
 
@@ -85,7 +95,7 @@ Get-SQLServerViewSchema -DatabaseFilePath "C:\Databases\MyApp.sqlite" `
 |:---|:---|
 | **Required?** | No |
 | **Position?** | 1 |
-| **Default value** | `'localhost'` |
+| **Default value** | *(none)* |
 | **Accept pipeline input?** | False |
 | **Aliases** | *(none)* |
 | **Accept wildcard characters?** | No |

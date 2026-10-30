@@ -622,8 +622,6 @@ function Set-WindowPosition {
     }
 
     process {
-
-
         ########################################################################
 
         # handle coordinate-only calculation mode without process interaction

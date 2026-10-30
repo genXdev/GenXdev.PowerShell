@@ -6,20 +6,6 @@
       "Microsoft.Playwright.dll"
     ]
   },
-  "SqlClient": {
-    "PackageId": "Microsoft.Data.SqlClient",
-    "Version": "7.1.1",
-    "Assemblies": [
-      "Microsoft.Data.SqlClient.dll"
-    ]
-  },
-  "SqliteClient": {
-    "PackageId": "System.Data.Sqlite",
-    "Version": "2.0.1",
-    "Assemblies": [
-      "System.Data.Sqlite.dll"
-    ]
-  },
   "BouncyCastle": {
     "PackageId": "BouncyCastle.Cryptography",
     "Version": "2.5.1",
